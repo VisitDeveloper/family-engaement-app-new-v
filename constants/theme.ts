@@ -5,25 +5,76 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const tintColorLight = '#a846c2';
+const tintColorDark = '#d17fe0'; // کمی روشن‌تر از بنفش تیره برای دارک مود
+
+const emergencyColor = '#f87171';
+const emergencyBackgroundColor = '#fdf1f1'
+
+const star = '#efb000'
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
+
     tint: tintColorLight,
+
+    //Emergency
+    emergencyColor: emergencyColor,
+    emergencyBackground: emergencyBackgroundColor,
+
+    text: '#11181C',
+    textSecondary: '#9393a0',
+    // #9393a0
+    // #232323
+    background: '#fff',
+    backgroundElement: '#fff',
+    backgroundElementSecondary: '#f9f9f9',
+    textElement: '#666',
+    passwordDescriptionText: '#467938',
+    dashboardColorNumber: "#17709c",
+    borderColor: '#ddd',
+    star: star,
+
+    //check
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    tabActivationBackground: '#f4e9f7',
+    tabBarBorderColor: '#ddd',
+    iconSecondColor: '#fff',
+    messageTimeColor: '#999',
+    messageTextColor: '#666',
+    textMessageMe: '#fff',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+
+    // Emergency
+    emergencyColor: emergencyColor,
+    emergencyBackground: emergencyBackgroundColor,
+
+    text: '#E5E5E5', // سفید ملایم به جای #ECEDEE برای بهتر دیده شدن
+    textSecondary: '#ECEDEE',
+    background: '#1C1C1E',
+    backgroundElement: '#2C2C2E',
+    backgroundElementSecondary: '#3C3C3E',
+    textElement: '#ddd',
+    passwordDescriptionText: '#467938',
+    dashboardColorNumber: "#17709c",
+    borderColor: '#555',
+    star: star,
+
+    //check
+    icon: '#A0A0A5', // کمی روشن‌تر برای آیکون‌ها
+    tabIconDefault: '#7E7E82', // خاکستری مناسب با پس‌زمینه
     tabIconSelected: tintColorDark,
+    tabActivationBackground: '#2C2C2E', // پس‌زمینه فعال تب کمی روشن‌تر
+    tabBarBorderColor: '#444', // مرز ملایم
+    iconSecondColor: '#fff',
+    messageTimeColor: '#AAA', // متن زمان کمی روشن‌تر
+    messageTextColor: '#CCC', // پیام‌ها کمی روشن‌تر
+    textMessageMe: '#000', // اگر پیام خودم روی پس‌زمینه روشنه
   },
 };
 
