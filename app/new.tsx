@@ -2,11 +2,10 @@ import HeaderInnerPage from "@/components/reptitive-component/header-inner-page"
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 
 const groups = [
-    { id: "new-group", name: "Create New Group", type: "action", icon: "people-outline" },
+    // { id: "new-group", name: "Create New Group", type: "action", icon: "people-outline" },
     { id: "5b", name: "Room 5B Class Updates", type: "group", image: "https://randomuser.me/api/portraits/men/32.jpg" },
     { id: "4a", name: "Room 4A Class Updates", type: "group", image: "https://randomuser.me/api/portraits/men/32.jpg" },
     { id: "4b", name: "Room 4B Class Updates", type: "group", image: "https://randomuser.me/api/portraits/men/32.jpg" },
@@ -17,7 +16,6 @@ const groups = [
 ];
 
 const contacts = [
-    { id: "new-contact", name: "Add New Contact", type: "action", icon: "person-add-outline" },
     { id: "1", name: "Principal Johnson", role: "Admin", lastSeen: "8:00 PM", image: "https://randomuser.me/api/portraits/men/32.jpg" },
     { id: "2", name: "Ms. Alvarez", lastSeen: "2:15 PM", initials: "MA" },
     { id: "3", name: "Mr. Rodriguez - Art", lastSeen: "Yesterday", initials: "MR" },
@@ -29,7 +27,6 @@ const contacts = [
 ];
 
 export default function NewMessageScreen() {
-    const router = useRouter();
     const styles = useThemedStyles((t) => ({
         container: {
             flex: 1,
@@ -110,17 +107,6 @@ export default function NewMessageScreen() {
     const theme = useStore(state => state.theme)
 
     const renderItem = ({ item }: any) => {
-        if (item.type === "action") {
-            return (
-                <TouchableOpacity style={styles.row}>
-                    <View style={styles.actionIcon}>
-                        <Ionicons name={item.icon} size={24} color={theme.tint} />
-                    </View>
-                    <Text style={styles.itemName}>{item.name}</Text>
-                </TouchableOpacity>
-            );
-        }
-
         return (
             <TouchableOpacity style={styles.row}>
                 {item.image ? (
@@ -150,6 +136,13 @@ export default function NewMessageScreen() {
 
             {/* Groups */}
             <Text style={styles.sectionTitle}>Groups</Text>
+            <TouchableOpacity style={styles.row}>
+                <View style={styles.actionIcon}>
+                    <Ionicons name={'people-outline'} size={24} color={theme.tint} />
+                </View>
+                <Text style={styles.itemName}>Create New Group</Text>
+            </TouchableOpacity>
+
             <FlatList
                 showsVerticalScrollIndicator={false}
                 showsHorizontalScrollIndicator={false}
@@ -160,6 +153,12 @@ export default function NewMessageScreen() {
 
             {/* Contacts */}
             <Text style={styles.sectionTitle}>Contacts</Text>
+            <TouchableOpacity style={styles.row}>
+                <View style={styles.actionIcon}>
+                    <Ionicons name={'person-add-outline'} size={24} color={theme.tint} />
+                </View>
+                <Text style={styles.itemName}>Add New Contact</Text>
+            </TouchableOpacity>
             <FlatList
                 showsVerticalScrollIndicator={false}
                 showsHorizontalScrollIndicator={false}

@@ -87,6 +87,7 @@ const SampleTimeLine = () => {
             />
 
             <ScrollView
+                style={{ flex: 1 }}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
                 showsVerticalScrollIndicator={false}>
                 <TimelineItem

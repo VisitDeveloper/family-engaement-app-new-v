@@ -180,6 +180,7 @@ const ResourceLibrary = () => {
                 extraData={filteredResources}
                 keyExtractor={(item) => item.id!}
                 numColumns={2}
+                style={{ flex: 1 }}
                 columnWrapperStyle={styles.row}
                 contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 60 }}
                 removeClippedSubviews={false}

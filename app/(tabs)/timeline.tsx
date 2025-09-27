@@ -3,7 +3,7 @@ import TimelineItem from '@/components/reptitive-component/timeline-item';
 import { ThemedText } from '@/components/themed-text';
 import { useThemedStyles } from '@/hooks/use-theme-style';
 import { useStore } from '@/store';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,7 +13,7 @@ const TimelineScreen = () => {
 
 
   const styles = useThemedStyles((theme) => ({
-    container: { flex: 1, backgroundColor: theme.bg, padding: 10 },
+    container: { flex: 1, backgroundColor: theme.bg, padding: 10, },
     tabs: {
       flexDirection: 'row',
       justifyContent: 'space-around',
@@ -112,6 +112,10 @@ const TimelineScreen = () => {
         buttonIcon={<Feather name="calendar" size={16} color={theme.tint} />}
         buttonLink='/event'
         buttonTtitle='Events'
+
+        buttonSecondLink='/new-post'
+        buttonSecondTtitle=''
+        buttonSecondIcon={<MaterialCommunityIcons name="timeline-plus-outline" size={16} color={theme.tint} />}
       />
 
       {/* Tabs */}
@@ -132,6 +136,7 @@ const TimelineScreen = () => {
       </View>
 
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
       >
@@ -140,7 +145,6 @@ const TimelineScreen = () => {
           name='Ms. Alvarez'
           seen='2 hours ago'
           desc='Sarah built an amazing tower with 20 blocks today! She showed excellent spatial reasoning and counted each block as she added it. This demonstrates her growing math skills and patience.'
-          styles={styles}
           numberOfComment={1}
           numberOfLike={3}
           commenter='Mom'
@@ -153,7 +157,6 @@ const TimelineScreen = () => {
           name='Ms. Alvarez'
           seen='2 hours ago'
           desc='Sarah built an amazing tower with 20 blocks today! She showed excellent spatial reasoning and counted each block as she added it. This demonstrates her growing math skills and patience.'
-          styles={styles}
           numberOfComment={1}
           numberOfLike={3}
           commenter='Mom'
@@ -165,7 +168,6 @@ const TimelineScreen = () => {
           name='Ms. Alvarez'
           seen='2 hours ago'
           desc='Sarah built an amazing tower with 20 blocks today! She showed excellent spatial reasoning and counted each block as she added it. This demonstrates her growing math skills and patience.'
-          styles={styles}
           numberOfComment={1}
           numberOfLike={3}
           commenter='Mom'

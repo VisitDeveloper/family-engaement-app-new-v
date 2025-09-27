@@ -28,7 +28,7 @@ export const Colors = {
     // #232323
     background: '#fff',
     backgroundElement: '#fff',
-    backgroundElementSecondary: '#f9f9f9',
+    backgroundElementSecondary: '#f3f3f5',
     textElement: '#666',
     passwordDescriptionText: '#467938',
     dashboardColorNumber: "#17709c",

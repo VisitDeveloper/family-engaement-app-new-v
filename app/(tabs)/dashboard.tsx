@@ -1,45 +1,10 @@
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
+import StatCard from "@/components/reptitive-component/stat-card-admin";
 import { ThemedText } from "@/components/themed-text";
+import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store"; // همون Zustand store که theme رو برمی‌گردونه
 import { AntDesign, Feather, FontAwesome5, FontAwesome6 } from "@expo/vector-icons";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-interface StatCardProps {
-  label: string;
-  value: string;
-  sub: string;
-  theme: any;
-  positive?: boolean;
-  negative?: boolean;
-  rate?: number | string;
-  icon?: React.ReactNode | React.ReactElement;
-
-}
-
-function StatCard({ label, value, sub, theme, positive, negative, rate, icon }: StatCardProps) {
-  return (
-
-    <View style={[styles.card, { backgroundColor: theme.bg, flex: 1, borderColor: theme.border, }]}>
-
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", }}>
-        <Text style={[styles.statValue, { color: theme.iconDash }]}>
-          {value}
-        </Text>
-        {icon}
-      </View>
-      <Text style={[styles.statLabel, { color: theme.subText, marginBottom: 10 }]}>{label}</Text>
-      <Text
-        style={{
-          color: positive ? "green" : negative ? "red" : theme.subText,
-          marginTop: 4,
-          fontSize: 12,
-        }}
-      >
-        {sub}
-      </Text>
-    </View>
-  );
-}
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 
 export default function Dashboard() {
@@ -51,6 +16,66 @@ export default function Dashboard() {
     { name: "Ms. Chen", posts: 21, responses: 19, rate: 92 },
     { name: "Mr. Thompson", posts: 15, responses: 12, rate: 85 },
   ];
+
+  const styles = useThemedStyles((t) => ({
+    container: {
+      flex: 1,
+      marginBottom: 90,
+      backgroundColor: t.bg
+    },
+    headerWrap: {
+      borderBottomWidth: 1, paddingBottom: 5, marginBottom: 10
+    },
+    row: {
+      flexDirection: "row",
+      gap: 10,
+      marginBottom: 10,
+    },
+    card: {
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+
+    },
+    statValue: {
+      fontSize: 20,
+      fontWeight: "700",
+    },
+    statLabel: {
+      fontSize: 14,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    teacherRow: {
+      marginBottom: 12,
+    },
+    teacherName: {
+      fontWeight: "600",
+      fontSize: 14,
+    },
+    teacherStats: {
+      fontSize: 12,
+      marginBottom: 4,
+    },
+    progressBar: {
+      height: 6,
+      borderRadius: 6,
+      overflow: "hidden",
+    },
+    progressFill: {
+      height: 6,
+      borderRadius: 6,
+    },
+  }))
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg, padding: 10 }}>
@@ -64,10 +89,7 @@ export default function Dashboard() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        style={[styles.container, { backgroundColor: theme.bg }]}>
-
-
-
+        style={styles.container}>
 
         {/* Top Stats */}
         <View style={styles.row}>
@@ -76,7 +98,6 @@ export default function Dashboard() {
             label="Active Families"
             value="22"
             sub="of 24 total families"
-            theme={theme}
             icon={<Feather name="users" size={30} color={theme.iconDash} />}
           />
 
@@ -85,7 +106,6 @@ export default function Dashboard() {
             label="Engagement Rate"
             value="92%"
             sub="↑ 5% from last month"
-            theme={theme}
             positive
             icon={<FontAwesome5 name="chart-line" size={30} color={theme.iconDash} />}
           />
@@ -98,7 +118,6 @@ export default function Dashboard() {
             label="Posts Shared"
             value="120"
             sub="↓ 4% from last month"
-            theme={theme}
             negative
             icon={<AntDesign name="picture" size={30} color={theme.iconDash} />}
           />
@@ -107,10 +126,8 @@ export default function Dashboard() {
             label="Messages Sent"
             value="340"
             sub="Same as last month"
-            theme={theme}
             icon={<FontAwesome6 name="message" size={24} color={theme.iconDash} />}
           />
-
         </View>
 
         {/* Teacher Engagement */}
@@ -167,61 +184,4 @@ export default function Dashboard() {
 
 
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    marginBottom: 90,
-  },
-  headerWrap: {
-    borderBottomWidth: 1, paddingBottom: 5, marginBottom: 10
-  },
-  row: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 10,
-  },
-  card: {
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
 
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  statLabel: {
-    fontSize: 14,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  teacherRow: {
-    marginBottom: 12,
-  },
-  teacherName: {
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  teacherStats: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  progressBar: {
-    height: 6,
-    borderRadius: 6,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: 6,
-    borderRadius: 6,
-  },
-});

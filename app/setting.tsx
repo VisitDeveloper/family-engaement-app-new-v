@@ -12,7 +12,6 @@ import {
     StyleSheet,
     Switch,
     TouchableOpacity,
-    useColorScheme,
     View
 } from "react-native";
 
@@ -22,8 +21,6 @@ const CONTENT_WIDTH = Math.min(420, screenWidth - 32); // responsive central col
 
 export default function SettingsScreen() {
     const router = useRouter();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === "dark";
 
     const theme = useStore((state) => state.theme);
     const isHighContrast = useStore((state) => state.isHighContrast);
@@ -47,7 +44,9 @@ export default function SettingsScreen() {
     const [lang, setLang] = useState<OptionsList[]>([{
         label: 'English',
         value: 'en'
-    }])
+    }]);
+
+
 
 
     return (
@@ -137,7 +136,7 @@ export default function SettingsScreen() {
                         <View style={styles.row}>
                             <View style={{ flex: 1 }}>
                                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                    <MaterialIcons name="error-outline" size={18} color="#e11d48" />
+                                    <MaterialIcons name="error-outline" size={18} color={theme.emergencyColor} />
                                     <ThemedText type="middleTitle" style={{ color: theme.text, marginLeft: 8 }}>Urgent Alerts</ThemedText>
                                 </View>
                                 <ThemedText type="subText" style={[styles.rowSubtitle, { color: theme.subText }]}>Emergency broadcasts & safety alerts</ThemedText>
@@ -145,7 +144,7 @@ export default function SettingsScreen() {
                             <Switch
                                 value={urgentAlerts}
                                 onValueChange={setUrgentAlerts}
-                                trackColor={{ false: "#ccc", true: "#e11d48" }}
+                                trackColor={{ false: "#ccc", true: theme.emergencyColor }}
                                 thumbColor={urgentAlerts ? "#fff" : "#fff"}
                             />
                         </View>
