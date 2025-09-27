@@ -5,7 +5,7 @@ import { Text, TouchableOpacity, type TextProps, type TextStyle } from 'react-na
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'subText' | 'middleTitle' | 'subLittleText';
+  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'subText' | 'middleTitle' | 'subLittleText' | 'text' | 'error';
   readString?: string;
 };
 
@@ -31,8 +31,10 @@ export function ThemedText({
     link: { fontSize: adjustFontSize(16), lineHeight: 30, color: '#0a7ea4' },
     subtitle: { fontSize: adjustFontSize(20), fontWeight: 'bold' },
     middleTitle: { fontSize: adjustFontSize(15), fontWeight: '700' },
+    text: { fontSize: adjustFontSize(14), lineHeight: 20, fontWeight: '700' },
     subText: { fontSize: adjustFontSize(12), lineHeight: 20 },
     subLittleText: { fontSize: adjustFontSize(10), lineHeight: 20 },
+    error: { fontSize: adjustFontSize(12), lineHeight: 20, color: '#f87171' },
   };
 
 

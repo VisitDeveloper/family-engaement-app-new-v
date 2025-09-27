@@ -11,12 +11,13 @@ import { Platform, View } from 'react-native';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = useStore(state => state.theme);
-  
+
   return (
     <View style={{ flex: 1, height: 80 }}>
 
       <Tabs
         screenOptions={{
+          // lazy: false,
           animation: 'shift',
           tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
           tabBarActiveBackgroundColor: colorScheme === 'dark' ? 'transparent' : Colors.light.tabActivationBackground,

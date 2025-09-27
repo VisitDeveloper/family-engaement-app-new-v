@@ -10,6 +10,10 @@ interface HeaderTabItemProps {
     buttonTtitle?: string;
     buttonIcon?: React.ReactNode | React.ReactElement;
 
+    buttonSecondTtitle?: string;
+    buttonSecondLink?: string;
+    buttonSecondIcon?: React.ReactNode | React.ReactElement;
+
     title: string;
     subTitle: string;
 
@@ -57,17 +61,32 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
                     {props.subTitle}
                 </ThemedText>
             </View>
-            {
-                props?.buttonTtitle ? (
-                    <TouchableOpacity style={styles.eventButton} onPress={() => router.push(props.buttonLink as any)}>
-                        {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
-                        {props.buttonIcon ? props.buttonIcon : null}
-                        <ThemedText type="subText" style={styles.eventText}>
-                            {props.buttonTtitle}
-                        </ThemedText>
-                    </TouchableOpacity>
-                ) : null
-            }
+            <View style={{ flexDirection: 'row', gap: 5 }}>
+
+                {
+                    props?.buttonTtitle ? (
+                        <TouchableOpacity style={styles.eventButton} onPress={() => router.push(props.buttonLink as any)}>
+                            {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
+                            {props.buttonIcon ? props.buttonIcon : null}
+                            <ThemedText type="subText" style={styles.eventText}>
+                                {props.buttonTtitle!}
+                            </ThemedText>
+                        </TouchableOpacity>
+                    ) : null
+                }
+                {
+                    (props?.buttonSecondTtitle || props.buttonSecondIcon) ? (
+                        <TouchableOpacity style={styles.eventButton} onPress={() => router.push(props.buttonSecondLink as any)}>
+                            {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
+                            {props.buttonSecondIcon ? props.buttonSecondIcon : null}
+                            {props?.buttonSecondTtitle ? <ThemedText type="subText" style={styles.eventText}>
+                                {props.buttonSecondTtitle!}
+                            </ThemedText> : null}
+
+                        </TouchableOpacity>
+                    ) : null
+                }
+            </View>
 
         </View>
     )

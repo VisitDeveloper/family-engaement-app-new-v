@@ -76,6 +76,14 @@ export default function RootLayout() {
                 logo={require('./../assets/images/LOGO.jpeg')} />
             }} />
 
+            <Stack.Screen name="resource/[id]/rating" options={{
+              headerShown: true,
+              header: () => <Header
+                link={'/setting'}
+                userImage={require('./../assets/images/user.jpeg')}
+                logo={require('./../assets/images/LOGO.jpeg')} />
+            }} />
+
 
             <Stack.Screen name="timeline/[id]" options={{
               headerShown: true,
@@ -126,6 +134,14 @@ export default function RootLayout() {
             }} />
 
             <Stack.Screen name="new" options={{
+              headerShown: true,
+              header: () => <Header
+                link={'/setting'}
+                userImage={require('./../assets/images/user.jpeg')}
+                logo={require('./../assets/images/LOGO.jpeg')} />
+            }} />
+
+            <Stack.Screen name="new-post" options={{
               headerShown: true,
               header: () => <Header
                 link={'/setting'}

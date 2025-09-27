@@ -1,6 +1,7 @@
 // app/book/[id].tsx
 import HeaderThreeSections from '@/components/reptitive-component/header-three-sections';
 import { ThemedText } from '@/components/themed-text';
+import Rating from '@/components/ui/rating';
 import { useThemedStyles } from '@/hooks/use-theme-style';
 import { useStore } from '@/store';
 import { AntDesign, Feather, FontAwesome, Ionicons } from '@expo/vector-icons';
@@ -16,9 +17,10 @@ const BookDetailScreen = () => {
     const param = usePathname();
     const pathID = param.split('/');
     const id = pathID.pop();
+    console.log('id', id);
 
     const resourceItem = useStore((state: any) => state.getResourceById(`${id}`));
-    console.log('id', id, resourceItem);
+    const addResource = useStore((state: any) => state.addResource);
 
 
     const styles = useThemedStyles((t) => ({
@@ -36,7 +38,7 @@ const BookDetailScreen = () => {
         backBtn: { padding: 6 },
         cover: {
             width: '100%',
-            height: 180,
+            height: 225,
             borderRadius: 12,
             marginTop: 12,
         },
@@ -88,12 +90,28 @@ const BookDetailScreen = () => {
         },
     }) as const);
 
+    const openResource = (item: any) => {
+        const data = {
+            id: item.id,
+            type: item.type,
+            title: item.title,
+            age: item.age,
+            category: item.category,
+            rating: item.rating,
+        }
+        addResource(data);
+        router.push({
+            pathname: "/resource/[id]/rating",
+            params: { id: data?.id! },
+        });
+    }
+
     return (
         <View style={styles.container}>
 
             <HeaderThreeSections
-                title={resourceItem.title}
-                desc={`${resourceItem.category} • ${resourceItem.age}`}
+                title={resourceItem?.title!}
+                desc={`${resourceItem?.category!} • ${resourceItem?.age!}`}
                 icon={<Ionicons name="bookmark-outline" size={20} color={theme.text} />}
                 colorDesc={theme.subText}
             />
@@ -111,13 +129,13 @@ const BookDetailScreen = () => {
                     <View style={styles.chip}>
                         <Ionicons name="book-outline" size={16} color={theme.text} />
                         <ThemedText type="subText">
-                            {resourceItem.type}
+                            {resourceItem?.type!}
                         </ThemedText>
                     </View>
-                    <View style={styles.rating}>
+                    <TouchableOpacity onPress={() => openResource(resourceItem!)} style={styles.rating}>
                         <FontAwesome name="star" size={16} color="#FACC15" />
                         <ThemedText type="subText">4.8</ThemedText>
-                    </View>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Description */}
@@ -135,6 +153,9 @@ const BookDetailScreen = () => {
                         <AntDesign name="download" size={18} color={theme.tint} />
                     </TouchableOpacity>
                 </View>
+
+                <Rating maxRating={5} size={40} onRatingChange={(value) => console.log("امتیاز:", value)} />
+
             </ScrollView>
         </View>
     );
