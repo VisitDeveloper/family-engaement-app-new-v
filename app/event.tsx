@@ -1,10 +1,10 @@
 // app/school-calendar.tsx (یا هر مسیری که می‌خوای)
-import HeaderInnerPage from '@/components/reptitive-component/header-inner-page';
+import HeaderThreeSections from '@/components/reptitive-component/header-three-sections';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useThemedStyles } from '@/hooks/use-theme-style';
 import { useStore } from '@/store';
-import { AntDesign, Feather, FontAwesome, FontAwesome6, MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, Feather, FontAwesome, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
@@ -168,9 +168,13 @@ const SchoolCalendarScreen = () => {
     return (
         <ThemedView style={styles.container}>
 
-            <HeaderInnerPage
+            <HeaderThreeSections
                 title='School Calendar'
-                subTitle='Upcoming events and important dates'
+                desc='Upcoming events and important dates'
+                icon={<Ionicons name="add-circle-outline" size={24} color={theme.tint} />}
+                colorDesc={theme.subText}
+                onPress={() => router.push('/create-new-event')}
+
             />
 
             {/* Month Selector */}

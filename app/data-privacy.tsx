@@ -43,7 +43,7 @@ export default function DataPrivacyScreen() {
                 addstyles={{ marginBottom: 20 }}
             />
 
-            <ScrollView style={styles.containerScrollView}>
+            <ScrollView style={styles.containerScrollView} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
 
                 {/* Contact */}
                 <View style={styles.card}>

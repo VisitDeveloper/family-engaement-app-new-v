@@ -1,7 +1,6 @@
 // app/book/[id].tsx
 import HeaderThreeSections from '@/components/reptitive-component/header-three-sections';
 import { ThemedText } from '@/components/themed-text';
-import Rating from '@/components/ui/rating';
 import { useThemedStyles } from '@/hooks/use-theme-style';
 import { useStore } from '@/store';
 import { AntDesign, Feather, FontAwesome, Ionicons } from '@expo/vector-icons';
@@ -154,7 +153,6 @@ const BookDetailScreen = () => {
                     </TouchableOpacity>
                 </View>
 
-                <Rating maxRating={5} size={40} onRatingChange={(value) => console.log("امتیاز:", value)} />
 
             </ScrollView>
         </View>
