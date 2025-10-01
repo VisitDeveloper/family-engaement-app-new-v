@@ -113,7 +113,7 @@ const TimelineScreen = () => {
         buttonLink='/event'
         buttonTtitle='Events'
 
-        buttonSecondLink='/new-post'
+        buttonSecondLink='/create-post'
         buttonSecondTtitle=''
         buttonSecondIcon={<MaterialCommunityIcons name="timeline-plus-outline" size={16} color={theme.tint} />}
       />

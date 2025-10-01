@@ -10,8 +10,9 @@ import { ThemedText } from '../themed-text'
 interface HeaderThreeSectionsProps {
     title: string;
     desc?: string;
-    icon: React.ReactNode | React.ReactElement;
-    colorDesc?:string;
+    icon?: React.ReactNode | React.ReactElement;
+    colorDesc?: string;
+    onPress?: () => void;
 }
 
 export default function HeaderThreeSections(props: HeaderThreeSectionsProps) {
@@ -46,16 +47,15 @@ export default function HeaderThreeSections(props: HeaderThreeSectionsProps) {
                     <Ionicons name="chevron-back" size={20} color={theme.text} />
                 </TouchableOpacity>
                 <View>
-                    <ThemedText type="defaultSemiBold">
+                    <ThemedText type="subtitle" style={{ fontWeight: 500 }}>
                         {props.title}
                     </ThemedText>
-                    <ThemedText type="subText" style={{color:`${props.colorDesc}`}}>
+                    <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
                         {props.desc}
                     </ThemedText>
                 </View>
             </View>
-            <TouchableOpacity>
-                {/* <Ionicons name="bookmark-outline" size={20} color={theme.text} /> */}
+            <TouchableOpacity onPress={props.onPress}>
                 {props.icon}
             </TouchableOpacity>
         </View>

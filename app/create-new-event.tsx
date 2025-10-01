@@ -1,0 +1,304 @@
+import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { ThemedText } from "@/components/themed-text";
+import DatePicker from "@/components/ui/date-picker";
+import Divider from "@/components/ui/divider";
+import { useThemedStyles } from "@/hooks/use-theme-style";
+import { useStore } from "@/store";
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
+import { ScrollView, Switch, TextInput, TouchableOpacity, View } from "react-native";
+
+
+
+
+
+
+function CreateNewEvent() {
+    const theme = useStore((state) => state.theme)
+
+
+    const styles = useThemedStyles((theme) => ({
+        container: { flex: 1, paddingHorizontal: 10, backgroundColor: theme.bg, },
+        containerScrollView: { flex: 1, backgroundColor: theme.bg, marginBottom: 30 },
+        header: {
+            paddingVertical: 15,
+            marginBottom: 20,
+            borderBottomWidth: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            gap: 20
+        },
+        title: { fontSize: 18, fontWeight: "600", },
+        card: {
+            borderWidth: 1,
+            borderRadius: 10,
+            padding: 16,
+            marginBottom: 20,
+            backgroundColor: theme.bg,
+            borderColor: theme.border
+        },
+        subText: { fontSize: 14, textAlign: "center", marginBottom: 6 },
+        row: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+        sectionTitle: { marginTop: 5, color: theme.text, fontWeight: 500 },
+        input: {
+            padding: 10,
+            marginBottom: 10,
+            borderRadius: 10,
+            color: theme.text,
+            backgroundColor: theme.panel,
+        },
+        messageInput: {
+            backgroundColor: theme.panel,
+            borderRadius: 10,
+            padding: 5,
+
+            height: 100,
+            textAlignVertical: 'top',
+            marginBottom: 10,
+            color: theme.text,
+        },
+
+    }))
+
+
+    const [message, setMessage] = useState<string>('')
+    const [textMessages, setTextMessages] = useState<boolean>(false)
+
+    // date
+    const [startdate, setStartDate] = useState(new Date());
+    const [enddate, setEndDate] = useState(new Date());
+
+
+    // time
+    const [startDateTime, setStartDateTime] = useState(new Date());
+    const [enddateTime, setEndDateTime] = useState(new Date());
+
+    useEffect(() => {
+        // console.log('start date', startdate)
+        // console.log('end date', enddate)
+
+        console.log('Start Date Time', startDateTime)
+        // console.log('End Date Time', enddateTime)
+    }, [
+        // startdate,
+        // enddate,
+        startDateTime,
+        // enddateTime
+    ])
+
+    const [multipleTimeSlots, setMultipleTimeSlots] = useState<boolean>(false)
+
+
+    return (
+        <View style={styles.container}>
+            <HeaderInnerPage
+                title="Create New Event"
+                addstyles={{ marginBottom: 20 }}
+            />
+
+            <ScrollView style={styles.containerScrollView} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+
+                {/* Contact */}
+                <View style={styles.card}>
+
+                    <View style={styles.row}>
+                        <ThemedText style={styles.sectionTitle}> Event Title</ThemedText>
+                    </View>
+                    <TextInput placeholder="What’s the event called?" style={styles.input} />
+
+
+                    <View style={styles.row}>
+                        <ThemedText style={styles.sectionTitle}> Event Type</ThemedText>
+                    </View>
+                    <TextInput placeholder="Conference" style={styles.input} />
+
+
+                    <View style={styles.row}>
+                        <ThemedText style={styles.sectionTitle}> Description</ThemedText>
+                    </View>
+                    <TextInput
+                        style={styles.messageInput}
+                        value={message}
+                        onChangeText={setMessage}
+                        placeholder="What do you want to talk about?"
+                        placeholderTextColor={theme.subText}
+                        multiline
+                    />
+
+                    <Divider />
+
+
+                    <View style={styles.row}>
+                        <ThemedText style={styles.sectionTitle}>Location</ThemedText>
+                    </View>
+                    <TextInput placeholder="What’s the event called?" style={styles.input} />
+
+
+                    <View style={[styles.row, { justifyContent: 'space-between', alignItems: 'center' }]}>
+                        <View style={{ flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
+                            <ThemedText style={styles.sectionTitle}>Request RSVP</ThemedText>
+                            <ThemedText type="subText" style={[styles.sectionTitle, { color: theme.subText, margin: 0 }]}>Request Invitees for RSVP</ThemedText>
+                        </View>
+                        <Switch
+                            value={textMessages}
+                            onValueChange={setTextMessages}
+                            trackColor={{ false: "#ccc", true: '#a846c2' }}
+                            thumbColor={textMessages ? "#fff" : "#fff"}
+                            style={{ marginTop: 10 }}
+                        />
+                    </View>
+
+                </View>
+
+                <View style={styles.card}>
+
+                    <View style={[styles.row, { justifyContent: 'space-between', marginBottom: 30 }]}>
+                        <ThemedText style={styles.sectionTitle}>Start Date</ThemedText>
+                        <DatePicker date={startdate} setDate={setStartDate} />
+                    </View>
+
+
+
+                    <View style={[styles.row, { justifyContent: 'space-between' }]}>
+                        <ThemedText style={styles.sectionTitle}>End Date</ThemedText>
+                        <DatePicker date={enddate} setDate={setEndDate} />
+                    </View>
+
+                    <Divider />
+
+                    <View style={[styles.row, { justifyContent: 'space-between', alignItems: 'center' }]}>
+                        <View style={{ flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
+                            <ThemedText style={styles.sectionTitle}>
+                                All Day Event
+                            </ThemedText>
+                        </View>
+                        <Switch
+                            value={textMessages}
+                            onValueChange={setTextMessages}
+                            trackColor={{ false: "#ccc", true: '#a846c2' }}
+                            thumbColor={textMessages ? "#fff" : "#fff"}
+                            style={{ marginTop: 10 }}
+                        />
+                    </View>
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <View style={{ flexDirection: 'column', alignItems: 'flex-start', width: '50%' }}>
+                            <ThemedText style={[styles.sectionTitle, { marginBottom: 5 }]}>
+                                Start Time
+                            </ThemedText>
+
+                            <DatePicker mode="time" date={startDateTime} setDate={setStartDateTime} />
+                        </View>
+
+
+                        <View style={{ flexDirection: 'column', alignItems: 'flex-start', width: '50%' }}>
+                            <ThemedText style={[styles.sectionTitle, { marginBottom: 5 }]}>
+                                End Time
+                            </ThemedText>
+                            <DatePicker mode="time" date={enddateTime} setDate={setEndDateTime} />
+
+                        </View>
+                    </View>
+
+                    <View style={[styles.row, { justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }]}>
+                        <View style={{ flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
+                            <ThemedText style={styles.sectionTitle}>
+                                Multiple Time Slots
+                            </ThemedText>
+                        </View>
+
+
+                        <Switch
+                            value={multipleTimeSlots}
+                            onValueChange={setMultipleTimeSlots}
+                            trackColor={{ false: "#ccc", true: '#a846c2' }}
+                            thumbColor={textMessages ? "#fff" : "#fff"}
+                            style={{ marginTop: 10 }}
+                        />
+                    </View>
+
+
+                    {multipleTimeSlots && (
+                        <View>
+                            <View style={styles.row}>
+                                <ThemedText style={styles.sectionTitle}> Event Title</ThemedText>
+                            </View>
+
+                            <TextInput placeholder="What’s the event called?" style={styles.input} />
+
+
+                            <View style={[styles.row, { justifyContent: 'space-between', alignItems: 'center' }]}>
+                                <View style={{ flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
+                                    <ThemedText style={styles.sectionTitle}>Slot Restriction</ThemedText>
+                                    <ThemedText type="subText" style={[styles.sectionTitle, { color: theme.subText, margin: 0 }]}>
+                                        Restrict No. of People in a Slot
+                                    </ThemedText>
+                                </View>
+                                <Switch
+                                    value={textMessages}
+                                    onValueChange={setTextMessages}
+                                    trackColor={{ false: "#ccc", true: '#a846c2' }}
+                                    thumbColor={textMessages ? "#fff" : "#fff"}
+                                    style={{ marginTop: 10 }}
+                                />
+                            </View>
+
+                            <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent: 'space-between' }}>
+                                <View style={{ backgroundColor: theme.panel, width: '65%', height: 35, borderRadius: 10, paddingVertical: 3 }}>
+                                    <ThemedText type="subtitle" style={{ color: theme.subText, marginHorizontal: 'auto' }}>
+
+                                        {/* {counter} */}
+                                        5
+                                    </ThemedText>
+                                </View>
+
+                                <View style={{ backgroundColor: theme.panel, paddingHorizontal: 8, flexDirection: 'row', borderRadius: 25, width: '30%', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <TouchableOpacity onPress={() => console.log('click')}>
+
+                                        <ThemedText type="title" style={{ marginHorizontal: 'auto', fontWeight: 400 }}>
+                                            -
+                                        </ThemedText>
+                                    </TouchableOpacity>
+
+                                    {/* <TouchableOpacity onPress={() => console.log('click')}>
+                                        <MaterialIcons name="minimize" size={24} color="black" />
+                                    </TouchableOpacity> */}
+
+
+                                    <View style={{ height: 15, width: 2, backgroundColor: theme.text }} />
+                                    <Ionicons name="add-outline" size={24} color="black" />
+                                </View>
+                            </View>
+                        </View>
+                    )}
+
+
+                    <Divider />
+
+
+                    <View style={[styles.row, { justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }]}>
+                        <View style={{ flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
+                            <ThemedText style={styles.sectionTitle}>
+                                Repeat
+                            </ThemedText>
+                        </View>
+                        <Switch
+                            value={textMessages}
+                            onValueChange={setTextMessages}
+                            trackColor={{ false: "#ccc", true: '#a846c2' }}
+                            thumbColor={textMessages ? "#fff" : "#fff"}
+                            style={{ marginTop: 10 }}
+                        />
+                    </View>
+
+                </View>
+
+
+            </ScrollView>
+        </View>
+    );
+}
+
+
+export default CreateNewEvent

@@ -141,7 +141,15 @@ export default function RootLayout() {
                 logo={require('./../assets/images/LOGO.jpeg')} />
             }} />
 
-            <Stack.Screen name="new-post" options={{
+            <Stack.Screen name="create-post" options={{
+              headerShown: true,
+              header: () => <Header
+                link={'/setting'}
+                userImage={require('./../assets/images/user.jpeg')}
+                logo={require('./../assets/images/LOGO.jpeg')} />
+            }} />
+
+            <Stack.Screen name="create-new-event" options={{
               headerShown: true,
               header: () => <Header
                 link={'/setting'}
