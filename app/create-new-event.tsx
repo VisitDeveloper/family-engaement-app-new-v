@@ -2,20 +2,37 @@ import HeaderInnerPage from "@/components/reptitive-component/header-inner-page"
 import { ThemedText } from "@/components/themed-text";
 import DatePicker from "@/components/ui/date-picker";
 import Divider from "@/components/ui/divider";
+import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
-import { Ionicons } from "@expo/vector-icons";
+import { enumToOptions } from "@/utils/make-array-for-select-box";
+import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { ScrollView, Switch, TextInput, TouchableOpacity, View } from "react-native";
 
+enum EventType {
+    Conference = 'Conference',
+    Meeting = 'Meeting',
+    ClassEvent = "ClassEvent",
+    FamilyWorkshop = 'FamilyWorkshop',
+    SchoolwideEvent = 'SchoolwideEvent',
+    FieldTrip = 'FieldTrip',
+    Assessment = 'Assessment',
+    ServicesAndScreenings = 'ServicesAndScreenings'
+}
 
 
+enum TimeRepition {
+    Daily = 'Daily',
+    Weekly = 'Weekly',
+    Monthly = 'Monthly',
+    Yearly = 'Yearly',
+}
 
 
 
 function CreateNewEvent() {
     const theme = useStore((state) => state.theme)
-
 
     const styles = useThemedStyles((theme) => ({
         container: { flex: 1, paddingHorizontal: 10, backgroundColor: theme.bg, },
@@ -62,8 +79,11 @@ function CreateNewEvent() {
     }))
 
 
-    const [message, setMessage] = useState<string>('')
+    const [message, setMessage] = useState<string>('');
+    const firstElementArray = enumToOptions(EventType)
+    const [eventType, setEventType] = useState<OptionsList[]>([firstElementArray[0]]);
     const [textMessages, setTextMessages] = useState<boolean>(false)
+
 
     // date
     const [startdate, setStartDate] = useState(new Date());
@@ -88,6 +108,22 @@ function CreateNewEvent() {
     ])
 
     const [multipleTimeSlots, setMultipleTimeSlots] = useState<boolean>(false)
+    const [restrictNumberOfPeopleInASlot, setRestrictNumberOfPeopleInASlot] = useState<boolean>(false)
+
+    const [counter, setCounter] = useState<number>(0);
+
+    const incrementCounter = () => {
+        setCounter(perv => perv + 1)
+    }
+
+    const decrementCounter = () => {
+        if (counter === 0) return;
+        setCounter(perv => perv - 1);
+
+    }
+
+    const firstElementArrayOfTimeRepetition = enumToOptions(TimeRepition)
+    const [timeRepetition, setTimeRepetition] = useState<OptionsList[]>([firstElementArrayOfTimeRepetition[0]]);
 
 
     return (
@@ -105,13 +141,24 @@ function CreateNewEvent() {
                     <View style={styles.row}>
                         <ThemedText style={styles.sectionTitle}> Event Title</ThemedText>
                     </View>
-                    <TextInput placeholder="What’s the event called?" style={styles.input} />
+                    <TextInput placeholder="What’s the event called?" placeholderTextColor={theme.subText} style={styles.input} />
 
 
                     <View style={styles.row}>
                         <ThemedText style={styles.sectionTitle}> Event Type</ThemedText>
                     </View>
-                    <TextInput placeholder="Conference" style={styles.input} />
+                    <SelectBox
+                        options={firstElementArray}
+                        value={eventType[0].label} // فقط label برای نمایش در SelectBox
+                        onChange={(val) => {
+                            const selectedOption = firstElementArray.find(opt => opt.value === val);
+
+                            if (selectedOption) {
+                                setEventType([selectedOption]); // کل گزینه رو ذخیره کن
+                            }
+                        }}
+                        title="List of Post Visibility"
+                    />
 
 
                     <View style={styles.row}>
@@ -132,7 +179,7 @@ function CreateNewEvent() {
                     <View style={styles.row}>
                         <ThemedText style={styles.sectionTitle}>Location</ThemedText>
                     </View>
-                    <TextInput placeholder="What’s the event called?" style={styles.input} />
+                    <TextInput placeholder="Venue Details" placeholderTextColor={theme.subText} style={styles.input} />
 
 
                     <View style={[styles.row, { justifyContent: 'space-between', alignItems: 'center' }]}>
@@ -207,13 +254,11 @@ function CreateNewEvent() {
                                 Multiple Time Slots
                             </ThemedText>
                         </View>
-
-
                         <Switch
                             value={multipleTimeSlots}
                             onValueChange={setMultipleTimeSlots}
                             trackColor={{ false: "#ccc", true: '#a846c2' }}
-                            thumbColor={textMessages ? "#fff" : "#fff"}
+                            thumbColor={multipleTimeSlots ? "#fff" : "#fff"}
                             style={{ marginTop: 10 }}
                         />
                     </View>
@@ -222,10 +267,10 @@ function CreateNewEvent() {
                     {multipleTimeSlots && (
                         <View>
                             <View style={styles.row}>
-                                <ThemedText style={styles.sectionTitle}> Event Title</ThemedText>
+                                <ThemedText style={styles.sectionTitle}> Slot Duration</ThemedText>
                             </View>
 
-                            <TextInput placeholder="What’s the event called?" style={styles.input} />
+                            <TextInput placeholder="30 min" style={styles.input} />
 
 
                             <View style={[styles.row, { justifyContent: 'space-between', alignItems: 'center' }]}>
@@ -235,11 +280,12 @@ function CreateNewEvent() {
                                         Restrict No. of People in a Slot
                                     </ThemedText>
                                 </View>
+
                                 <Switch
-                                    value={textMessages}
-                                    onValueChange={setTextMessages}
+                                    value={restrictNumberOfPeopleInASlot}
+                                    onValueChange={setRestrictNumberOfPeopleInASlot}
                                     trackColor={{ false: "#ccc", true: '#a846c2' }}
-                                    thumbColor={textMessages ? "#fff" : "#fff"}
+                                    thumbColor={restrictNumberOfPeopleInASlot ? "#fff" : "#fff"}
                                     style={{ marginTop: 10 }}
                                 />
                             </View>
@@ -248,26 +294,28 @@ function CreateNewEvent() {
                                 <View style={{ backgroundColor: theme.panel, width: '65%', height: 35, borderRadius: 10, paddingVertical: 3 }}>
                                     <ThemedText type="subtitle" style={{ color: theme.subText, marginHorizontal: 'auto' }}>
 
-                                        {/* {counter} */}
-                                        5
+                                        {counter}
+
                                     </ThemedText>
                                 </View>
 
                                 <View style={{ backgroundColor: theme.panel, paddingHorizontal: 8, flexDirection: 'row', borderRadius: 25, width: '30%', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <TouchableOpacity onPress={() => console.log('click')}>
 
-                                        <ThemedText type="title" style={{ marginHorizontal: 'auto', fontWeight: 400 }}>
+                                    <TouchableOpacity disabled={restrictNumberOfPeopleInASlot} onPress={() => decrementCounter()} style={{ width: '45%' }}>
+                                        <ThemedText type="title" style={{ marginHorizontal: 'auto', fontWeight: 400, color: restrictNumberOfPeopleInASlot ? theme.subText : theme.text }}>
                                             -
                                         </ThemedText>
                                     </TouchableOpacity>
 
-                                    {/* <TouchableOpacity onPress={() => console.log('click')}>
-                                        <MaterialIcons name="minimize" size={24} color="black" />
-                                    </TouchableOpacity> */}
 
+                                    <View style={{ height: 15, width: 2, backgroundColor: theme.text, }} />
 
-                                    <View style={{ height: 15, width: 2, backgroundColor: theme.text }} />
-                                    <Ionicons name="add-outline" size={24} color="black" />
+                                    <TouchableOpacity disabled={restrictNumberOfPeopleInASlot} onPress={() => incrementCounter()} style={{ width: '45%' }}>
+                                        <ThemedText type="title" style={{ marginHorizontal: 'auto', fontWeight: 400, color: restrictNumberOfPeopleInASlot ? theme.subText : theme.text }}>
+                                            +
+                                        </ThemedText>
+                                    </TouchableOpacity>
+
                                 </View>
                             </View>
                         </View>
@@ -292,6 +340,37 @@ function CreateNewEvent() {
                         />
                     </View>
 
+                    <SelectBox
+                        options={firstElementArrayOfTimeRepetition}
+                        value={timeRepetition[0].label} // فقط label برای نمایش در SelectBox
+                        onChange={(val) => {
+                            const selectedOption = firstElementArrayOfTimeRepetition.find(opt => opt.value === val);
+
+                            if (selectedOption) {
+                                setTimeRepetition([selectedOption]); // کل گزینه رو ذخیره کن
+                            }
+                        }}
+                        title="List of Post Visibility"
+                    />
+
+                </View>
+
+                <View style={styles.card}>
+
+                    <View style={[styles.row, { justifyContent: 'space-between', alignItems: 'center', }]}>
+                        <View >
+                            <ThemedText style={styles.sectionTitle}>Invitees</ThemedText>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 3, backgroundColor: theme.panel, borderRadius: 10 }}>
+                            <Feather name="users" size={15} color="black" />
+                            <ThemedText style={styles.sectionTitle} type="middleTitle">2</ThemedText>
+                        </View>
+                    </View>
+
+                    <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+
+                    </ScrollView>
                 </View>
 
 
