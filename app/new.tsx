@@ -2,6 +2,7 @@ import HeaderInnerPage from "@/components/reptitive-component/header-inner-page"
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 
 const groups = [
@@ -27,6 +28,7 @@ const contacts = [
 ];
 
 export default function NewMessageScreen() {
+    const router = useRouter()
     const styles = useThemedStyles((t) => ({
         container: {
             flex: 1,
@@ -136,7 +138,7 @@ export default function NewMessageScreen() {
 
             {/* Groups */}
             <Text style={styles.sectionTitle}>Groups</Text>
-            <TouchableOpacity style={styles.row}>
+            <TouchableOpacity style={styles.row} onPress={() => router.push('/create-group')}>
                 <View style={styles.actionIcon}>
                     <Ionicons name={'people-outline'} size={24} color={theme.tint} />
                 </View>

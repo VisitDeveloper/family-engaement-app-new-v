@@ -65,7 +65,7 @@ function buildTheme(colorScheme: "light" | "dark", isHighContrast: boolean): The
     panel: isHighContrast ? "#111" : baseTheme.backgroundElementSecondary,
     border: isHighContrast ? "#fff" : baseTheme.borderColor,
     tint: isHighContrast ? "#d17fe0" : baseTheme.tint,
-    passDesc: isHighContrast ? "#467938" : baseTheme.passwordDescriptionText,
+    passDesc: isHighContrast ? "#4CAF50" : baseTheme.passwordDescriptionText,
     iconDash: isHighContrast ? "#fff" : baseTheme.dashboardColorNumber,
     emergencyColor: isHighContrast ? "#f87171" : baseTheme.emergencyColor,
     emergencyBackground: isHighContrast ? "#f87171" : baseTheme.emergencyBackground,

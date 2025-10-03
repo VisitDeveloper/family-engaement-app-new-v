@@ -219,7 +219,9 @@ function CreateNewEvent() {
 
         // data
 
-        router.push('/data-privacy')
+        if (isValid && selected.length !== 0) {
+            router.push('/data-privacy')
+        }
 
     };
 
@@ -519,6 +521,23 @@ function CreateNewEvent() {
                             </View>
 
                             <TextInput placeholder="30 min" style={styles.input} />
+                            {/* <Dropdown
+                                options={options}
+                                value={selected}
+                                onChange={(val: string) => setSelected(val)}
+                            />
+                            <SelectBox
+                                options={firstElementArray}
+                                value={eventType[0].label}
+                                onChange={(val) => {
+                                    const selectedOption = firstElementArray.find(opt => opt.value === val);
+
+                                    if (selectedOption) {
+                                        setEventType([selectedOption]);
+                                    }
+                                }}
+                                title="List of Event Type"
+                            /> */}
 
 
                             <View style={styles.row}>
@@ -615,12 +634,12 @@ function CreateNewEvent() {
                         <View style={styles.wrapperInviteesShows}>
 
                             {selected.length !== 0 && (<TouchableOpacity onPress={selectAllUsers} style={[styles.numberOfInvitees, { backgroundColor: theme.emergencyBackground }]}>
-                                <ThemedText type="subText" style={{ color: theme.text }}>
+                                <ThemedText type="subText" style={{ color: '#212121' }}>
                                     Select All
                                 </ThemedText>
                                 <Feather name={"check-square"}
                                     size={15}
-                                    color={theme.text} />
+                                    color={'#212121'} />
                             </TouchableOpacity>)}
 
                             <View style={styles.numberOfInvitees}>

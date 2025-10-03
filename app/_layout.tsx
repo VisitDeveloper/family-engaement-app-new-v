@@ -157,6 +157,16 @@ export default function RootLayout() {
                 logo={require('./../assets/images/LOGO.jpeg')} />
             }} />
 
+            <Stack.Screen name="create-group" options={{
+              headerShown: true,
+              header: () => <Header
+                link={'/setting'}
+                userImage={require('./../assets/images/user.jpeg')}
+                logo={require('./../assets/images/LOGO.jpeg')} />
+            }} />
+
+            
+
             <Stack.Screen name="setting" options={{
               headerShown: true,
               header: () => <Header
