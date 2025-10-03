@@ -22,9 +22,10 @@ interface SelectBoxProps {
     value: string;
     onChange: (value: string) => void;
     title?: string;
+    disabled?: boolean;
 }
 
-export default function SelectBox({ options, value, onChange, title = '' }: SelectBoxProps) {
+export default function SelectBox({ options, value, onChange, title = '', disabled = false }: SelectBoxProps) {
     const [visible, setVisible] = useState(false);
     const theme = useStore(state => state.theme);
 
@@ -70,10 +71,11 @@ export default function SelectBox({ options, value, onChange, title = '' }: Sele
         <View>
 
             <TouchableOpacity
+                disabled={disabled}
                 style={[styles.selectBox, { backgroundColor: theme.panel, borderColor: "transparent" }]}
                 onPress={() => setVisible(true)}
             >
-                <Text style={{ color: theme.text }}>{value}</Text>
+                <Text style={{ color: disabled ? theme.subText : theme.text }}>{value}</Text>
                 <Feather name="chevron-down" size={16} color={theme.subText} />
             </TouchableOpacity>
 

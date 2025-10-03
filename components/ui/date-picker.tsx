@@ -7,11 +7,12 @@ import { Platform, View } from 'react-native';
 interface DatePickerProps {
     mode?: 'date' | 'time' | 'datetime' | 'countdown';
     setDate: React.Dispatch<React.SetStateAction<Date>>;
-    date: Date
+    date: Date;
+    disabled?: boolean
 }
 
 export default function DatePicker(props: DatePickerProps) {
-    const { mode = 'date', setDate, date } = props
+    const { mode = 'date', setDate, date, disabled = false } = props
     const theme = useStore(state => state.theme)
     const [show, setShow] = useState(false);
 
@@ -47,6 +48,7 @@ export default function DatePicker(props: DatePickerProps) {
                 mode={mode}
                 display="default"
                 onChange={onChange}
+                disabled={disabled}
             />
 
 

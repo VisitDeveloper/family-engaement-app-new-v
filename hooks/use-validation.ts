@@ -1,3 +1,4 @@
+import { splitCamelCase } from "@/utils/split-camel-case";
 import { useState } from "react";
 
 export interface ValidationRule {
@@ -26,13 +27,13 @@ export const useValidation = <T extends Record<string, any>>(schema: ValidationS
 
             // required
             if (rules.required && (!value || String(value).trim().length === 0)) {
-                newErrors[field] = `${field} is required`;
+                newErrors[field] = `${splitCamelCase(field)} is required`;
                 continue;
             }
 
             // minLength
             if (rules.minLength && String(value).length < rules.minLength) {
-                newErrors[field] = `${field} must be at least ${rules.minLength} characters`;
+                newErrors[field] = `${splitCamelCase(field)} must be at least ${rules.minLength} characters`;
             }
 
             // maxLength
