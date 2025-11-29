@@ -48,3 +48,11 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Important: when you want run the project if you are in the same network:
+
+- npx expo start
+
+### other wise 
+
+- npx expo start --tunnel
