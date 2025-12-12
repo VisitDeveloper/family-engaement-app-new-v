@@ -100,7 +100,7 @@ const SampleTimeLine = () => {
                     commenter='Mom'
                     commnet='This is wonderful! Thank you for sharing.'
                     // require('./../../assets/images/partial-react-logo.png')
-                    image={require('./../assets/images/timeline-1.jpg')}
+                    image={require('./../../assets/images/timeline-1.jpg')}
                 />
             </ScrollView>
         </View>

@@ -11,7 +11,8 @@ import { Platform, View } from 'react-native';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = useStore(state => state.theme);
-
+  const role = useStore(state => state.role);
+  console.log('TabLayout render with role:', role);
   return (
     <View style={{ flex: 1, height: 80 }}>
 
@@ -94,7 +95,7 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
-          name="dashboard"
+          name={"dashboard"}
           options={{
             title: 'Dashboard',
             tabBarIcon: ({ color }) => <Feather name="bar-chart" size={24} color={color} />,

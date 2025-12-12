@@ -39,7 +39,7 @@ export default function SettingsScreen() {
     const voiceEnabled = useStore((state) => state.voiceNarrationEnabled);
     const toggleVoice = useStore((state) => state.toggleVoiceNarration);
     const speak = useStore((state) => state.speak);
-
+    const setLoggedIn = useStore((s) => s.setLoggedIn);
     const [tone, setTone] = useState("Default");
     const [lang, setLang] = useState<OptionsList[]>([{
         label: 'English',
@@ -329,6 +329,17 @@ export default function SettingsScreen() {
                             <ThemedText type="default" style={{ color: theme.subText, fontWeight: '600' }}>Support</ThemedText>
                             <ThemedText type="default" style={{ color: theme.subText, fontWeight: '600' }}>Terms of Service </ThemedText>
                         </View>
+                    </View>
+
+                    <View>
+                        <TouchableOpacity style={{
+                            marginTop: 20, flexDirection: 'row', alignItems: 'center',
+                            justifyContent: 'center', paddingVertical: 10, borderWidth: 1, borderColor: theme.emergencyColor, borderRadius: 10, backgroundColor: theme.emergencyColor
+                        }}
+                            onPress={() => setLoggedIn(false)}>
+                            <MaterialIcons name="logout" size={20} color="#fff" />
+                            <ThemedText type="text" style={{ color: '#fff', fontWeight: 'bold', paddingHorizontal: 10, }}>Logout</ThemedText>
+                        </TouchableOpacity>
                     </View>
 
                 </ScrollView>

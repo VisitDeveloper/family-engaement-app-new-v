@@ -58,7 +58,7 @@ export default function ChatScreen() {
             <View style={[styles.messageContainer, isMe ? styles.myMessage : styles.otherMessage]}>
                 {item.type === "text" && <Text style={isMe ? styles.messageText : styles.messageOtherText}>{item.content}</Text>}
                 {item.type === "audio" && <View style={styles.audioPlayer}><Text>Audio Player: {item.mediaUri}</Text></View>}
-                {item.type === "video" && <Image source={require('./../../assets/images/timeline-1.jpg')} style={styles.videoThumbnail} />}
+                {item.type === "video" && <Image source={require('./../../../assets/images/timeline-1.jpg')} style={styles.videoThumbnail} />}
                 <Text style={[styles.timeText, isMe ? { color: '#fff' } : { color: '#666' }]}>{item.time}</Text>
             </View>
         );

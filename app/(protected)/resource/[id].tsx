@@ -118,7 +118,7 @@ const BookDetailScreen = () => {
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 {/* Cover */}
                 <Image
-                    source={require('./../../assets/images/timeline-1.jpg')}
+                    source={require('./../../../assets/images/timeline-1.jpg')}
                     style={styles.cover}
                     resizeMode="cover"
                 />

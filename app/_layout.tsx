@@ -1,227 +1,41 @@
-import Header from '@/components/layout/header';
-import { Colors } from '@/constants/theme';
-import { useStore } from '@/store';
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { Appearance } from 'react-native';
-import 'react-native-reanimated';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-
-
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { useStore } from "@/store";
+import { Slot, useRouter, useSegments } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 
 export default function RootLayout() {
-
-  const theme = useStore((state) => state.theme);
-  const colorScheme = useStore((state) => state.colorScheme);
-  const isHighContrast = useStore((state) => state.isHighContrast);
-  const baseTheme = colorScheme === "dark" ? Colors.dark : Colors.light;
-  const setColorScheme = useStore(state => state.setColorScheme);
+  const router = useRouter();
+  const segments = useSegments();
+  const isLoggedIn = useStore((s) => s.isLoggedIn);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      if (colorScheme) setColorScheme(colorScheme as 'light' | 'dark');
-    });
+    setIsMounted(true);
+  }, []);
 
-    return () => subscription.remove();
-  }, [setColorScheme])
+  useEffect(() => {
+    if (!isMounted || segments === undefined) return;
 
-  const MyTheme = {
-    ...DefaultTheme,
-    colors: {
-      ...DefaultTheme.colors,
-      background: isHighContrast ? "#000" : baseTheme.background,
-    },
-  };
+    const inAuthGroup = segments[0] === "(auth)";
 
+    if (isLoggedIn && inAuthGroup) {
+      router.replace("/(protected)/(tabs)");
+    } else if (!isLoggedIn && !inAuthGroup) {
+      // اضافه کردن شرط segments.length > 0 برای جلوگیری از هدایت در رندر اولیه که segments خالی است.
+      // همچنین ممکن است بخواهید مسیرهای عمومی که نیاز به احراز هویت ندارند را در اینجا استثنا کنید.
+      // مثلا: if (!isLoggedIn && !inAuthGroup && segments[0] !== 'public-page')
+      router.replace("/(auth)/login");
+    }
 
-  return (
-    <SafeAreaProvider>
-      <ThemeProvider
-        value={{
-          dark: true, // یا true اگر میخوای dark باشه
-          colors: {
-            primary: theme.tint,
-            background: theme.bg,
-            card: theme.bg,
-            text: theme.text,
-            border: theme.border,
-            notification: theme.emergencyColor,
-          },
-          fonts: DefaultTheme.fonts
-        }}
-      // value={colorScheme === 'dark' ? DarkTheme : MyTheme}
-      >
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['right', 'top', 'left']}>
-          <Stack>
-            <Stack.Screen name="(tabs)"
-              options={{
-                headerShown: true,
-                header: () => <Header
-                  link={'/setting'}
-                  userImage={require('./../assets/images/user.jpeg')}
-                  logo={require('./../assets/images/LOGO.jpeg')} />
-              }} />
+  }, [isLoggedIn, segments, isMounted]);
 
-            <Stack.Screen name="resource/[id]" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
+  if (!isMounted) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
-            <Stack.Screen name="resource/[id]/rating" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-
-            <Stack.Screen name="timeline/[id]" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="sampleTimeline" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="chat/[chatID]" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="blocklist" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="ai-assisstant" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="emergency" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="new" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="create-post" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="create-new-event" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="create-group" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            
-
-            <Stack.Screen name="setting" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="user-profile" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="change-password" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="data-privacy" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="profile" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="event" options={{
-              headerShown: true,
-              header: () => <Header
-                link={'/setting'}
-                userImage={require('./../assets/images/user.jpeg')}
-                logo={require('./../assets/images/LOGO.jpeg')} />
-            }} />
-
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-            <Stack.Screen name="+not-found" options={{ headerShown: true, header: () => <Header link={'/setting'} userImage={require('./../assets/images/user.jpeg')} logo={require('./../assets/images/LOGO.jpeg')} /> }} />
-
-          </Stack>
-          <StatusBar style={colorScheme === 'dark' || isHighContrast ? 'light' : 'dark'} animated={true} hideTransitionAnimation='slide' backgroundColor={theme.bg} />
-        </SafeAreaView>
-      </ThemeProvider>
-    </SafeAreaProvider>
-  );
+  return <Slot />;
 }

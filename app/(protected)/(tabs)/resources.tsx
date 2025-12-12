@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const resources: ResourceItemProps[] = [
     {
         id: '1', type: 'Book', title: 'The Very Hungry Caterpillar', age: '3-5 years', category: 'Nature',
-        rating: 4.8, image: require('./../../assets/images/timeline-1.jpg'),
+        rating: 4.8, image: require('./../../../assets/images/timeline-1.jpg'),
         icon: <Ionicons name="book-outline" size={15} color={'#666'} />
     },
     {
@@ -35,19 +35,19 @@ const resources: ResourceItemProps[] = [
         id: '4', type: 'Activity',
         icon: <Ionicons name="extension-puzzle-outline" size={15} color="#666" />,
         title: 'My Family Tree', age: '5-7 years', category: 'Social Studies',
-        rating: 4.5, image: require('./../../assets/images/timeline-2.jpg')
+        rating: 4.5, image: require('./../../../assets/images/timeline-2.jpg')
     },
     {
         id: '5', type: 'Book',
         icon: <Ionicons name="book-outline" size={15} color={'#666'} />,
         title: 'Goodnight Moon', age: '2-4 years', category: 'Bedtime', rating: 4.7,
-        image: require('./../../assets/images/timeline-2.jpg'),
+        image: require('./../../../assets/images/timeline-2.jpg'),
     },
     {
         id: '6', type: 'Activity',
         icon: <Ionicons name="extension-puzzle-outline" size={15} color="#666" />,
         title: 'Weather Patterns', age: '5-8 years', category: 'Science', rating: 4.4,
-        image: require('./../../assets/images/timeline-3.jpg')
+        image: require('./../../../assets/images/timeline-3.jpg')
     },
 ];
 

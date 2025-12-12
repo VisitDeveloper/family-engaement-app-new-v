@@ -6,6 +6,7 @@ export interface ValidationRule {
     maxLength?: number;
     minLength?: number;
     pattern?: RegExp;
+    equalTo?: any;
     custom?: (value: any) => string | null; // تابع ولیدیشن دلخواه
 }
 
@@ -44,6 +45,11 @@ export const useValidation = <T extends Record<string, any>>(schema: ValidationS
             // pattern
             if (rules.pattern && !rules.pattern.test(String(value))) {
                 newErrors[field] = `${field} is invalid`;
+            }
+
+            if (rules.equalTo !== undefined && value !== rules.equalTo) {
+                newErrors[field] = `${field} does not match`;
+                continue;
             }
 
             // custom validator

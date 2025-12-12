@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { ChatSlice, createChatSlice } from './slice/chat';
 import { createThemeSlice, ThemeSlice } from './slice/highContrast';
 import { createLargeFontSlice, LargeFontSlice } from './slice/largeFont';
+import { loginSliceStatus, LoginStatusSlice } from './slice/login';
 import { createResourceSlice, ResourceSlice } from './slice/resource';
 import { createVoiceNarrationSlice, VoiceNarrationSlice } from './slice/voiceNarration';
 
@@ -13,7 +14,7 @@ interface UserSlice {
   setUser: (user: { id: string; name: string }) => void;
 }
 
-type StoreState = UserSlice & ChatSlice & ThemeSlice & LargeFontSlice & VoiceNarrationSlice & ResourceSlice;
+type StoreState = UserSlice & ChatSlice & ThemeSlice & LargeFontSlice & VoiceNarrationSlice & ResourceSlice & LoginStatusSlice;
 
 
 // ترکیب چند slice
@@ -35,6 +36,8 @@ export const useStore = create<StoreState>()(
       ...createVoiceNarrationSlice(set, get, {} as any),
       // Resource Slice 
       ...createResourceSlice(set, get, {} as any),
+
+      ...loginSliceStatus(set, get, {} as any)
     }),
     {
       name: 'main-store',

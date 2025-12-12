@@ -3,6 +3,7 @@ import { useStore } from '@/store';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
+import RoleGuard from '../check-permisions';
 import { ThemedText } from '../themed-text';
 
 interface HeaderTabItemProps {
@@ -76,14 +77,17 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
                 }
                 {
                     (props?.buttonSecondTtitle || props.buttonSecondIcon) ? (
-                        <TouchableOpacity style={styles.eventButton} onPress={() => router.push(props.buttonSecondLink as any)}>
-                            {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
-                            {props.buttonSecondIcon ? props.buttonSecondIcon : null}
-                            {props?.buttonSecondTtitle ? <ThemedText type="subText" style={styles.eventText}>
-                                {props.buttonSecondTtitle!}
-                            </ThemedText> : null}
+                        <RoleGuard roles={['admin', 'teacher']}>
 
-                        </TouchableOpacity>
+                            <TouchableOpacity style={styles.eventButton} onPress={() => router.push(props.buttonSecondLink as any)}>
+                                {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
+                                {props.buttonSecondIcon ? props.buttonSecondIcon : null}
+                                {props?.buttonSecondTtitle ? <ThemedText type="subText" style={styles.eventText}>
+                                    {props.buttonSecondTtitle!}
+                                </ThemedText> : null}
+
+                            </TouchableOpacity>
+                        </RoleGuard>
                     ) : null
                 }
             </View>
