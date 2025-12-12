@@ -1,12 +1,12 @@
+import RecentActivityCard, { ActivityItem } from "@/components/reptitive-component/activities-parent-dashboard";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import StatCardParent from "@/components/reptitive-component/state-card-parent";
-import UpcomingEventsCard from "@/components/reptitive-component/upcominf-events-parent";
-import { ThemedText } from "@/components/themed-text";
+import UpcomingEventsCard, { EventsProps } from "@/components/reptitive-component/upcominf-events-parent";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store"; // همون Zustand store که theme رو برمی‌گردونه
 import { AntDesign, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Redirect } from "expo-router";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 
 
@@ -19,6 +19,28 @@ export default function ParentDashboard() {
         { name: "Mr. Rodriguez", posts: 19, responses: 16, rate: 88 },
         { name: "Ms. Chen", posts: 21, responses: 19, rate: 92 },
         { name: "Mr. Thompson", posts: 15, responses: 12, rate: 85 },
+    ];
+
+    const events: Array<EventsProps> = [
+        { title: 'Parent-Teacher Conference', time: '3:00 PM', date: 'Jan 28' },
+        { title: 'Field Trip - Science Museum', time: 'All Day', date: 'Feb 2' },
+        { title: 'Art Show Presentation', time: '6:00 PM', date: 'Feb 8' },
+    ];
+
+    const activities: Array<ActivityItem> = [
+        {
+            title: "Ms. Alvarez shared a new photo",
+            time: "2 hours ago",
+            active: true,
+        },
+        {
+            title: "New message from Mr. Rodriguez",
+            time: "4 hours ago",
+        },
+        {
+            title: "Reading assessment available",
+            time: "1 day ago",
+        },
     ];
 
 
@@ -125,56 +147,9 @@ export default function ParentDashboard() {
 
                 </View>
 
-                <UpcomingEventsCard/>
+                <UpcomingEventsCard events={events} />
 
-
-                {/* Teacher Engagement */}
-                <View style={[styles.card, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-                    <View style={styles.cardHeader}>
-                        <Text style={[styles.cardTitle, { color: theme.text }]}>Teacher Engagement</Text>
-                        <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderColor: theme.tint, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8 }}>
-                            <AntDesign name="download" size={15} color={theme.tint} />
-                            <Text style={{ color: theme.tint }}>Export</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {teachers.map((t, i) => (
-                        <View key={i} style={styles.teacherRow}>
-
-                            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
-                                <Text style={[styles.teacherName, { color: theme.text }]}>
-                                    {t.name}
-                                </Text>
-                                <View style={{ backgroundColor: theme.passDesc, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
-                                    <ThemedText type="subText" style={{ color: theme.bg }}>{t.rate}%</ThemedText>
-                                </View>
-                            </View>
-
-                            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", paddingTop: 5 }}>
-                                <Text style={[styles.teacherStats, { color: theme.subText }]}>
-                                    {t.posts} posts
-                                </Text>
-                                <Text style={[styles.teacherStats, { color: theme.subText }]}>
-                                    {t.responses} responses
-                                </Text>
-                            </View>
-
-
-                            <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
-                                <View style={[styles.progressFill, { width: `${t.rate}%`, backgroundColor: theme.tint }]} />
-                            </View>
-                        </View>
-                    ))}
-                </View>
-
-                {/* Average Response Time */}
-                <View style={[styles.card, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-                    <Text style={[styles.cardTitle, { color: theme.text }]}>Average Response Time</Text>
-                    <Text style={{ fontSize: 20, fontWeight: "600", color: theme.iconDash, marginTop: 20 }}>
-                        2.3 hours
-                    </Text>
-                    <Text style={{ color: theme.passDesc, marginTop: 5 }}>↑ 15% faster than last month</Text>
-                </View>
+                <RecentActivityCard activities={activities} />
             </ScrollView>
         </View>
     );

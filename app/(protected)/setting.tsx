@@ -1,3 +1,4 @@
+import RoleGuard from "@/components/check-permisions";
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
@@ -273,11 +274,14 @@ export default function SettingsScreen() {
                             </ThemedText>
                         </View>
 
-                        <TouchableOpacity style={[styles.dataSecurityLink, { borderColor: theme.border, backgroundColor: theme.panel }]} >
-                            {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
-                            <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Family Member Permissions</ThemedText>
-                            <AntDesign name="right" size={16} color={theme.text} />
-                        </TouchableOpacity>
+                        <RoleGuard roles={['admin', 'teacher']}>
+                            <TouchableOpacity style={[styles.dataSecurityLink, { borderColor: theme.border, backgroundColor: theme.panel }]} >
+                                {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
+                                <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Family Member Permissions</ThemedText>
+                                <AntDesign name="right" size={16} color={theme.text} />
+                            </TouchableOpacity>
+                        </RoleGuard>
+
 
                         <TouchableOpacity onPress={() => router.push('/data-privacy')} style={[styles.dataSecurityLink, { borderColor: theme.border, backgroundColor: theme.panel }]} >
                             {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
@@ -295,31 +299,33 @@ export default function SettingsScreen() {
 
 
                     {/* accont manager  */}
-                    <View style={[styles.card, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-                        <View style={[styles.cardHeaderSmall]}>
-                            <Feather name="users" size={20} color={theme.text} />
-                            <ThemedText type="middleTitle" style={[styles.cardTitle, { color: theme.text }]}>Account Management</ThemedText>
+                    <RoleGuard roles={['admin', 'teacher']}>
+                        <View style={[styles.card, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+                            <View style={[styles.cardHeaderSmall]}>
+                                <Feather name="users" size={20} color={theme.text} />
+                                <ThemedText type="middleTitle" style={[styles.cardTitle, { color: theme.text }]}>Account Management</ThemedText>
+                            </View>
+
+
+
+                            <TouchableOpacity onPress={() => speak(`Add Family Member`)} style={[styles.dataSecurityLink, { borderColor: theme.border, backgroundColor: theme.panel }]} >
+                                {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
+                                <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Add Family Member</ThemedText>
+                                <AntDesign name="right" size={16} color={theme.text} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.dataSecurityLink, { borderColor: theme.border, backgroundColor: theme.panel }]} >
+                                {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
+                                <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Manage Children</ThemedText>
+                                <AntDesign name="right" size={16} color={theme.text} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.dataSecurityLink, { borderColor: theme.border, backgroundColor: theme.panel }]} >
+                                {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
+                                <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Export Data</ThemedText>
+                                <AntDesign name="download" size={16} color={theme.text} />
+                            </TouchableOpacity>
+
                         </View>
-
-
-
-                        <TouchableOpacity onPress={() => speak(`Add Family Member`)} style={[styles.dataSecurityLink, { borderColor: theme.border, backgroundColor: theme.panel }]} >
-                            {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
-                            <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Add Family Member</ThemedText>
-                            <AntDesign name="right" size={16} color={theme.text} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.dataSecurityLink, { borderColor: theme.border, backgroundColor: theme.panel }]} >
-                            {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
-                            <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Manage Children</ThemedText>
-                            <AntDesign name="right" size={16} color={theme.text} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.dataSecurityLink, { borderColor: theme.border, backgroundColor: theme.panel }]} >
-                            {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
-                            <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Export Data</ThemedText>
-                            <AntDesign name="download" size={16} color={theme.text} />
-                        </TouchableOpacity>
-
-                    </View>
+                    </RoleGuard>
 
                     {/* Copyright */}
                     <View style={{ height: 120, backgroundColor: theme.bg, borderColor: theme.border, borderWidth: 1, padding: 10, borderRadius: 10, flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>

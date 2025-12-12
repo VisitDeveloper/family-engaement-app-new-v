@@ -20,7 +20,7 @@ export default function ProfileScreen() {
                     source={{ uri: 'https://randomuser.me/api/portraits/women/44.jpg' }}
                     style={styles.avatar}
                 />
-                <Text style={styles.name}>Maria Rodriguez</Text>
+                <Text style={styles.name}>Maria Rodriguezzz</Text>
                 <Text style={styles.relation}>Parent - Sarah Rodriguez</Text>
                 <View style={styles.tag}>
                     <Text style={styles.tagText}>Math</Text>
