@@ -10,8 +10,22 @@ import { createVoiceNarrationSlice, VoiceNarrationSlice } from './slice/voiceNar
 
 
 interface UserSlice {
-  user: { id: string; name: string } | null;
-  setUser: (user: { id: string; name: string }) => void;
+  user: { 
+    id: string; 
+    name: string;
+    email?: string;
+    role?: 'admin' | 'teacher' | 'parent';
+    avatar?: string;
+    [key: string]: any; // برای فیلدهای اضافی که ممکن است از API بیایند
+  } | null;
+  setUser: (user: { 
+    id: string; 
+    name: string;
+    email?: string;
+    role?: 'admin' | 'teacher' | 'parent';
+    avatar?: string;
+    [key: string]: any;
+  } | null) => void;
 }
 
 type StoreState = UserSlice & ChatSlice & ThemeSlice & LargeFontSlice & VoiceNarrationSlice & ResourceSlice & LoginStatusSlice;
