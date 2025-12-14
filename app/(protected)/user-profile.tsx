@@ -74,6 +74,23 @@ export default function ProfileScreen() {
             borderWidth: 1,
             borderRadius: 10,
         },
+        tagsContainer: {
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: 6,
+            marginTop: 8,
+        },
+        tag: {
+            backgroundColor: theme.panel,
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+            borderRadius: 4,
+        },
+        tagText: {
+            fontSize: 12,
+            color: theme.text,
+        },
     }));
 
     const fetchProfile = useCallback(async () => {
@@ -320,6 +337,19 @@ export default function ProfileScreen() {
                             : 'No role assigned'
                         }
                     </ThemedText>
+                    {profile?.subjects && profile.subjects.length > 0 ? (
+                        <View style={styles.tagsContainer}>
+                            {profile.subjects.map((subject, index) => (
+                                <View key={index} style={styles.tag}>
+                                    <ThemedText type="subText" style={styles.tagText}>{subject}</ThemedText>
+                                </View>
+                            ))}
+                        </View>
+                    ) : (
+                        <ThemedText type="subText" style={styles.subText}>
+                            No subjects available
+                        </ThemedText>
+                    )}
                     {profile?.email && (
                         <ThemedText type="subText" style={[styles.subText, { marginTop: 4 }]}>
                             {profile.email}
