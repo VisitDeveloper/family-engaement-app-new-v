@@ -11,24 +11,26 @@ export interface RegisterRequest {
   confirmPassword?: string;
 }
 
+// UserResponseDto from API
+export interface UserResponseDto {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: 'admin' | 'teacher' | 'parent';
+  phoneNumber?: string;
+  profilePicture?: string;
+}
+
+// LoginResponseDto from API
 export interface AuthResponse {
-  access_token: string; // فقط access_token
-  user?: {
-    id: string;
-    email: string;
-    name?: string;
-    firstName?: string;
-    lastName?: string;
-    role?: 'admin' | 'teacher' | 'parent';
-    avatar?: string;
-    image?: string;
-    [key: string]: any; // برای فیلدهای اضافی که ممکن است از API بیایند
-  };
+  access_token: string;
+  user: UserResponseDto;
+  message: string;
   data?: {
     user?: any;
     access_token?: string;
   };
-  message?: string;
 }
 
 export interface ChangePasswordRequest {
@@ -46,32 +48,33 @@ export interface ChangePasswordResponse {
   };
 }
 
+// ProfileResponseDto from API
+export interface ProfileResponse {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: 'admin' | 'teacher' | 'parent';
+  phoneNumber?: string;
+  profilePicture?: string;
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+}
+
+// UserProfile - backward compatible interface that maps API fields
 export interface UserProfile {
   id: string;
   email: string;
-  name?: string;
   firstName?: string;
   lastName?: string;
-  phone?: string;
-  avatar?: string;
-  image?: string;
+  phoneNumber?: string;
+  phone?: string; // backward compatibility
   profilePicture?: string;
-  role?: 'admin' | 'teacher' | 'parent';
-  [key: string]: any; // برای فیلدهای اضافی که ممکن است از API بیایند
-}
-
-export interface ProfileResponse {
- 
-  // ممکن است API مستقیماً user را برگرداند
-  id?: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  avatar?: string;
-  image?: string;
-  profilePicture?: string;
-  role?: 'admin' | 'teacher' | 'parent';
+  avatar?: string; // backward compatibility - maps to profilePicture
+  image?: string; // backward compatibility - maps to profilePicture
+  role: 'admin' | 'teacher' | 'parent';
+  createdAt?: string;
+  updatedAt?: string;
   [key: string]: any;
 }
 
@@ -193,27 +196,6 @@ class AuthServiceImpl implements AuthService {
   async getProfile(): Promise<ProfileResponse> {
     try {
       const response = await apiClient.get<ProfileResponse>('/auth/profile');
-
-      // اگر user در data باشد، آن را به response.user منتقل می‌کنیم
-      if (response.data?.user && !response.user) {
-        response.user = response.data.user;
-      }
-
-      // اگر API مستقیماً user را برگرداند (بدون wrapper)، آن را به response.user منتقل می‌کنیم
-      if (!response.user && (response.id || response.email)) {
-        response.user = {
-          id: response.id || '',
-          email: response.email || '',
-          firstName: response.firstName,
-          lastName: response.lastName,
-          name: response.name,
-          phone: response.phone,
-          avatar: response.avatar || response.image || response.profilePicture,
-          role: response.role,
-          ...response,
-        } as UserProfile;
-      }
-
       return response;
     } catch (error) {
       const apiError = error as ApiError;

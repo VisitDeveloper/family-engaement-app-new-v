@@ -30,7 +30,7 @@ export default function ProfileScreen() {
             backgroundColor: theme.bg,
             borderColor: theme.border
         },
-        avatar: { width: 90, height: 90, borderRadius: 45, alignSelf: "center" },
+        avatar: { width: 90, height: 90, borderRadius: 45, alignSelf: "center", borderWidth: 1, borderColor: theme.border },
         cameraIcon: {
             position: "absolute",
             right: "38%",
@@ -81,18 +81,29 @@ export default function ProfileScreen() {
         try {
             const response = await authService.getProfile();
             
-            if (response.user) {
-                setProfile(response.user);
+            // API returns ProfileResponse directly
+            if (response.id) {
+                const profileData: UserProfile = {
+                    id: response.id,
+                    email: response.email,
+                    firstName: response.firstName,
+                    lastName: response.lastName,
+                    phoneNumber: response.phoneNumber,
+                    phone: response.phoneNumber, // backward compatibility
+                    profilePicture: response.profilePicture,
+                    avatar: response.profilePicture, // backward compatibility
+                    image: response.profilePicture, // backward compatibility
+                    role: response.role,
+                    createdAt: response.createdAt,
+                    updatedAt: response.updatedAt,
+                };
+                setProfile(profileData);
                 // به‌روزرسانی user در store
                 const userData = {
-                    ...response.user,
-                    id: response.user.id,
-                    name: response.user.name || response.user.firstName || response.user.lastName 
-                        ? `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim()
-                        : response.user.email?.split('@')[0] || '',
-                    email: response.user.email || '',
-                    role: (response.user.role || role || undefined) as 'admin' | 'teacher' | 'parent' | undefined,
-                    avatar: response.user.avatar || response.user.image || response.user.profilePicture,
+                    ...profileData,
+                    name: profileData.firstName || profileData.lastName 
+                        ? `${profileData.firstName || ''} ${profileData.lastName || ''}`.trim()
+                        : profileData.email?.split('@')[0] || '',
                 };
                 setUser(userData);
             }
@@ -177,9 +188,9 @@ export default function ProfileScreen() {
                 {/* User Info */}
                 <View style={styles.card}>
                     <Image 
-                        source={profile?.avatar || profile?.image || profile?.profilePicture
-                            ? { uri: profile.avatar || profile.image || profile.profilePicture } 
-                            : { uri: "https://randomuser.me/api/portraits/women/44.jpg" }
+                        source={profile?.profilePicture || profile?.avatar || profile?.image
+                            ? { uri: profile.profilePicture || profile.avatar || profile.image } 
+                            : { uri: "" }
                         } 
                         style={styles.avatar} 
                     />
@@ -218,10 +229,10 @@ export default function ProfileScreen() {
                     />
                     <ThemedText type="subText" style={styles.label}>Phone</ThemedText>
                     <View style={[styles.input, { flexDirection: "row", alignItems: "center", borderColor: theme.border, backgroundColor: theme.panel }]}>
-                        {profile?.phone ? (
+                        {profile?.phoneNumber || profile?.phone ? (
                             <>
                                 <ThemedText style={{ color: theme.text, marginRight: 8 }}>+1</ThemedText>
-                                <ThemedText style={{ color: theme.text }}>{profile.phone}</ThemedText>
+                                <ThemedText style={{ color: theme.text }}>{profile.phoneNumber || profile.phone}</ThemedText>
                             </>
                         ) : (
                             <ThemedText style={{ color: theme.subText }}>No phone number available</ThemedText>

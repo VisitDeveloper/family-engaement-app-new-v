@@ -5,23 +5,23 @@ import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
 import {
-    AntDesign,
-    Feather,
-    Ionicons,
-    MaterialIcons,
+  AntDesign,
+  Feather,
+  Ionicons,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -122,7 +122,7 @@ export default function SettingsScreen() {
                   user?.avatar || user?.image
                     ? { uri: user.avatar || user.image }
                     : {
-                        uri: "https://randomuser.me/api/portraits/women/44.jpg",
+                        uri: "",
                       }
                 }
                 style={styles.avatar}
@@ -731,7 +731,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  avatar: { width: 48, height: 48, borderRadius: 24, marginLeft: 2 },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginLeft: 2,
+    borderWidth: 1,
+    // Fix: Remove reference to undefined 'theme', use a safe default color.
+    borderColor: "#ccc",
+  },
   role: { marginTop: 4 },
 
   smallBadge: {
