@@ -2,12 +2,20 @@ import { StateCreator } from 'zustand';
 
 export interface Resource {
     id: string;
-    type: string;
     title: string;
-    age: string;
+    description: string;
+    type: 'book' | 'activity' | 'video';
     category: string;
-    rating: number;
-    // image: any;
+    ageRange: string | null;
+    imageUrl: string | null;
+    contentUrl: string | null;
+    averageRating: number;
+    ratingsCount: number;
+    createdBy: any | null;
+    isSaved: boolean;
+    userRating: number | null;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface ResourceSlice {
@@ -20,12 +28,20 @@ export const createResourceSlice: StateCreator<any, [], [], ResourceSlice> = (se
     resources: [
         {
             id: '1',
-            type: 'Book',
             title: 'The Very Hungry Caterpillar',
-            age: '3-5 years',
+            description: 'A classic story about the transformation of a caterpillar into a beautiful butterfly.',
+            type: 'book',
             category: 'Nature',
-            rating: 4.8,
-            // image: require('./../../assets/images/react-logo.png'),
+            ageRange: '3-5 years',
+            imageUrl: null,
+            contentUrl: null,
+            averageRating: 4.8,
+            ratingsCount: 0,
+            createdBy: null,
+            isSaved: false,
+            userRating: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         },
     ],
 
