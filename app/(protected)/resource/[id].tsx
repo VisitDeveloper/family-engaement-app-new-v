@@ -90,13 +90,23 @@ const BookDetailScreen = () => {
     }) as const);
 
     const openResource = (item: any) => {
+        // Map to API model structure
         const data = {
-            id: item.id,
-            type: item.type,
+            id: item.id || '',
             title: item.title,
-            age: item.age,
+            description: item.description || '',
+            type: item.type as 'book' | 'activity' | 'video',
             category: item.category,
-            rating: item.rating,
+            ageRange: item.ageRange || item.age || null,
+            imageUrl: item.imageUrl || null,
+            contentUrl: item.contentUrl || null,
+            averageRating: item.averageRating || item.rating || 0,
+            ratingsCount: item.ratingsCount || 0,
+            createdBy: item.createdBy || null,
+            isSaved: item.isSaved || false,
+            userRating: item.userRating || null,
+            createdAt: item.createdAt || new Date().toISOString(),
+            updatedAt: item.updatedAt || new Date().toISOString(),
         }
         addResource(data);
         router.push({
@@ -110,7 +120,7 @@ const BookDetailScreen = () => {
 
             <HeaderThreeSections
                 title={resourceItem?.title!}
-                desc={`${resourceItem?.category!} • ${resourceItem?.age!}`}
+                desc={`${resourceItem?.category!} • ${resourceItem?.ageRange || resourceItem?.age || 'N/A'}`}
                 icon={<Ionicons name="bookmark-outline" size={20} color={theme.text} />}
                 colorDesc={theme.subText}
             />
@@ -118,7 +128,11 @@ const BookDetailScreen = () => {
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 {/* Cover */}
                 <Image
-                    source={require('./../../../assets/images/timeline-1.jpg')}
+                    source={
+                        resourceItem?.imageUrl
+                            ? { uri: resourceItem.imageUrl }
+                            : require('./../../../assets/images/timeline-1.jpg')
+                    }
                     style={styles.cover}
                     resizeMode="cover"
                 />
@@ -133,13 +147,15 @@ const BookDetailScreen = () => {
                     </View>
                     <TouchableOpacity onPress={() => openResource(resourceItem!)} style={styles.rating}>
                         <FontAwesome name="star" size={16} color="#FACC15" />
-                        <ThemedText type="subText">4.8</ThemedText>
+                        <ThemedText type="subText">
+                            {(resourceItem?.averageRating || resourceItem?.rating || 0).toFixed(1)}
+                        </ThemedText>
                     </TouchableOpacity>
                 </View>
 
                 {/* Description */}
                 <ThemedText type="default" style={styles.desc}>
-                    A classic story about the transformation of a caterpillar into a beautiful butterfly.
+                    {resourceItem?.description || 'A classic story about the transformation of a caterpillar into a beautiful butterfly.'}
                 </ThemedText>
 
                 {/* Action Buttons */}
