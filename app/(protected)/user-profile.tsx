@@ -5,6 +5,7 @@ import { ApiError } from "@/services/api";
 import { authService, UserProfile } from "@/services/auth.service";
 import { useStore } from "@/store";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
@@ -18,6 +19,7 @@ export default function ProfileScreen() {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [uploading, setUploading] = useState<boolean>(false);
 
     const styles = useThemedStyles((theme) => ({
         container: { flex: 1, padding: 10, backgroundColor: theme.bg },
@@ -136,6 +138,110 @@ export default function ProfileScreen() {
         fetchProfile();
     }, [fetchProfile]);
 
+    const handleUpdateProfilePicture = useCallback(async () => {
+        try {
+            // Request permissions
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert(
+                    'Permission Required',
+                    'Sorry, we need camera roll permissions to update your profile picture!'
+                );
+                return;
+            }
+
+            // Launch image picker
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (result.canceled || !result.assets[0]) {
+                return;
+            }
+
+            const imageUri = result.assets[0].uri;
+            setUploading(true);
+
+            // Upload image
+            const response = await authService.updateProfilePicture(imageUri);
+
+            // اگر API کل user را برگرداند، از آن استفاده می‌کنیم
+            if (response.user) {
+                const profileData: UserProfile = {
+                    id: response.user.id,
+                    email: response.user.email,
+                    firstName: response.user.firstName,
+                    lastName: response.user.lastName,
+                    phoneNumber: response.user.phoneNumber,
+                    phone: response.user.phoneNumber,
+                    profilePicture: response.user.profilePicture,
+                    role: response.user.role,
+                    subjects: response.user.subjects,
+                    childName: response.user.childName,
+                    createdAt: response.user.createdAt,
+                    updatedAt: response.user.updatedAt,
+                };
+                setProfile(profileData);
+
+                // Update user in store
+                const userData = {
+                    ...profileData,
+                    name: profileData.firstName || profileData.lastName 
+                        ? `${profileData.firstName || ''} ${profileData.lastName || ''}`.trim()
+                        : profileData.email?.split('@')[0] || '',
+                };
+                setUser(userData);
+            } else if (response.profilePicture) {
+                // اگر فقط profilePicture برگرداند، آن را به‌روزرسانی می‌کنیم
+                const updatedProfile = {
+                    ...profile!,
+                    profilePicture: response.profilePicture,
+                };
+                setProfile(updatedProfile);
+
+                // Update user in store
+                const userData = {
+                    ...updatedProfile,
+                    name: updatedProfile.firstName || updatedProfile.lastName 
+                        ? `${updatedProfile.firstName || ''} ${updatedProfile.lastName || ''}`.trim()
+                        : updatedProfile.email?.split('@')[0] || '',
+                };
+                setUser(userData);
+            }
+
+            // برای اطمینان، یک بار دیگر profile را fetch می‌کنیم
+            // این باعث می‌شود همه جا به‌روزرسانی شود
+            await fetchProfile();
+
+            Alert.alert('Success', 'Profile picture updated successfully!');
+        } catch (err) {
+            const apiError = err as ApiError;
+            const errorMessage = apiError.message || 'Failed to update profile picture. Please try again.';
+            Alert.alert('Error', errorMessage);
+
+            // اگر خطای 401 یا 403 باشد، token باطل شده
+            if (apiError.status === 401 || apiError.status === 403) {
+                Alert.alert(
+                    'Session Expired',
+                    'Your session has expired. Please login again.',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                router.replace('/(auth)/login');
+                            },
+                        },
+                    ]
+                );
+            }
+        } finally {
+            setUploading(false);
+        }
+    }, [profile, setUser, router, fetchProfile]);
+
     if (loading) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -194,8 +300,16 @@ export default function ProfileScreen() {
                         } 
                         style={styles.avatar} 
                     />
-                    <TouchableOpacity style={styles.cameraIcon}>
-                        <Feather name="camera" size={18} color="#fff" />
+                    <TouchableOpacity 
+                        style={styles.cameraIcon}
+                        onPress={handleUpdateProfilePicture}
+                        disabled={uploading}
+                    >
+                        {uploading ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <Feather name="camera" size={18} color="#fff" />
+                        )}
                     </TouchableOpacity>
                     <ThemedText type="subtitle" style={styles.name}>
                         {displayName}
