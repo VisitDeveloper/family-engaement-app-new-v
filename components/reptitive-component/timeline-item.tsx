@@ -1,32 +1,40 @@
 import { useThemedStyles } from '@/hooks/use-theme-style'
+import { postService } from '@/services/post.service'
 import { useStore } from '@/store'
 import { AntDesign, EvilIcons, Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import React from 'react'
-import { Image, TextInput, TouchableOpacity, View } from 'react-native'
+import React, { useState } from 'react'
+import { Alert, Image, TextInput, TouchableOpacity, View } from 'react-native'
 import { ThemedText } from '../themed-text'
 import { ThemedView } from '../themed-view'
 
 export interface ResourceItemProps {
-
+    postId?: string;
     name: string;
     seen?: string;
     desc: string;
     numberOfLike: number;
     numberOfComment: number;
-    commenter: string;
-    commnet: string;
+    commenter?: string;
+    commnet?: string;
     image?: any;
+    tags?: string[];
+    recommended?: boolean;
+    isLiked?: boolean;
+    isSaved?: boolean;
     styles?: any;
     onPress?: (i: any) => void;
+    onLike?: () => void;
+    onSave?: () => void;
     comment?: string;
-    setComment?: () => void;
+    setComment?: (text: string) => void;
 }
 
 export default function TimelineItem(props: ResourceItemProps) {
-
     const theme = useStore(state => state.theme);
     const router = useRouter();
+    const [comment, setComment] = useState("");
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
     const styles = useThemedStyles((theme) => ({
         
@@ -117,9 +125,11 @@ export default function TimelineItem(props: ResourceItemProps) {
                         {props.seen}
                     </ThemedText>
                 </View>
-                <View style={styles.badge}>
-                    <AntDesign name="star" size={12} color="#fff" />
-                </View>
+                {props.recommended && (
+                    <View style={styles.badge}>
+                        <AntDesign name="star" size={12} color="#fff" />
+                    </View>
+                )}
             </View>
 
             <ThemedText type="subText" style={{ color: theme.text }}>
@@ -127,13 +137,15 @@ export default function TimelineItem(props: ResourceItemProps) {
             </ThemedText>
 
             {/* Tags */}
-            <View style={styles.tags}>
-                {['Math', 'Building', 'Problem Solving'].map((tag, idx) => (
-                    <ThemedView key={idx} style={styles.tag}>
-                        <ThemedText type="subText" style={{ fontWeight: '600', color: theme.text }}>{tag}</ThemedText>
-                    </ThemedView>
-                ))}
-            </View>
+            {props.tags && props.tags.length > 0 && (
+                <View style={styles.tags}>
+                    {props.tags.map((tag, idx) => (
+                        <ThemedView key={idx} style={styles.tag}>
+                            <ThemedText type="subText" style={{ fontWeight: '600', color: theme.text }}>{tag}</ThemedText>
+                        </ThemedView>
+                    ))}
+                </View>
+            )}
 
             {/* Post Image */}
             {props.image && (
@@ -168,33 +180,56 @@ export default function TimelineItem(props: ResourceItemProps) {
                     </TouchableOpacity>
                 </View>
 
-                <View>
-                    <Ionicons name="bookmark-outline" size={20} color={theme.text} />
-                </View>
+                <TouchableOpacity onPress={props.onSave}>
+                    <Ionicons 
+                        name={props.isSaved ? "bookmark" : "bookmark-outline"} 
+                        size={20} 
+                        color={props.isSaved ? theme.tint : theme.text} 
+                    />
+                </TouchableOpacity>
 
 
             </View>
 
             {/* Comments */}
             <View style={styles.comments}>
-                <View style={styles.commentRow}>
-                    <ThemedText type="defaultSemiBold" style={{ color: theme.text }}>
-                        {props.commenter}
-                    </ThemedText>
-                    <ThemedText type="subText" style={[styles.generalmargin, { color: theme.text }]}>
-                        {props.commnet}
-                    </ThemedText>
-                </View>
-                <View style={styles.commentRow}>
-                    <Ionicons name="person-circle" size={24} color={theme.subText} />
-                    <TextInput
-                        style={[styles.commentInput, { color: theme.text }]}
-                        value={props.comment}
-                        onChangeText={props.setComment}
-                        placeholder="Add a comment..."
-                        placeholderTextColor={theme.subText}
-                    />
-                </View>
+                {props.commenter && props.commnet && (
+                    <View style={styles.commentRow}>
+                        <ThemedText type="defaultSemiBold" style={{ color: theme.text }}>
+                            {props.commenter}
+                        </ThemedText>
+                        <ThemedText type="subText" style={[styles.generalmargin, { color: theme.text }]}>
+                            {props.commnet}
+                        </ThemedText>
+                    </View>
+                )}
+                {props.postId && (
+                    <View style={styles.commentRow}>
+                        <Ionicons name="person-circle" size={24} color={theme.subText} />
+                        <TextInput
+                            style={[styles.commentInput, { color: theme.text }]}
+                            value={comment}
+                            onChangeText={setComment}
+                            placeholder="Add a comment..."
+                            placeholderTextColor={theme.subText}
+                            editable={!isSubmittingComment}
+                            onSubmitEditing={async () => {
+                                if (comment.trim() && props.postId) {
+                                    setIsSubmittingComment(true);
+                                    try {
+                                        await postService.createComment(props.postId, { content: comment.trim() });
+                                        setComment("");
+                                        // Optionally refresh comments
+                                    } catch (err: any) {
+                                        Alert.alert("Error", err.message || "Failed to post comment");
+                                    } finally {
+                                        setIsSubmittingComment(false);
+                                    }
+                                }
+                            }}
+                        />
+                    </View>
+                )}
             </View>
         </ThemedView>
     )
