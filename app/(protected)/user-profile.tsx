@@ -91,9 +91,9 @@ export default function ProfileScreen() {
                     phoneNumber: response.phoneNumber,
                     phone: response.phoneNumber, // backward compatibility
                     profilePicture: response.profilePicture,
-                    avatar: response.profilePicture, // backward compatibility
-                    image: response.profilePicture, // backward compatibility
                     role: response.role,
+                    subjects: response.subjects, // Array of subjects
+                    childName: response.childName, // Child's name
                     createdAt: response.createdAt,
                     updatedAt: response.updatedAt,
                 };
@@ -188,8 +188,8 @@ export default function ProfileScreen() {
                 {/* User Info */}
                 <View style={styles.card}>
                     <Image 
-                        source={profile?.profilePicture || profile?.avatar || profile?.image
-                            ? { uri: profile.profilePicture || profile.avatar || profile.image } 
+                        source={profile?.profilePicture
+                            ? { uri: profile.profilePicture } 
                             : { uri: "" }
                         } 
                         style={styles.avatar} 

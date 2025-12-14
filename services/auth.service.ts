@@ -57,11 +57,14 @@ export interface ProfileResponse {
   role: 'admin' | 'teacher' | 'parent';
   phoneNumber?: string;
   profilePicture?: string;
+  subjects?: string[]; // Array of subjects/interests
+  childName?: string; // Child's name (for parent role)
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
+  [key: string]: any; // برای فیلدهای اضافی که ممکن است از API بیایند
 }
 
-// UserProfile - backward compatible interface that maps API fields
+// UserProfile interface that maps API fields
 export interface UserProfile {
   id: string;
   email: string;
@@ -70,9 +73,9 @@ export interface UserProfile {
   phoneNumber?: string;
   phone?: string; // backward compatibility
   profilePicture?: string;
-  avatar?: string; // backward compatibility - maps to profilePicture
-  image?: string; // backward compatibility - maps to profilePicture
   role: 'admin' | 'teacher' | 'parent';
+  subjects?: string[]; // Array of subjects/interests
+  childName?: string; // Child's name (for parent role)
   createdAt?: string;
   updatedAt?: string;
   [key: string]: any;

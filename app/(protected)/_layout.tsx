@@ -227,8 +227,8 @@ export default function RootLayout() {
                 <Header
                   link={"/setting"}
                   userImage={
-                    user?.avatar || user?.image
-                      ? { uri: user.avatar || user.image }
+                    user?.profilePicture
+                      ? { uri: user.profilePicture }
                       : {
                           uri: "",
                         }

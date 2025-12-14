@@ -119,8 +119,8 @@ export default function SettingsScreen() {
             <View style={styles.profileRow}>
               <Image
                 source={
-                  user?.avatar || user?.image
-                    ? { uri: user.avatar || user.image }
+                  user?.profilePicture
+                    ? { uri: user.profilePicture }
                     : {
                         uri: "",
                       }

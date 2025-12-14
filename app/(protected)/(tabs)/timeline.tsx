@@ -251,8 +251,8 @@ const TimelineScreen = () => {
           <View style={styles.createElement}>
             <Image
               source={
-                user?.avatar || user?.image
-                  ? { uri: user.avatar || user.image }
+                user?.profilePicture
+                  ? { uri: user.profilePicture }
                   : { uri: "" }
               }
               style={styles.avatarcreate}

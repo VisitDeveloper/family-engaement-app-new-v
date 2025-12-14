@@ -15,6 +15,7 @@ import {
 export default function ProfileScreen() {
   const router = useRouter();
   const user = useStore((state) => state.user);
+  
   return (
     <ScrollView
       style={styles.container}
@@ -37,17 +38,30 @@ export default function ProfileScreen() {
       <View style={styles.card}>
         <Image
           source={
-            user?.avatar || user?.image
-              ? { uri: user.avatar || user.image }
+            user?.profilePicture
+              ? { uri: user.profilePicture }
               : { uri: "" }
           }
           style={styles.avatar}
         />
-        <Text style={styles.name}>Maria Rodriguezzz</Text>
-        <Text style={styles.relation}>Parent - Sarah Rodriguez</Text>
-        <View style={styles.tag}>
-          <Text style={styles.tagText}>Math</Text>
-        </View>
+        <Text style={styles.name}>{`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || ""}</Text>
+        <Text style={styles.relation}>
+          {user?.role ? `${user.role.charAt(0).toUpperCase() + user.role.slice(1)}` : ""}
+          {user?.childName ? ` - ${user.childName}` : user?.email ? ` - ${user.email.split('@')[0]}` : ""}
+        </Text>
+        {user?.subjects && user.subjects.length > 0 ? (
+          <View style={styles.tagsContainer}>
+            {user.subjects.map((subject, index) => (
+              <View key={index} style={styles.tag}>
+                <Text style={styles.tagText}>{subject}</Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.tag}>
+            <Text style={styles.tagText}>No subjects</Text>
+          </View>
+        )}
       </View>
 
       {/* Classrooms Attached */}
@@ -137,8 +151,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 8,
   },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 8,
+  },
   tag: {
-    alignSelf: "center",
     backgroundColor: "#eee",
     paddingHorizontal: 8,
     paddingVertical: 2,

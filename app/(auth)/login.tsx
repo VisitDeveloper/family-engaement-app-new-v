@@ -7,16 +7,16 @@ import { useStore } from "@/store";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    Image,
-    Keyboard,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Image,
+  Keyboard,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 export default function LoginScreen() {
@@ -97,7 +97,7 @@ export default function LoginScreen() {
             // @ts-ignore
             email: response.user.email || email,
             role: response.user.role || detectedRole || null,
-            avatar: response.user.profilePicture || response.user.avatar,
+            profilePicture: response.user.profilePicture,
             ...response.user, // ذخیره تمام فیلدهای اضافی
           });
         } else {
@@ -147,7 +147,7 @@ export default function LoginScreen() {
             // @ts-ignore
             email: response.user.email || email,
             role: response.user.role || detectedRole || undefined,
-            avatar: response.user.profilePicture || response.user.avatar,
+            profilePicture: response.user.profilePicture,
             ...response.user, // ذخیره تمام فیلدهای اضافی
           });
         } else {

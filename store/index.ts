@@ -14,16 +14,32 @@ interface UserSlice {
     id: string; 
     name: string;
     email?: string;
+    firstName?: string;
+    lastName?: string;
     role?: 'admin' | 'teacher' | 'parent';
-    avatar?: string;
+    phoneNumber?: string;
+    phone?: string; // backward compatibility
+    profilePicture?: string;
+    subjects?: string[]; // Array of subjects/interests
+    childName?: string; // Child's name (for parent role)
+    createdAt?: string;
+    updatedAt?: string;
     [key: string]: any; // برای فیلدهای اضافی که ممکن است از API بیایند
   } | null;
   setUser: (user: { 
     id: string; 
     name: string;
     email?: string;
+    firstName?: string;
+    lastName?: string;
     role?: 'admin' | 'teacher' | 'parent';
-    avatar?: string;
+    phoneNumber?: string;
+    phone?: string; // backward compatibility
+    profilePicture?: string;
+    subjects?: string[]; // Array of subjects/interests
+    childName?: string; // Child's name (for parent role)
+    createdAt?: string;
+    updatedAt?: string;
     [key: string]: any;
   } | null) => void;
 }
