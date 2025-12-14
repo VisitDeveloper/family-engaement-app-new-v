@@ -66,7 +66,10 @@ class ApiClient {
       }
     }
     
-    headers.set('Content-Type', 'application/json');
+    // Don't set Content-Type for FormData, let the browser set it with boundary
+    if (!(options.body instanceof FormData)) {
+      headers.set('Content-Type', 'application/json');
+    }
     
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
@@ -125,6 +128,14 @@ class ApiClient {
 
   async delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+  }
+
+  async uploadFile<T>(endpoint: string, formData: FormData, options?: RequestInit): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body: formData,
+    });
   }
 
   async setAuthToken(token: string): Promise<void> {

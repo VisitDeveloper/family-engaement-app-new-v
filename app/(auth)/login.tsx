@@ -81,7 +81,7 @@ export default function LoginScreen() {
 
         // ذخیره user و role - ذخیره تمام اطلاعات user از API
         if (response.user) {
-          debugger;
+          
           console.log("response.user", response.user);
           useStore.getState().setUser({
             // @ts-ignore

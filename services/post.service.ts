@@ -98,15 +98,8 @@ class PostServiceImpl implements PostService {
       const endpoint = `/posts${queryString ? `?${queryString}` : ''}`;
       
       const response = await apiClient.get<{ posts: PostResponseDto[], limit: number, page: number, total: number }>(endpoint);
-      
-      debugger
-      // API returns array, but we need to wrap it in pagination structure
-      return {
-        posts: response.posts,
-        limit: params?.limit || 10,
-        page: params?.page || 1,
-        total: response.total,
-      };
+      console.log(response);
+      return response;
     } catch (error) {
       const apiError = error as ApiError;
       throw {
