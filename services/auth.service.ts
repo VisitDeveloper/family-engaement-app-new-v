@@ -20,6 +20,8 @@ export interface UserResponseDto {
   role: "admin" | "teacher" | "parent";
   phoneNumber?: string;
   profilePicture?: string;
+  childName?: string;
+  subjects?: string[];
 }
 
 // LoginResponseDto from API

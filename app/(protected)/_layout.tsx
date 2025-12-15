@@ -1,5 +1,6 @@
 import Header from "@/components/layout/header";
 import { Colors } from "@/constants/theme";
+import { apiClient } from "@/services/api";
 import { useStore } from "@/store";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
@@ -20,6 +21,7 @@ export default function RootLayout() {
   const isHighContrast = useStore((state) => state.isHighContrast);
   const baseTheme = colorScheme === "dark" ? Colors.dark : Colors.light;
   const setColorScheme = useStore((state) => state.setColorScheme);
+  const getAcceptLanguage = useStore((state) => state.getAcceptLanguage);
 
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
@@ -28,6 +30,11 @@ export default function RootLayout() {
 
     return () => subscription.remove();
   }, [setColorScheme]);
+
+  // تنظیم language getter برای API client
+  useEffect(() => {
+    apiClient.setLanguageGetter(() => getAcceptLanguage());
+  }, [getAcceptLanguage]);
 
 
   const MyTheme = {
