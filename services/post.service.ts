@@ -23,6 +23,7 @@ export interface PostResponseDto {
   updatedAt: string;
   isSaved?: boolean;
   isLiked?: boolean;
+  lastComment?: CommentResponseDto | null;
 }
 
 export interface CommentResponseDto {
@@ -34,6 +35,8 @@ export interface CommentResponseDto {
   repliesCount: number;
   createdAt: string;
   updatedAt: string;
+  isLiked?: boolean;
+  replies?: CommentResponseDto[];
 }
 
 export interface CreatePostDto {
