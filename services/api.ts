@@ -10,9 +10,15 @@ export interface ApiError {
 
 class ApiClient {
   private baseURL: string;
+  private getLanguage: (() => string) | null = null;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
+  }
+
+  // متد برای تنظیم function که زبان را برمی‌گرداند
+  setLanguageGetter(getter: () => string): void {
+    this.getLanguage = getter;
   }
 
   private async getToken(): Promise<string | null> {
@@ -66,11 +72,19 @@ class ApiClient {
       }
     }
     
-    headers.set('Content-Type', 'application/json');
+    // Don't set Content-Type for FormData, let the browser set it with boundary
+    if (!(options.body instanceof FormData)) {
+      headers.set('Content-Type', 'application/json');
+    }
     
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
+
+    // اضافه کردن Accept-Language header
+    // پیش‌فرض: en-US، اما اگر language getter تنظیم شده باشد، از آن استفاده می‌کند
+    const acceptLanguage = this.getLanguage ? this.getLanguage() : 'en';
+    headers.set('Accept-Language', acceptLanguage);
 
     const url = `${this.baseURL}${endpoint}`;
 
@@ -123,8 +137,24 @@ class ApiClient {
     });
   }
 
+  async patch<T>(endpoint: string, body?: any, options?: RequestInit): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
   async delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+  }
+
+  async uploadFile<T>(endpoint: string, formData: FormData, options?: RequestInit): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body: formData,
+    });
   }
 
   async setAuthToken(token: string): Promise<void> {

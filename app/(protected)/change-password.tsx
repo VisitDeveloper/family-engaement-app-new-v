@@ -6,20 +6,20 @@ import { ApiError } from "@/services/api";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
 import {
-    AntDesign,
-    Ionicons,
-    MaterialCommunityIcons,
-    Octicons,
+  AntDesign,
+  Ionicons,
+  MaterialCommunityIcons,
+  Octicons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function ChangePassword() {
@@ -61,7 +61,8 @@ export default function ChangePassword() {
   })();
 
   // بررسی match بودن passwords
-  const passwordsMismatch = newPassword && confirmPassword && newPassword !== confirmPassword;
+  const passwordsMismatch =
+    newPassword && confirmPassword && newPassword !== confirmPassword;
 
   const { errors, validate } = useValidation({
     oldPassword: { required: true, minLength: 6 },
@@ -142,11 +143,15 @@ export default function ChangePassword() {
     setLoading(true);
 
     try {
-      await authService.changePassword({
+      
+      const response = await authService.changePassword({
         oldPassword,
         newPassword,
-        confirmPassword,
+        // confirmPassword,
       });
+
+      
+      console.log("response", response);
 
       Alert.alert("Success", "Password changed successfully!", [
         {
@@ -157,34 +162,33 @@ export default function ChangePassword() {
         },
       ]);
     } catch (err) {
+      debugger
+      console.log("err", err);
       const apiError = err as ApiError;
       let errorMessage =
         apiError.message || "Failed to change password. Please try again.";
-      
+
       // اگر خطای 401 یا 403 باشد، token باطل شده و باید دوباره لاگین کنیم
       if (apiError.status === 401 || apiError.status === 403) {
-        errorMessage = "Your session has expired. Please login again with your new password.";
-        
+        errorMessage =
+          "Your session has expired. Please login again with your new password.";
+
         // پاک کردن state و هدایت به صفحه login
         setLoggedIn(false);
         setUser(null);
         setRole(null);
-        
-        Alert.alert(
-          "Session Expired",
-          errorMessage,
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                router.replace("/(auth)/login");
-              },
+
+        Alert.alert("Session Expired", errorMessage, [
+          {
+            text: "OK",
+            onPress: () => {
+              router.replace("/(auth)/login");
             },
-          ]
-        );
+          },
+        ]);
         return;
       }
-      
+
       setError(errorMessage);
       Alert.alert("Error", errorMessage);
     } finally {
@@ -318,157 +322,164 @@ export default function ChangePassword() {
             )}
           </View>
 
-           <View style={styles.desc}>
-             <MaterialCommunityIcons
-               name={passwordRequirements.minLength === true ? "check" : passwordRequirements.minLength === false ? "close" : "check"}
-               size={16}
-               color={
-                 passwordRequirements.minLength === null
-                   ? theme.subText
+          <View style={styles.desc}>
+            <MaterialCommunityIcons
+              name={
+                passwordRequirements.minLength === true
+                  ? "check"
+                  : passwordRequirements.minLength === false
+                  ? "close"
+                  : "check"
+              }
+              size={16}
+              color={
+                passwordRequirements.minLength === null
+                  ? theme.subText
                   : passwordRequirements.minLength === true
                   ? "#4caf50"
                   : theme.emergencyColor
-               }
-             />
-             <ThemedText
-               type="subText"
-               style={{
-                 color:
-                   passwordRequirements.minLength === null
-                     ? theme.subText
-                     : passwordRequirements.minLength === true
-                     ? "#4caf50"
-                     : theme.emergencyColor,
-                 marginLeft: 10,
-               }}
-             >
-               Must be at least 8 characters.
-             </ThemedText>
-           </View>
-           <View style={styles.desc}>
-             <MaterialCommunityIcons
-               name={
-                 passwordRequirements.hasUpperLower === true
-                   ? "check"
-                   : passwordRequirements.hasUpperLower === false
-                   ? "close"
-                   : "check"
-               }
-               size={16}
-               color={
-                 passwordRequirements.hasUpperLower === null
-                   ? theme.subText
-                   : passwordRequirements.hasUpperLower === true
-                   ? "#4caf50"
-                   : theme.emergencyColor
-               }
-             />
-             <ThemedText
-               type="subText"
-               style={{
-                 color:
-                   passwordRequirements.hasUpperLower === null
-                     ? theme.subText
-                     : passwordRequirements.hasUpperLower === true
-                     ? "#4caf50"
-                     : theme.emergencyColor,
-                 marginLeft: 10,
-               }}
-             >
-               Must include a mix of uppercase and lowercase letters.
-             </ThemedText>
-           </View>
-           <View style={styles.desc}>
-             <MaterialCommunityIcons
-               name={
-                 passwordRequirements.hasNumber === true
-                   ? "check"
-                   : passwordRequirements.hasNumber === false
-                   ? "close"
-                   : "check"
-               }
-               size={16}
-               color={
-                 passwordRequirements.hasNumber === null
-                   ? theme.subText
-                   : passwordRequirements.hasNumber === true
-                   ? "#4caf50"
-                   : theme.emergencyColor
-               }
-             />
-             <ThemedText
-               type="subText"
-               style={{
-                 color:
-                   passwordRequirements.hasNumber === null
-                     ? theme.subText
-                     : passwordRequirements.hasNumber === true
-                     ? "#4caf50"
-                     : theme.emergencyColor,
-                 marginLeft: 10,
-               }}
-             >
-               Must include numbers.
-             </ThemedText>
-           </View>
-           <View style={styles.desc}>
-             <MaterialCommunityIcons
-               name={
-                 passwordRequirements.hasSpecial === true
-                   ? "check"
-                   : passwordRequirements.hasSpecial === false
-                   ? "close"
-                   : "check"
-               }
-               size={16}
-               color={
-                 passwordRequirements.hasSpecial === null
-                   ? theme.subText
-                   : passwordRequirements.hasSpecial === true
-                   ? "#4caf50"
-                   : theme.emergencyColor
-               }
-             />
-             <ThemedText
-               type="subText"
-               style={{
-                 color:
-                   passwordRequirements.hasSpecial === null
-                     ? theme.subText
-                     : passwordRequirements.hasSpecial === true
-                     ? "#4caf50"
-                     : theme.emergencyColor,
-                 marginLeft: 10,
-               }}
-             >
-               Must include special characters.
-             </ThemedText>
-           </View>
-           <View style={styles.desc}>
-             <MaterialCommunityIcons
-               name="check"
-               size={16}
-               color={theme.passDesc}
-             />
-             <ThemedText
-               type="subText"
-               style={{ color: theme.passDesc, marginLeft: 10 }}
-             >
-               Must not include your name, birthday, or any other readily available information.
-             </ThemedText>
-           </View>
+              }
+            />
+            <ThemedText
+              type="subText"
+              style={{
+                color:
+                  passwordRequirements.minLength === null
+                    ? theme.subText
+                    : passwordRequirements.minLength === true
+                    ? "#4caf50"
+                    : theme.emergencyColor,
+                marginLeft: 10,
+              }}
+            >
+              Must be at least 8 characters.
+            </ThemedText>
+          </View>
+          <View style={styles.desc}>
+            <MaterialCommunityIcons
+              name={
+                passwordRequirements.hasUpperLower === true
+                  ? "check"
+                  : passwordRequirements.hasUpperLower === false
+                  ? "close"
+                  : "check"
+              }
+              size={16}
+              color={
+                passwordRequirements.hasUpperLower === null
+                  ? theme.subText
+                  : passwordRequirements.hasUpperLower === true
+                  ? "#4caf50"
+                  : theme.emergencyColor
+              }
+            />
+            <ThemedText
+              type="subText"
+              style={{
+                color:
+                  passwordRequirements.hasUpperLower === null
+                    ? theme.subText
+                    : passwordRequirements.hasUpperLower === true
+                    ? "#4caf50"
+                    : theme.emergencyColor,
+                marginLeft: 10,
+              }}
+            >
+              Must include a mix of uppercase and lowercase letters.
+            </ThemedText>
+          </View>
+          <View style={styles.desc}>
+            <MaterialCommunityIcons
+              name={
+                passwordRequirements.hasNumber === true
+                  ? "check"
+                  : passwordRequirements.hasNumber === false
+                  ? "close"
+                  : "check"
+              }
+              size={16}
+              color={
+                passwordRequirements.hasNumber === null
+                  ? theme.subText
+                  : passwordRequirements.hasNumber === true
+                  ? "#4caf50"
+                  : theme.emergencyColor
+              }
+            />
+            <ThemedText
+              type="subText"
+              style={{
+                color:
+                  passwordRequirements.hasNumber === null
+                    ? theme.subText
+                    : passwordRequirements.hasNumber === true
+                    ? "#4caf50"
+                    : theme.emergencyColor,
+                marginLeft: 10,
+              }}
+            >
+              Must include numbers.
+            </ThemedText>
+          </View>
+          <View style={styles.desc}>
+            <MaterialCommunityIcons
+              name={
+                passwordRequirements.hasSpecial === true
+                  ? "check"
+                  : passwordRequirements.hasSpecial === false
+                  ? "close"
+                  : "check"
+              }
+              size={16}
+              color={
+                passwordRequirements.hasSpecial === null
+                  ? theme.subText
+                  : passwordRequirements.hasSpecial === true
+                  ? "#4caf50"
+                  : theme.emergencyColor
+              }
+            />
+            <ThemedText
+              type="subText"
+              style={{
+                color:
+                  passwordRequirements.hasSpecial === null
+                    ? theme.subText
+                    : passwordRequirements.hasSpecial === true
+                    ? "#4caf50"
+                    : theme.emergencyColor,
+                marginLeft: 10,
+              }}
+            >
+              Must include special characters.
+            </ThemedText>
+          </View>
+          <View style={styles.desc}>
+            <MaterialCommunityIcons
+              name="check"
+              size={16}
+              color={theme.passDesc}
+            />
+            <ThemedText
+              type="subText"
+              style={{ color: theme.passDesc, marginLeft: 10 }}
+            >
+              Must not include your name, birthday, or any other readily
+              available information.
+            </ThemedText>
+          </View>
 
-           {passwordsMismatch && (
-             <View style={styles.desc}>
-               <AntDesign name="close" size={16} color={theme.emergencyColor} />
-               <ThemedText
-                 type="subText"
-                 style={{ color: theme.emergencyColor, marginLeft: 10 }}
-               >
-                 Password Mismatch
-               </ThemedText>
-             </View>
-           )}
+          {passwordsMismatch && (
+            <View style={styles.desc}>
+              <AntDesign name="close" size={16} color={theme.emergencyColor} />
+              <ThemedText
+                type="subText"
+                style={{ color: theme.emergencyColor, marginLeft: 10 }}
+              >
+                Password Mismatch
+              </ThemedText>
+            </View>
+          )}
 
           {/* {error && (
             <View

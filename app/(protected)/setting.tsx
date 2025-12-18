@@ -11,7 +11,7 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -50,14 +50,32 @@ export default function SettingsScreen() {
   const setLoggedIn = useStore((s) => s.setLoggedIn);
   const setRole = useStore((s) => s.setRole);
   const setUser = useStore((s) => s.setUser);
+  const appLanguage = useStore((state) => state.appLanguage);
+  const setAppLanguage = useStore((state) => state.setAppLanguage);
   const [tone, setTone] = useState("Default");
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [lang, setLang] = useState<OptionsList[]>([
     {
       label: "English",
-      value: "en",
+      value: appLanguage || "en",
     },
   ]);
+
+  // همگام‌سازی lang با appLanguage از store
+  useEffect(() => {
+    if (appLanguage) {
+      const languageOptions = [
+        { label: "English", value: "en" },
+        { label: "فارسی", value: "fa" },
+      ];
+      const selectedOption = languageOptions.find(
+        (opt) => opt.value === appLanguage
+      );
+      if (selectedOption) {
+        setLang([selectedOption]);
+      }
+    }
+  }, [appLanguage]);
 
   const handleLogout = async () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -116,7 +134,7 @@ export default function SettingsScreen() {
               { backgroundColor: theme.bg, borderColor: theme.border },
             ]}
           >
-            <View style={styles.profileRow}>
+            <TouchableOpacity onPress={() => router.push("/user-profile")} style={styles.profileRow}>
               <Image
                 source={
                   user?.profilePicture
@@ -128,7 +146,6 @@ export default function SettingsScreen() {
                 style={styles.avatar}
               />
               <View style={{ flex: 1, marginLeft: 12 }}>
-
                 <ThemedText type="subtitle" style={{ color: theme.text }}>
                   {user?.firstName + " " + user?.lastName || "User"}
                 </ThemedText>
@@ -138,27 +155,31 @@ export default function SettingsScreen() {
                 >
                   {role
                     ? `${role.charAt(0).toUpperCase() + role.slice(1)}`
-                    : "No role assigned"}
+                    : "No role assigned"}{" "}
+                  {user?.childName ? ` - ${user.childName}` : ""}
                 </ThemedText>
-                {user?.email && (
-                  <View style={{ marginTop: 4 }}>
-                    <ThemedText
-                      type="subText"
-                      style={{ color: theme.subText, fontSize: 12 }}
-                    >
-                      {user.email}
-                    </ThemedText>
+                {user?.subjects && user.subjects.length > 0 ? (
+                  <View style={styles.tagsContainer}>
+                    {user.subjects.map((subject, index) => (
+                      <View key={index} style={styles.tag}>
+                        <ThemedText type="subText" style={styles.tagText}>
+                          {subject}
+                        </ThemedText>
+                      </View>
+                    ))}
                   </View>
+                ) : (
+                  ""
                 )}
               </View>
-              <TouchableOpacity onPress={() => router.push("/user-profile")}>
+              <View >
                 <Ionicons
                   name="chevron-forward"
                   size={20}
                   color={theme.subText}
                 />
-              </TouchableOpacity>
-            </View>
+              </View>
+            </TouchableOpacity>
           </View>
 
           {/* Notifications Card */}
@@ -335,17 +356,20 @@ export default function SettingsScreen() {
               <SelectBox
                 options={[
                   { label: "English", value: "en" },
-                  { label: "فارسی", value: "fa" },
+                  { label: "French", value: "fr" },
+                  { label: "Spanish", value: "es" },
                 ]}
-                value={lang[0].value} // فقط label برای نمایش در SelectBox
+                value={appLanguage || lang[0].value} // استفاده از زبان از store
                 onChange={(val) => {
                   const selectedOption = [
                     { label: "English", value: "en" },
-                    { label: "فارسی", value: "fa" },
+                    { label: "French", value: "fr" },
+                    { label: "Spanish", value: "es" },
                   ].find((opt) => opt.value === val);
 
                   if (selectedOption) {
-                    setLang([selectedOption]); // کل گزینه رو ذخیره کن
+                    setLang([selectedOption]); // برای نمایش محلی
+                    setAppLanguage(selectedOption.value); // ذخیره در store
                   }
                 }}
                 title="List of Language"
@@ -809,4 +833,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   selectLabel: { marginBottom: 6 },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 8,
+  },
+  tag: {
+    backgroundColor: "#eee",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  tagText: {
+    fontSize: 12,
+    color: "#333",
+  },
 });

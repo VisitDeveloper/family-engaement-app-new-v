@@ -1,24 +1,25 @@
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import ResourceItem, {
-    ResourceItemProps,
+  ResourceItemProps,
 } from "@/components/reptitive-component/resource-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
 import { ThemedText } from "@/components/themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import {
-    ResourceResponseDto,
-    resourceService,
+  ResourceResponseDto,
+  resourceService,
 } from "@/services/resource.service";
+import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -54,6 +55,7 @@ const convertToResourceItemProps = (
       ? { uri: resource.imageUrl }
       : require("./../../../assets/images/timeline-1.jpg"),
     icon: getResourceIcon(resource.type),
+    isSaved: resource.isSaved,
   };
 };
 
@@ -99,7 +101,9 @@ const ResourceLibrary = () => {
         };
 
         const { resources: data } = await resourceService.getAll(params);
-        
+
+        console.log("data", data);
+
         const convertedResources = data.map(convertToResourceItemProps);
         setFilteredResources(convertedResources);
       } catch (err: any) {
@@ -120,6 +124,13 @@ const ResourceLibrary = () => {
     fetchResources();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refresh resources when screen comes into focus (e.g., after rating)
+  useFocusEffect(
+    useCallback(() => {
+      fetchResources(query, selectedCategory);
+    }, [query, selectedCategory, fetchResources])
+  );
 
   const handleDebouncedQuery = useCallback(
     (debouncedValue: string) => {
@@ -151,6 +162,7 @@ const ResourceLibrary = () => {
       borderWidth: 1,
       borderColor: theme.border,
       borderRadius: 10,
+      backgroundColor: theme.panel,
     },
     textContainer: { padding: 5, flexDirection: "column" },
     typeContainer: {
@@ -212,11 +224,40 @@ const ResourceLibrary = () => {
   //     [addResource, router]
   // );
 
+  const handleSaveToggle = async (resourceId: string) => {
+    try {
+      // Find the resource in the current list
+      const resource = filteredResources.find((r) => r.id === resourceId);
+      if (!resource) return;
+
+      const isCurrentlySaved = resource.isSaved || false;
+
+      await saveService.saveResource(resourceId);
+
+      // Update the local state
+      setFilteredResources((prev) =>
+        prev.map((r) =>
+          r.id === resourceId ? { ...r, isSaved: !isCurrentlySaved } : r
+        )
+      );
+
+      // Refresh the list to get updated data
+      await fetchResources(query, selectedCategory);
+    } catch (err: any) {
+      Alert.alert(
+        "Error",
+        err.message || "Failed to update save status. Please try again."
+      );
+      console.error("Error toggling save:", err);
+    }
+  };
+
   const openResource = async (item: ResourceItemProps) => {
     try {
       // Fetch full resource details from API
       const fullResource = await resourceService.getById(item.id!);
 
+      debugger;
       // Map to API model structure
       const data = {
         id: fullResource.id,
@@ -363,6 +404,7 @@ const ResourceLibrary = () => {
           renderItem={({ item }) => (
             <ResourceItem
               onPress={() => openResource(item)}
+              onSavePress={handleSaveToggle}
               styles={stylesFlatListItem}
               {...item}
             />
