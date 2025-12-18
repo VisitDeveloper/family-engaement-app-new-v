@@ -2,20 +2,31 @@ import HeaderInnerPage from '@/components/reptitive-component/header-inner-page'
 import { ThemedText } from '@/components/themed-text';
 import Rating from '@/components/ui/rating';
 import { useThemedStyles } from '@/hooks/use-theme-style';
+import { resourceService } from '@/services/resource.service';
 import { useStore } from '@/store';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, ScrollView, TouchableOpacity, View } from 'react-native';
 
 const RatingScreen = () => {
     const { id } = useLocalSearchParams();
+    const router = useRouter();
     const theme = useStore((s) => s.theme);
 
     const resourceItem = useStore((state: any) =>
         state.getResourceById(`${id}`)
     );
-    const [rating, setRating] = useState<number>(0);
+    const addResource = useStore((state: any) => state.addResource);
+    const [rating, setRating] = useState<number>(resourceItem?.userRating || 0);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+    // Update rating when resourceItem changes
+    useEffect(() => {
+        if (resourceItem?.userRating) {
+            setRating(resourceItem.userRating);
+        }
+    }, [resourceItem?.userRating]);
 
 
     const styles = useThemedStyles((t) => ({
@@ -36,6 +47,9 @@ const RatingScreen = () => {
             height: 225,
             borderRadius: 12,
             marginTop: 12,
+            borderWidth: 1,
+            borderColor: t.border,
+            backgroundColor: t.panel,
         },
         chipRow: {
             flexDirection: 'row',
@@ -83,31 +97,69 @@ const RatingScreen = () => {
     }
 
     const handleRatingSubmit = async () => {
-        if (!rating) {
-            alert("Please select a rating first.");
+        if (!rating || rating === 0) {
+            Alert.alert("Error", "Please select a rating first.");
             return;
         }
 
-        console.log('ok', rating)
-        // try {
-        //     const res = await fetch("https://your-api.com/resources/rating", {
-        //         method: "POST",
-        //         headers: {
-        //             "Content-Type": "application/json",
-        //         },
-        //         body: JSON.stringify({
-        //             resourceId: resourceItem.id,
-        //             rating: rating,
-        //         }),
-        //     });
+        if (!id || typeof id !== 'string') {
+            Alert.alert("Error", "Invalid resource ID.");
+            return;
+        }
 
-        //     if (!res.ok) throw new Error("Failed to submit rating");
-
-        //     alert("Rating submitted successfully!");
-        // } catch (err) {
-        //     console.error(err);
-        //     alert("Something went wrong!");
-        // }
+        setIsSubmitting(true);
+        try {
+            await resourceService.rateResource(id, { rating });
+            
+            // Fetch updated resource from API to get latest averageRating, ratingsCount, etc.
+            try {
+                const updatedResourceData = await resourceService.getById(id);
+                
+                // Update resource in store with all updated data
+                addResource({
+                    id: updatedResourceData.id,
+                    title: updatedResourceData.title,
+                    description: updatedResourceData.description,
+                    type: updatedResourceData.type,
+                    category: updatedResourceData.category,
+                    ageRange: updatedResourceData.ageRange,
+                    imageUrl: updatedResourceData.imageUrl,
+                    contentUrl: updatedResourceData.contentUrl,
+                    averageRating: updatedResourceData.averageRating,
+                    ratingsCount: updatedResourceData.ratingsCount,
+                    createdBy: updatedResourceData.createdBy,
+                    isSaved: updatedResourceData.isSaved,
+                    userRating: updatedResourceData.userRating,
+                    createdAt: updatedResourceData.createdAt,
+                    updatedAt: updatedResourceData.updatedAt,
+                });
+            } catch (fetchError) {
+                console.error('Error fetching updated resource:', fetchError);
+                // If fetch fails, still update with what we know
+                if (resourceItem) {
+                    const updatedResource = {
+                        ...resourceItem,
+                        userRating: rating,
+                    };
+                    addResource(updatedResource);
+                }
+            }
+            
+            Alert.alert("Success", "Rating submitted successfully!", [
+                {
+                    text: "OK",
+                    onPress: () => router.back(),
+                },
+            ]);
+        } catch (error: any) {
+            console.error('Error submitting rating:', error);
+            Alert.alert(
+                "Error",
+                error.message || "Failed to submit rating. Please try again."
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
 
@@ -124,11 +176,16 @@ const RatingScreen = () => {
                     <ThemedText type="default" style={{ marginHorizontal: 'auto', color: theme.subText }}>
                         Choose your rating
                     </ThemedText>
-                    <Rating maxRating={5} size={40} onRatingChange={(val) => setRating(val)} />
+                    <Rating 
+                        maxRating={5} 
+                        size={40} 
+                        initialRating={resourceItem?.userRating || 0}
+                        onRatingChange={(val) => setRating(val)} 
+                    />
                 </View>
 
                 <Image
-                    source={require('./../../../../assets/images/timeline-1.jpg')}
+                    source={{ uri: resourceItem?.imageUrl ? resourceItem.imageUrl : "" }}
                     style={styles.cover}
                     resizeMode="cover"
                 />
@@ -155,12 +212,18 @@ const RatingScreen = () => {
                     A classic story about the transformation of a caterpillar into a beautiful butterfly.
                 </ThemedText>
 
-                <TouchableOpacity onPress={handleRatingSubmit} style={styles.readBtn}>
-
-                    <ThemedText style={styles.readText}>
-                        Submit Rating
-                    </ThemedText>
-
+                <TouchableOpacity 
+                    onPress={handleRatingSubmit} 
+                    style={[styles.readBtn, isSubmitting && { opacity: 0.6 }]}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <ThemedText style={styles.readText}>
+                            Submit Rating
+                        </ThemedText>
+                    )}
                 </TouchableOpacity>
 
             </ScrollView>
