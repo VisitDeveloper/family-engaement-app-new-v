@@ -1,11 +1,10 @@
 import Header from "@/components/layout/header";
-import { Colors } from "@/constants/theme";
 import { apiClient } from "@/services/api";
 import { useStore } from "@/store";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Appearance } from "react-native";
 import "react-native-reanimated";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -19,7 +18,6 @@ export default function RootLayout() {
   const user = useStore((state) => state.user);
   const colorScheme = useStore((state) => state.colorScheme);
   const isHighContrast = useStore((state) => state.isHighContrast);
-  const baseTheme = colorScheme === "dark" ? Colors.dark : Colors.light;
   const setColorScheme = useStore((state) => state.setColorScheme);
   const getAcceptLanguage = useStore((state) => state.getAcceptLanguage);
 
@@ -36,14 +34,32 @@ export default function RootLayout() {
     apiClient.setLanguageGetter(() => getAcceptLanguage());
   }, [getAcceptLanguage]);
 
+  // Memoize userImage to prevent unnecessary re-renders
+  const userImage = useMemo(() => {
+    if (user?.profilePicture) {
+      return { uri: user.profilePicture };
+    }
+    return { uri: "" };
+  }, [user?.profilePicture]);
 
-  const MyTheme = {
-    ...DefaultTheme,
-    colors: {
-      ...DefaultTheme.colors,
-      background: isHighContrast ? "#000" : baseTheme.background,
-    },
-  };
+  // Memoize the header component to prevent infinite re-renders
+  const renderHeader = useCallback(() => {
+    return (
+      <Header
+        link={"/setting"}
+        userImage={userImage}
+        logo={require("./../../assets/images/LOGO.jpeg")}
+      />
+    );
+  }, [userImage]);
+
+  // Memoize screenOptions to prevent re-renders
+  const screenOptions = useMemo(
+    () => ({
+      header: renderHeader,
+    }),
+    [renderHeader]
+  );
 
   return (
     <SafeAreaProvider>
@@ -228,23 +244,7 @@ export default function RootLayout() {
                         <Stack.Screen name="+not-found" options={{ headerShown: true, header: () => <Header link={'/setting'} userImage={require('./../../assets/images/user.jpeg')} logo={require('./../../assets/images/LOGO.jpeg')} /> }} />
 
                     </Stack> */}
-          <Stack
-            screenOptions={{
-              header: () => (
-                <Header
-                  link={"/setting"}
-                  userImage={
-                    user?.profilePicture
-                      ? { uri: user.profilePicture }
-                      : {
-                          uri: "",
-                        }
-                  }
-                  logo={require("./../../assets/images/LOGO.jpeg")}
-                />
-              ),
-            }}
-          />
+          <Stack screenOptions={screenOptions} />
           <StatusBar
             style={colorScheme === "dark" || isHighContrast ? "light" : "dark"}
             animated={true}

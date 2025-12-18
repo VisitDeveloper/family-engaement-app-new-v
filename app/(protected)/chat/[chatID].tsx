@@ -2,34 +2,40 @@ import HeaderThreeSections from "@/components/reptitive-component/header-three-s
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
-import { usePathname } from 'expo-router';
-import { useState } from "react";
-import { FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-
-interface Message {
-    id: string;
-    type: "text" | "audio" | "video";
-    content: string;
-    time: string;
-    sender: "me" | "other";
-    mediaUri?: string;
-}
-
-const messagesData: Message[] = [
-    { id: "1", type: "text", content: "Sarah did wonderful work on her math worksheet today! ...", time: "2:30 PM", sender: "other" },
-    { id: "2", type: "audio", content: "", time: "2:32 PM", sender: "other", mediaUri: "audio.mp3" },
-    { id: "3", type: "text", content: "That's wonderful to hear! Thank you for the update.", time: "2:45 PM", sender: "me" },
-    { id: "4", type: "video", content: "", time: "2:47 PM", sender: "me", mediaUri: "video.mp4" },
-];
+import { usePathname, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { messagingService, MessageResponseDto, ConversationResponseDto } from "@/services/messaging.service";
 
 export default function ChatScreen() {
     const [input, setInput] = useState("");
+    const [sending, setSending] = useState(false);
+    const [loading, setLoading] = useState(true);
     const param = usePathname();
     const pathID = param.split('/');
-    const id = pathID.pop();
-    const chat = useStore((state: any) => state.getChatById(id));
+    const conversationId = pathID.pop();
+    
+    // Select data from store instead of calling functions
+    const conversations = useStore((state: any) => state.conversations);
+    const messagesStore = useStore((state: any) => state.messages);
+    const addMessage = useStore((state: any) => state.addMessage);
+    const setMessages = useStore((state: any) => state.setMessages);
+    const markConversationAsRead = useStore((state: any) => state.updateConversation);
+    const currentUser = useStore((state: any) => state.user);
+    const currentUserId = currentUser?.id || null;
 
     const theme = useStore((state) => state.theme);
+
+    // Compute conversation and messages using useMemo to prevent infinite loops
+    const conversation = useMemo(() => {
+        if (!conversationId || !conversations) return undefined;
+        return conversations.find((c: ConversationResponseDto) => c.id === conversationId);
+    }, [conversationId, conversations]);
+
+    const messages = useMemo(() => {
+        if (!conversationId || !messagesStore) return [];
+        return messagesStore[conversationId] || [];
+    }, [conversationId, messagesStore]);
 
     const styles = useThemedStyles((t) => ({
         container: { flex: 1, backgroundColor: t.bg },
@@ -46,23 +52,143 @@ export default function ChatScreen() {
         timeText: { fontSize: 10, marginTop: 5, alignSelf: "flex-end" },
         audioPlayer: { height: 50, backgroundColor: "#ddd", justifyContent: "center", padding: 5, borderRadius: 8 },
         videoThumbnail: { width: 150, height: 100, borderRadius: 8, marginTop: 5 },
+        imageThumbnail: { width: 200, height: 150, borderRadius: 8, marginTop: 5 },
         inputContainer: { flexDirection: "row", paddingVertical: 10, borderTopWidth: 1, borderColor: t.border, alignItems: "center", paddingHorizontal: 25, marginBottom: 10 },
         input: { flex: 1, borderWidth: 1, borderColor: t.border, borderRadius: 10, paddingHorizontal: 10, height: 40, color: t.text },
         sendButton: { backgroundColor: t.tint, padding: 10, borderRadius: 25, marginLeft: 10 },
+        loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     }) as const);
 
+    const loadConversation = useCallback(async () => {
+        if (!conversationId) return;
+        
+        try {
+            const conv = await messagingService.getConversationById(conversationId);
+            // Update store if needed
+        } catch (error) {
+            console.error('Error loading conversation:', error);
+            Alert.alert('Error', 'Failed to load conversation');
+        }
+    }, [conversationId]);
 
-    const renderMessage = ({ item }: { item: Message }) => {
-        const isMe = item.sender === "me";
+    const loadMessages = useCallback(async () => {
+        if (!conversationId) return;
+        
+        setLoading(true);
+        try {
+            const response = await messagingService.getMessages(conversationId, { limit: 50 });
+            setMessages(conversationId, response.messages.reverse()); // Reverse to show oldest first
+        } catch (error) {
+            console.error('Error loading messages:', error);
+            Alert.alert('Error', 'Failed to load messages');
+        } finally {
+            setLoading(false);
+        }
+    }, [conversationId, setMessages]);
+
+    useEffect(() => {
+        loadConversation();
+        loadMessages();
+        
+        // Mark conversation as read when component mounts
+        if (conversationId) {
+            messagingService.markConversationAsRead(conversationId).catch(console.error);
+            markConversationAsRead(conversationId, { unreadCount: 0 });
+        }
+    }, [conversationId, loadConversation, loadMessages, markConversationAsRead]);
+
+    const handleSendMessage = async () => {
+        if (!input.trim() || !conversationId || sending) return;
+
+        setSending(true);
+        try {
+            const newMessage = await messagingService.createMessage({
+                conversationId,
+                content: input.trim(),
+                type: 'text',
+            });
+            
+            addMessage(conversationId, newMessage);
+            setInput("");
+        } catch (error: any) {
+            console.error('Error sending message:', error);
+            Alert.alert('Error', error.message || 'Failed to send message');
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const formatTime = (dateString: string) => {
+        const date = new Date(dateString);
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    };
+
+    const renderMessage = ({ item }: { item: MessageResponseDto }) => {
+        const isMe = item.senderId === currentUserId;
+        const messageTime = formatTime(item.createdAt);
+        
         return (
             <View style={[styles.messageContainer, isMe ? styles.myMessage : styles.otherMessage]}>
-                {item.type === "text" && <Text style={isMe ? styles.messageText : styles.messageOtherText}>{item.content}</Text>}
-                {item.type === "audio" && <View style={styles.audioPlayer}><Text>Audio Player: {item.mediaUri}</Text></View>}
-                {item.type === "video" && <Image source={require('./../../../assets/images/timeline-1.jpg')} style={styles.videoThumbnail} />}
-                <Text style={[styles.timeText, isMe ? { color: '#fff' } : { color: '#666' }]}>{item.time}</Text>
+                {item.type === "text" && item.content && (
+                    <Text style={isMe ? styles.messageText : styles.messageOtherText}>{item.content}</Text>
+                )}
+                {item.type === "image" && item.mediaUrl && (
+                    <Image source={{ uri: item.mediaUrl }} style={styles.imageThumbnail} />
+                )}
+                {item.type === "video" && item.mediaUrl && (
+                    <Image source={{ uri: item.mediaUrl }} style={styles.videoThumbnail} />
+                )}
+                {item.type === "audio" && item.mediaUrl && (
+                    <View style={styles.audioPlayer}>
+                        <Text style={isMe ? styles.messageText : styles.messageOtherText}>
+                            Audio Message
+                        </Text>
+                    </View>
+                )}
+                {item.type === "file" && (
+                    <View>
+                        <Text style={isMe ? styles.messageText : styles.messageOtherText}>
+                            📎 {item.fileName || 'File'}
+                        </Text>
+                    </View>
+                )}
+                {item.type === "poll" && (
+                    <View>
+                        <Text style={isMe ? styles.messageText : styles.messageOtherText}>
+                            📊 Poll
+                        </Text>
+                    </View>
+                )}
+                <Text style={[styles.timeText, isMe ? { color: '#fff' } : { color: '#666' }]}>
+                    {messageTime}
+                </Text>
             </View>
         );
     };
+
+    const getConversationName = () => {
+        if (!conversation) return 'Chat';
+        if (typeof conversation.name === 'string') return conversation.name;
+        if (conversation.type === 'direct' && conversation.participants) {
+            const otherParticipant = conversation.participants.find(p => p.id !== currentUserId);
+            if (otherParticipant) {
+                return `${otherParticipant.firstName || ''} ${otherParticipant.lastName || ''}`.trim() || otherParticipant.email;
+            }
+        }
+        return 'Chat';
+    };
+
+    if (loading && messages.length === 0) {
+        return (
+            <View style={[styles.container, styles.loadingContainer]}>
+                <ActivityIndicator size="large" color={theme.tint} />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -71,23 +197,22 @@ export default function ChatScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
             >
-
                 <HeaderThreeSections
-                    title={chat.name}
-                    desc={chat.online === true ? 'Online' : 'Offline'}
+                    title={getConversationName()}
+                    desc={conversation?.unreadCount ? `${conversation.unreadCount} unread` : 'All read'}
                     icon={<MaterialIcons name="translate" size={24} color={theme.text} />}
-                    colorDesc={chat.online === true ? 'green' : 'red'}
+                    colorDesc={conversation?.unreadCount ? 'blue' : 'green'}
                 />
-
 
                 {/* Messages */}
                 <FlatList
-                    data={messagesData}
+                    data={messages}
                     keyExtractor={(item) => item.id}
                     renderItem={renderMessage}
                     contentContainerStyle={{ padding: 15 }}
                     showsVerticalScrollIndicator={false}
                     showsHorizontalScrollIndicator={false}
+                    inverted={false}
                 />
 
                 {/* Input */}
@@ -97,9 +222,19 @@ export default function ChatScreen() {
                         placeholder="Type a message..."
                         value={input}
                         onChangeText={setInput}
+                        onSubmitEditing={handleSendMessage}
+                        editable={!sending}
                     />
-                    <TouchableOpacity style={styles.sendButton}>
-                        <Feather name="send" size={20} color="#fff" />
+                    <TouchableOpacity 
+                        style={[styles.sendButton, sending && { opacity: 0.5 }]}
+                        onPress={handleSendMessage}
+                        disabled={sending || !input.trim()}
+                    >
+                        {sending ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <Feather name="send" size={20} color="#fff" />
+                        )}
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
