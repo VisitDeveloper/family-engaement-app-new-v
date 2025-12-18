@@ -3,75 +3,108 @@ import HeaderThreeSections from '@/components/reptitive-component/header-three-s
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useThemedStyles } from '@/hooks/use-theme-style';
+import { EventResponseDto, eventService } from '@/services/event.service';
 import { useStore } from '@/store';
 import { AntDesign, Feather, FontAwesome, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Helper function to format date
+const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getMonth()]} ${date.getDate()}`;
+};
+
+// Helper function to extract string from time field (can be object or string)
+const extractTimeString = (time: Record<string, any> | string | null | undefined): string | null => {
+    if (!time) return null;
+    if (typeof time === 'string') return time;
+    // If it's an object, try to extract a time string (adjust based on actual API structure)
+    if (typeof time === 'object' && time !== null) {
+        // Try common time field names
+        return (time as any).time || (time as any).value || (time as any).startTime || null;
+    }
+    return null;
+};
+
+// Helper function to format time string (HH:mm:ss or HH:mm) to readable format
+const formatTimeString = (timeString: string): string => {
+    if (!timeString) return 'All Day';
+    
+    // Handle time string format like "15:00:00" or "15:00"
+    const timeMatch = timeString.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (timeMatch) {
+        const hours = parseInt(timeMatch[1], 10);
+        const minutes = timeMatch[2];
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+        return `${displayHours}:${minutes} ${period}`;
+    }
+    
+    // If it's a full datetime string, try to parse it
+    try {
+        const date = new Date(timeString);
+        if (!isNaN(date.getTime())) {
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+    } catch {
+        // Ignore parsing errors
+    }
+    
+    return timeString; // Return as-is if can't parse
+};
+
+// Helper function to format time
+const formatTime = (time: Record<string, any> | string | null | undefined): string => {
+    const timeString = extractTimeString(time);
+    if (!timeString) return 'All Day';
+    return formatTimeString(timeString);
+};
+
+// Helper function to format time range
+const formatTimeRange = (startTime: Record<string, any> | string | null | undefined, endTime: Record<string, any> | string | null | undefined, allDay: boolean): string => {
+    if (allDay) return 'All Day';
+    const start = formatTime(startTime);
+    const end = formatTime(endTime);
+    if (start === 'All Day' || end === 'All Day') return 'All Day';
+    return `${start} - ${end}`;
+};
+
+// Helper function to extract string from description/location (can be object or string)
+const extractString = (value: Record<string, any> | string | null | undefined): string => {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value !== null) {
+        // Try common field names for localized strings
+        return (value as any).en || (value as any).fa || (value as any).text || (value as any).value || JSON.stringify(value);
+    }
+    return String(value);
+};
 
 type EventKind = 'Conference' | 'Fieldtrip' | 'Event' | 'Holiday';
 
-type CalendarItem = {
-    id: string;
-    title: string;
-    kind: EventKind;
-    dateText: string;        // e.g. Jan 28  or  Feb 2
-    timeText: string;        // e.g. 3:00 PM - 3:30 PM  or  All Day
-    placeText: string;       // e.g. Room 5B
-    description: string;     // paragraph
+// Map type string (lowercase) to EventKind for display
+const mapEventTypeToKind = (type: string): EventKind => {
+    const normalizedType = type.toLowerCase();
+    switch (normalizedType) {
+        case 'conference':
+        case 'meeting':
+            return 'Conference';
+        case 'fieldtrip':
+            return 'Fieldtrip';
+        case 'classevent':
+        case 'familyworkshop':
+        case 'schoolwideevent':
+        case 'assessment':
+        case 'servicesandscreenings':
+            return 'Event';
+        default:
+            return 'Event';
+    }
 };
-
-const eventsSeed: CalendarItem[] = [
-    {
-        id: '1',
-        title: 'Parent-Teacher Conference',
-        kind: 'Conference',
-        dateText: 'Jan 28',
-        timeText: '3:00 PM - 3:30 PM',
-        placeText: 'Room 5B',
-        description: "Individual conference to discuss Sarah's progress and development goals.",
-    },
-    {
-        id: '2',
-        title: 'Field Trip - Science Museum',
-        kind: 'Fieldtrip',
-        dateText: 'Feb 2',
-        timeText: 'All Day',
-        placeText: 'Downtown Science Museum',
-        description:
-            'Interactive science exhibits and planetarium show. Lunch will be provided.',
-    },
-    {
-        id: '3',
-        title: 'Art Show Presentation',
-        kind: 'Event',
-        dateText: 'Feb 8',
-        timeText: '6:00 PM - 8:00 PM',
-        placeText: 'School Auditorium',
-        description:
-            'Students will showcase their artwork from the semester. Families are invited to attend.',
-    },
-    {
-        id: '4',
-        title: 'Presidents Day Holiday',
-        kind: 'Holiday',
-        dateText: 'Feb 19',
-        timeText: 'All Day',
-        placeText: '',
-        description: 'No school in observance of Presidents Day.',
-    },
-    {
-        id: '5',
-        title: 'Reading Assessment Week',
-        kind: 'Event',
-        dateText: 'Feb 26',
-        timeText: '9:00 AM - 12:00 PM',
-        placeText: 'Classroom',
-        description:
-            'Individual reading assessments will be conducted throughout the week.',
-    },
-];
 
 const kindChip = (k: EventKind) => {
     switch (k) {
@@ -83,6 +116,8 @@ const kindChip = (k: EventKind) => {
             return { label: 'Event', bg: '#EAFCEF', text: '#16A34A', icon: <MaterialIcons name="event-note" size={15} color="#16A34A" /> };      // سبز
         case 'Holiday':
             return { label: 'Holiday', bg: '#FEE2E2', text: '#DC2626', icon: <AntDesign name="gift" size={15} color="#DC2626" /> };    // قرمز
+        default:
+            return { label: 'Event', bg: '#EAFCEF', text: '#16A34A', icon: <MaterialIcons name="event-note" size={15} color="#16A34A" /> };
     }
 };
 
@@ -90,13 +125,50 @@ const SchoolCalendarScreen = () => {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const theme = useStore((s) => s.theme);
-    const [monthIndex, setMonthIndex] = useState(1); // 0=Jan, 1=Feb...
+    const currentDate = new Date();
+    const [monthIndex, setMonthIndex] = useState(currentDate.getMonth()); // Current month
+    const [year, setYear] = useState(currentDate.getFullYear()); // Current year
+    const [events, setEvents] = useState<EventResponseDto[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const monthTitle = useMemo(() => {
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
             'August', 'September', 'October', 'November', 'December'];
-        return `${months[monthIndex]} 2024`;
-    }, [monthIndex]);
+        return `${months[monthIndex]} ${year}`;
+    }, [monthIndex, year]);
+
+    // Fetch events
+    const fetchEvents = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            // monthIndex is 0-based (0-11), API expects 1-based (1-12)
+            const month = monthIndex + 1;
+
+            const response = await eventService.getAll({
+                page: 1,
+                limit: 100,
+                filter: 'upcoming',
+                month,
+                year
+            });
+
+            setEvents(response.events);
+        } catch (err: any) {
+            const errorMessage = err.message || 'Failed to load events. Please try again.';
+            setError(errorMessage);
+            Alert.alert('Error', errorMessage);
+            console.error('Error fetching events:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, [monthIndex, year]);
+
+    useEffect(() => {
+        fetchEvents();
+    }, [fetchEvents]);
 
     const styles = useThemedStyles((t) => ({
         container: { flex: 1, backgroundColor: t.bg, paddingHorizontal: 10 },
@@ -162,8 +234,24 @@ const SchoolCalendarScreen = () => {
 
     }) as const);
 
-    const handlePrev = () => setMonthIndex((m) => (m - 1 + 12) % 12);
-    const handleNext = () => setMonthIndex((m) => (m + 1) % 12);
+    const handlePrev = () => {
+        setMonthIndex((m) => {
+            const newMonth = (m - 1 + 12) % 12;
+            if (newMonth === 11) {
+                setYear((y) => y - 1);
+            }
+            return newMonth;
+        });
+    };
+    const handleNext = () => {
+        setMonthIndex((m) => {
+            const newMonth = (m + 1) % 12;
+            if (newMonth === 0) {
+                setYear((y) => y + 1);
+            }
+            return newMonth;
+        });
+    };
 
     return (
         <ThemedView style={styles.container}>
@@ -194,55 +282,88 @@ const SchoolCalendarScreen = () => {
 
             {/* List */}
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
-                {eventsSeed.map((ev) => {
-                    const chip = kindChip(ev.kind);
-                    return (
-                        <ThemedView key={ev.id} style={styles.card}>
-                            <ThemedText type="defaultSemiBold" style={{ color: theme.text }}>{ev.title}</ThemedText>
+                {loading ? (
+                    <View style={styles.endmessage}>
+                        <ThemedText type="subtitle" style={{ color: theme.text }}>
+                            Loading events...
+                        </ThemedText>
+                    </View>
+                ) : error ? (
+                    <View style={styles.endmessage}>
+                        <ThemedText type="subtitle" style={{ color: theme.text }}>
+                            {error}
+                        </ThemedText>
+                    </View>
+                ) : events.length === 0 ? (
+                    <View style={styles.endmessage}>
+                        <FontAwesome name="calendar" size={24} color={theme.subText} />
+                        <ThemedText type="subtitle" style={{ color: theme.text }}>
+                            No events found
+                        </ThemedText>
+                        <ThemedText type="subText" style={{ color: theme.subText }}>
+                            Check back later for new events and announcements.
+                        </ThemedText>
+                    </View>
+                ) : (
+                    events.map((ev) => {
+                        const kind = mapEventTypeToKind(ev.type);
+                        const chip = kindChip(kind);
+                        const dateText = formatDate(ev.startDate);
+                        const timeText = formatTimeRange(ev.startTime, ev.endTime, ev.allDay);
+                        const locationText = extractString(ev.location);
+                        const descriptionText = extractString(ev.description);
+                        
+                        return (
+                            <ThemedView key={ev.id} style={styles.card}>
+                                <ThemedText type="defaultSemiBold" style={{ color: theme.text }}>{ev.title}</ThemedText>
 
-                            {/* Kind Chip */}
-                            <View style={[styles.chip, { backgroundColor: chip.bg }]}>
-                                {chip.icon}
-                                <ThemedText type="subText" style={{ color: chip.text }}>
-                                    {chip.label}
-                                </ThemedText>
-                            </View>
-
-
-                            {/* Meta */}
-                            <View style={styles.metaRow}>
-                                <View style={styles.metaItem}>
-                                    <Feather name="calendar" size={16} color={theme.text} />
-                                    <ThemedText type="subText" style={{ color: theme.subText }}>{ev.dateText}</ThemedText>
+                                {/* Kind Chip */}
+                                <View style={[styles.chip, { backgroundColor: chip.bg }]}>
+                                    {chip.icon}
+                                    <ThemedText type="subText" style={{ color: chip.text }}>
+                                        {chip.label}
+                                    </ThemedText>
                                 </View>
-                                <View style={styles.metaItem}>
-                                    <Feather name="clock" size={16} color={theme.text} />
-                                    <ThemedText type="subText" style={{ color: theme.subText }}>{ev.timeText}</ThemedText>
-                                </View>
-                                {!!ev.placeText && (
+
+                                {/* Meta */}
+                                <View style={styles.metaRow}>
                                     <View style={styles.metaItem}>
-                                        <Feather name="map-pin" size={16} color={theme.text} />
-                                        <ThemedText type="subText" style={{ color: theme.subText }}>{ev.placeText}</ThemedText>
+                                        <Feather name="calendar" size={16} color={theme.text} />
+                                        <ThemedText type="subText" style={{ color: theme.subText }}>{dateText}</ThemedText>
                                     </View>
-                                )}
-                            </View>
+                                    <View style={styles.metaItem}>
+                                        <Feather name="clock" size={16} color={theme.text} />
+                                        <ThemedText type="subText" style={{ color: theme.subText }}>{timeText}</ThemedText>
+                                    </View>
+                                    {!!locationText && (
+                                        <View style={styles.metaItem}>
+                                            <Feather name="map-pin" size={16} color={theme.text} />
+                                            <ThemedText type="subText" style={{ color: theme.subText }}>{locationText}</ThemedText>
+                                        </View>
+                                    )}
+                                </View>
 
-                            {/* Description */}
-                            <ThemedText type="default" style={styles.desc}>
-                                {ev.description}
-                            </ThemedText>
-                        </ThemedView>
-                    );
-                })}
-                <View style={styles.endmessage}>
-                    <FontAwesome name="calendar" size={24} color={theme.subText} />
-                    <ThemedText type="subtitle" style={{ color: theme.text }}>
-                        That's all for now!
-                    </ThemedText>
-                    <ThemedText type="subText" style={{ color: theme.subText }}>
-                        Check back later for new events and announcements.
-                    </ThemedText>
-                </View>
+                                {/* Description */}
+                                {!!descriptionText && (
+                                    <ThemedText type="default" style={styles.desc}>
+                                        {descriptionText}
+                                    </ThemedText>
+                                )}
+                            </ThemedView>
+                        );
+                    })
+                )}
+                {!loading && events.length > 0 && (
+                    <View style={styles.endmessage}>
+                        <FontAwesome name="calendar" size={24} color={theme.subText} />
+                        <ThemedText type="subtitle" style={{ color: theme.text }}>
+                            That&apos;s all for now!
+                        </ThemedText>
+                        <ThemedText type="subText" style={{ color: theme.subText }}>
+                            Check back later for new events and announcements.
+                        </ThemedText>
+                    </View>
+                )}
             </ScrollView>
 
         </ThemedView>

@@ -76,7 +76,7 @@ class ApiClient {
     if (!(options.body instanceof FormData)) {
       headers.set('Content-Type', 'application/json');
     }
-    
+    debugger
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }

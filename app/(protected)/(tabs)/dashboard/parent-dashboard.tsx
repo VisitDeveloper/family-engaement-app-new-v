@@ -3,9 +3,11 @@ import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import StatCardParent from "@/components/reptitive-component/state-card-parent";
 import UpcomingEventsCard, { EventsProps } from "@/components/reptitive-component/upcominf-events-parent";
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { eventService } from "@/services/event.service";
 import { useStore } from "@/store"; // همون Zustand store که theme رو برمی‌گردونه
 import { AntDesign, FontAwesome6, Ionicons } from "@expo/vector-icons";
-import { Redirect } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 
 
@@ -13,21 +15,90 @@ import { ScrollView, View } from "react-native";
 export default function ParentDashboard() {
     const { theme } = useStore(state => state);
     const role = useStore(state => state.role);
+    const router = useRouter();
 
-    const teachers = [
-        { name: "Ms. Alvarez", posts: 23, responses: 18, rate: 95 },
-        { name: "Mr. Rodriguez", posts: 19, responses: 16, rate: 88 },
-        { name: "Ms. Chen", posts: 21, responses: 19, rate: 92 },
-        { name: "Mr. Thompson", posts: 15, responses: 12, rate: 85 },
-    ];
+    const [events, setEvents] = useState<EventsProps[]>([]);
 
-    const events: Array<EventsProps> = [
-        { title: 'Parent-Teacher Conference', time: '3:00 PM', date: 'Jan 28' },
-        { title: 'Field Trip - Science Museum', time: 'All Day', date: 'Feb 2' },
-        { title: 'Art Show Presentation', time: '6:00 PM', date: 'Feb 8' },
-    ];
+    // Format date helper
+    const formatDate = (dateString: string): string => {
+        const date = new Date(dateString);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[date.getMonth()]} ${date.getDate()}`;
+    };
 
-    const activities: Array<ActivityItem> = [
+    // Helper function to extract string from time field (can be object or string)
+    const extractTimeString = (time: Record<string, any> | string | null | undefined): string | null => {
+        if (!time) return null;
+        if (typeof time === 'string') return time;
+        if (typeof time === 'object' && time !== null) {
+            return (time as any).time || (time as any).value || (time as any).startTime || null;
+        }
+        return null;
+    };
+
+    // Helper function to format time string (HH:mm:ss or HH:mm) to readable format
+    const formatTimeString = (timeString: string): string => {
+        if (!timeString) return 'All Day';
+        
+        // Handle time string format like "15:00:00" or "15:00"
+        const timeMatch = timeString.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+        if (timeMatch) {
+            const hours = parseInt(timeMatch[1], 10);
+            const minutes = timeMatch[2];
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+            return `${displayHours}:${minutes} ${period}`;
+        }
+        
+        // If it's a full datetime string, try to parse it
+        try {
+            const date = new Date(timeString);
+            if (!isNaN(date.getTime())) {
+                return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            }
+        } catch {
+            // Ignore parsing errors
+        }
+        
+        return timeString; // Return as-is if can't parse
+    };
+
+    // Format time helper
+    const formatTime = (time: Record<string, any> | string | null | undefined, allDay: boolean): string => {
+        if (allDay) return 'All Day';
+        const timeString = extractTimeString(time);
+        if (!timeString) return 'All Day';
+        return formatTimeString(timeString);
+    };
+
+    // Fetch upcoming events
+    const fetchUpcomingEvents = useCallback(async () => {
+        try {
+            const response = await eventService.getAll({
+                page: 1,
+                limit: 3,
+                filter: 'upcoming'
+            });
+
+            const formattedEvents: EventsProps[] = response.events.map(event => ({
+                title: event.title,
+                time: formatTime(event.startTime, event.allDay),
+                date: formatDate(event.startDate)
+            }));
+
+            setEvents(formattedEvents);
+        } catch (error) {
+            console.error('Error fetching upcoming events:', error);
+            // Keep empty array on error
+            setEvents([]);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchUpcomingEvents();
+    }, [fetchUpcomingEvents]);
+
+    const activities: ActivityItem[] = [
         {
             title: "Ms. Alvarez shared a new photo",
             time: "2 hours ago",
@@ -42,11 +113,6 @@ export default function ParentDashboard() {
             time: "1 day ago",
         },
     ];
-
-
-    if (role === 'teacher' || role === 'admin') {
-        return <Redirect href="/(protected)/(tabs)/dashboard" />;
-    }
 
     const styles = useThemedStyles((t) => ({
         container: {
@@ -106,7 +172,11 @@ export default function ParentDashboard() {
             height: 6,
             borderRadius: 6,
         },
-    }))
+    }));
+
+    if (role === 'teacher' || role === 'admin') {
+        return <Redirect href="/(protected)/(tabs)/dashboard" />;
+    }
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg, padding: 10 }}>
@@ -147,7 +217,10 @@ export default function ParentDashboard() {
 
                 </View>
 
-                <UpcomingEventsCard events={events} />
+                <UpcomingEventsCard 
+                    events={events} 
+                    onPressAllEvents={() => router.push('/event')}
+                />
 
                 <RecentActivityCard activities={activities} />
             </ScrollView>
