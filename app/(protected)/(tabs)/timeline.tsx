@@ -452,6 +452,9 @@ const TimelineScreen = () => {
                     console.error("Error toggling save:", error);
                   }
                 }}
+                onCommentAdded={async () => {
+                  fetchPosts(tabsData[activeTab].filter);
+                }}
               />
             );
           })}

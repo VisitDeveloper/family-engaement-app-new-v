@@ -37,7 +37,7 @@ export interface GetCommentsParams {
 }
 
 export interface CommentService {
-  getPostComments(postId: string, params?: GetCommentsParams): Promise<{ comments: CommentResponseDto[], limit: number, page: number, total: number }>;
+  getPostComments(postId: string, params?: GetCommentsParams): Promise<CommentResponseDto[]>;
   getCommentById(commentId: string): Promise<CommentResponseDto>;
   createComment(postId: string, data: CreateCommentDto): Promise<CommentResponseDto>;
   updateComment(commentId: string, data: UpdateCommentDto): Promise<CommentResponseDto>;
@@ -47,7 +47,7 @@ export interface CommentService {
 }
 
 class CommentServiceImpl implements CommentService {
-  async getPostComments(postId: string, params?: GetCommentsParams): Promise<{ comments: CommentResponseDto[], limit: number, page: number, total: number }> {
+  async getPostComments(postId: string, params?: GetCommentsParams): Promise<CommentResponseDto[]> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -64,7 +64,7 @@ class CommentServiceImpl implements CommentService {
       const queryString = queryParams.toString();
       const endpoint = `/posts/${postId}/comments${queryString ? `?${queryString}` : ''}`;
       
-      const response = await apiClient.get<{ comments: CommentResponseDto[], limit: number, page: number, total: number }>(endpoint);
+      const response = await apiClient.get<CommentResponseDto[]>(endpoint);
       return response;
     } catch (error) {
       const apiError = error as ApiError;
