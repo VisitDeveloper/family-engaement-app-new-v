@@ -3,12 +3,12 @@ import HeaderThreeSections from '@/components/reptitive-component/header-three-s
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useThemedStyles } from '@/hooks/use-theme-style';
-import { EventResponseDto, eventService } from '@/services/event.service';
+import { EventResponseDto, eventService, RSVPStatus, TimeSlotDto } from '@/services/event.service';
 import { useStore } from '@/store';
 import { AntDesign, Feather, FontAwesome, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Helper function to format date
@@ -73,6 +73,13 @@ const formatTimeRange = (startTime: Record<string, any> | string | null | undefi
     return `${start} - ${end}`;
 };
 
+// Helper function to format time slot range (for time slots which are always strings)
+const formatTimeSlotRange = (startTime: string, endTime: string): string => {
+    const start = formatTimeString(startTime);
+    const end = formatTimeString(endTime);
+    return `${start} - ${end}`;
+};
+
 // Helper function to extract string from description/location (can be object or string)
 const extractString = (value: Record<string, any> | string | null | undefined): string => {
     if (!value) return '';
@@ -91,16 +98,13 @@ const mapEventTypeToKind = (type: string): EventKind => {
     const normalizedType = type.toLowerCase();
     switch (normalizedType) {
         case 'conference':
-        case 'meeting':
             return 'Conference';
         case 'fieldtrip':
             return 'Fieldtrip';
-        case 'classevent':
-        case 'familyworkshop':
-        case 'schoolwideevent':
-        case 'assessment':
-        case 'servicesandscreenings':
+        case 'event':
             return 'Event';
+        case 'holiday':
+            return 'Holiday';
         default:
             return 'Event';
     }
@@ -131,6 +135,10 @@ const SchoolCalendarScreen = () => {
     const [events, setEvents] = useState<EventResponseDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState<string | null>(null);
+    const [timeSlotModalVisible, setTimeSlotModalVisible] = useState(false);
+    const [selectedEventForSlot, setSelectedEventForSlot] = useState<EventResponseDto | null>(null);
+    const [expandedRsvpEventId, setExpandedRsvpEventId] = useState<string | null>(null);
 
     const monthTitle = useMemo(() => {
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
@@ -230,9 +238,63 @@ const SchoolCalendarScreen = () => {
         desc: { marginTop: 10, color: t.text },
         endmessage: {
             flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 20
-        }
-
-    }) as const);
+        },
+        dropdownSection: {
+            marginTop: 12,
+            paddingTop: 12,
+            borderTopWidth: 1,
+            borderTopColor: t.border,
+        },
+        rsvpButtons: {
+            flexDirection: 'row',
+            gap: 8,
+            flexWrap: 'wrap',
+        },
+        rsvpButton: {
+            flex: 1,
+            minWidth: 90,
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderRadius: 8,
+            borderWidth: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        timeSlotItem: {
+            padding: 16,
+            borderRadius: 12,
+            borderWidth: 2,
+            marginBottom: 12,
+            minHeight: 60,
+            justifyContent: 'center',
+        },
+        timeSlotHeader: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 4,
+        },
+        timeSlotInfo: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 12,
+        },
+        radioButton: {
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            borderWidth: 2,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        selectSlotButton: {
+            marginTop: 12,
+            paddingVertical: 12,
+            borderRadius: 8,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+    }));
 
     const handlePrev = () => {
         setMonthIndex((m) => {
@@ -251,6 +313,40 @@ const SchoolCalendarScreen = () => {
             }
             return newMonth;
         });
+    };
+
+    const handleRSVP = async (eventId: string, status: RSVPStatus, timeSlotId?: string) => {
+        try {
+            setSubmitting(eventId);
+            await eventService.rsvp(eventId, status, timeSlotId);
+            const statusText = status === 'going' ? 'Going' : status === 'maybe' ? 'Maybe' : 'Not Going';
+            Alert.alert('Success', `RSVP updated to ${statusText}`);
+            // Refresh events
+            await fetchEvents();
+            // Close modal if time slot was selected
+            if (timeSlotId) {
+                closeTimeSlotModal();
+            }
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to update RSVP. Please try again.');
+            console.error('Error updating RSVP:', err);
+        } finally {
+            setSubmitting(null);
+        }
+    };
+
+    const openTimeSlotModal = (event: EventResponseDto) => {
+        setSelectedEventForSlot(event);
+        setTimeSlotModalVisible(true);
+    };
+
+    const closeTimeSlotModal = () => {
+        setTimeSlotModalVisible(false);
+        setSelectedEventForSlot(null);
+    };
+
+    const toggleRsvpDropdown = (eventId: string) => {
+        setExpandedRsvpEventId(expandedRsvpEventId === eventId ? null : eventId);
     };
 
     return (
@@ -313,6 +409,32 @@ const SchoolCalendarScreen = () => {
                         const locationText = extractString(ev.location);
                         const descriptionText = extractString(ev.description);
                         
+                        // Get current user's RSVP status
+                        const currentUser = useStore.getState().user;
+                        const currentUserInvitee = ev.invitees?.find(invitee => {
+                            return invitee.userId === currentUser?.id;
+                        });
+                        // Normalize RSVP status (handle both old and new API formats)
+                        const rawStatus = (currentUserInvitee?.rsvpStatus || 'pending') as string;
+                        const currentRsvpStatus: RSVPStatus = rawStatus === 'accepted' ? 'going' : rawStatus === 'declined' ? 'not_going' : (rawStatus as RSVPStatus);
+                        
+                        const isSubmittingEvent = submitting === ev.id;
+                        const isRsvpExpanded = expandedRsvpEventId === ev.id;
+                        
+                        // Determine RSVP display for button
+                        let rsvpButtonDisplay = null;
+                        if (ev.requestRSVP && !ev.multipleTimeSlots) {
+                            if (currentRsvpStatus === 'going') {
+                                rsvpButtonDisplay = { text: 'Going', icon: 'check-circle', color: '#16A34A', bg: '#EAFCEF' };
+                            } else if (currentRsvpStatus === 'maybe') {
+                                rsvpButtonDisplay = { text: 'Maybe', icon: 'help-circle', color: '#F59E0B', bg: '#FEF3C7' };
+                            } else if (currentRsvpStatus === 'not_going') {
+                                rsvpButtonDisplay = { text: 'Not Going', icon: 'x-circle', color: '#DC2626', bg: '#FEE2E2' };
+                            } else {
+                                rsvpButtonDisplay = { text: 'RSVP', icon: 'question', color: theme.subText, bg: theme.panel };
+                            }
+                        }
+                        
                         return (
                             <ThemedView key={ev.id} style={styles.card}>
                                 <ThemedText type="defaultSemiBold" style={{ color: theme.text }}>{ev.title}</ThemedText>
@@ -345,9 +467,170 @@ const SchoolCalendarScreen = () => {
 
                                 {/* Description */}
                                 {!!descriptionText && (
-                                    <ThemedText type="default" style={styles.desc}>
+                                <ThemedText type="default" style={styles.desc}>
                                         {descriptionText}
                                     </ThemedText>
+                                )}
+
+                                {/* Time Slot Button */}
+                                {ev.requestRSVP && ev.multipleTimeSlots && (
+                                    <TouchableOpacity
+                                        style={{
+                                            marginTop: 12,
+                                            paddingVertical: 10,
+                                            paddingHorizontal: 12,
+                                            borderRadius: 8,
+                                            backgroundColor: theme.panel,
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                        onPress={() => openTimeSlotModal(ev)}
+                                        disabled={isSubmittingEvent}
+                                    >
+                                        {isSubmittingEvent ? (
+                                            <ActivityIndicator size="small" color={theme.tint} />
+                                        ) : (
+                                            <>
+                                                <Feather name="clock" size={18} color={theme.tint} />
+                                                <ThemedText style={{ color: theme.tint, fontWeight: '500', marginLeft: 8 }}>
+                                                    Choose Time Slot
+                                                </ThemedText>
+                                            </>
+                                        )}
+                                    </TouchableOpacity>
+                                )}
+
+                                {/* RSVP Button with Dropdown */}
+                                {ev.requestRSVP && !ev.multipleTimeSlots && rsvpButtonDisplay && (
+                                    <View style={{ marginTop: 12 }}>
+                                        <TouchableOpacity
+                                            style={{
+                                                paddingVertical: 10,
+                                                paddingHorizontal: 12,
+                                                borderRadius: 8,
+                                                backgroundColor: rsvpButtonDisplay.bg,
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                            }}
+                                            onPress={() => toggleRsvpDropdown(ev.id)}
+                                            disabled={isSubmittingEvent}
+                                        >
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                {isSubmittingEvent ? (
+                                                    <ActivityIndicator size="small" color={rsvpButtonDisplay.color} />
+                                                ) : (
+                                                    <Feather name={rsvpButtonDisplay.icon as any} size={18} color={rsvpButtonDisplay.color} />
+                                                )}
+                                                <ThemedText style={{ color: rsvpButtonDisplay.color, fontWeight: '500' }}>
+                                                    {rsvpButtonDisplay.text}
+                                                </ThemedText>
+                                            </View>
+                                            <Feather 
+                                                name={isRsvpExpanded ? "chevron-up" : "chevron-down"} 
+                                                size={16} 
+                                                color={rsvpButtonDisplay.color} 
+                                            />
+                                        </TouchableOpacity>
+
+                                        {/* RSVP Dropdown Options */}
+                                        {isRsvpExpanded && (
+                                            <View style={[styles.dropdownSection, { marginTop: 8 }]}>
+                                                <View style={styles.rsvpButtons}>
+                                                    <TouchableOpacity
+                                                        style={[
+                                                            styles.rsvpButton,
+                                                            { 
+                                                                borderColor: currentRsvpStatus === 'going' ? '#16A34A' : theme.border,
+                                                                backgroundColor: currentRsvpStatus === 'going' ? '#EAFCEF' : theme.bg,
+                                                            },
+                                                        ]}
+                                                        onPress={() => {
+                                                            handleRSVP(ev.id, 'going');
+                                                            toggleRsvpDropdown(ev.id);
+                                                        }}
+                                                        disabled={isSubmittingEvent}
+                                                    >
+                                                        <Feather 
+                                                            name="check-circle" 
+                                                            size={18} 
+                                                            color={currentRsvpStatus === 'going' ? '#16A34A' : theme.subText} 
+                                                        />
+                                                        <ThemedText 
+                                                            style={{ 
+                                                                marginTop: 4, 
+                                                                color: currentRsvpStatus === 'going' ? '#16A34A' : theme.subText,
+                                                                fontWeight: currentRsvpStatus === 'going' ? '600' : '400',
+                                                            }}
+                                                        >
+                                                            Going
+                                                        </ThemedText>
+                                                    </TouchableOpacity>
+
+                                                    <TouchableOpacity
+                                                        style={[
+                                                            styles.rsvpButton,
+                                                            { 
+                                                                borderColor: currentRsvpStatus === 'maybe' ? '#F59E0B' : theme.border,
+                                                                backgroundColor: currentRsvpStatus === 'maybe' ? '#FEF3C7' : theme.bg,
+                                                            },
+                                                        ]}
+                                                        onPress={() => {
+                                                            handleRSVP(ev.id, 'maybe');
+                                                            toggleRsvpDropdown(ev.id);
+                                                        }}
+                                                        disabled={isSubmittingEvent}
+                                                    >
+                                                        <Feather 
+                                                            name="help-circle" 
+                                                            size={18} 
+                                                            color={currentRsvpStatus === 'maybe' ? '#F59E0B' : theme.subText} 
+                                                        />
+                                                        <ThemedText 
+                                                            style={{ 
+                                                                marginTop: 4, 
+                                                                color: currentRsvpStatus === 'maybe' ? '#F59E0B' : theme.subText,
+                                                                fontWeight: currentRsvpStatus === 'maybe' ? '600' : '400',
+                                                            }}
+                                                        >
+                                                            Maybe
+                                                        </ThemedText>
+                                                    </TouchableOpacity>
+
+                                                    <TouchableOpacity
+                                                        style={[
+                                                            styles.rsvpButton,
+                                                            { 
+                                                                borderColor: currentRsvpStatus === 'not_going' ? '#DC2626' : theme.border,
+                                                                backgroundColor: currentRsvpStatus === 'not_going' ? '#FEE2E2' : theme.bg,
+                                                            },
+                                                        ]}
+                                                        onPress={() => {
+                                                            handleRSVP(ev.id, 'not_going');
+                                                            toggleRsvpDropdown(ev.id);
+                                                        }}
+                                                        disabled={isSubmittingEvent}
+                                                    >
+                                                        <Feather 
+                                                            name="x-circle" 
+                                                            size={18} 
+                                                            color={currentRsvpStatus === 'not_going' ? '#DC2626' : theme.subText} 
+                                                        />
+                                                        <ThemedText 
+                                                            style={{ 
+                                                                marginTop: 4, 
+                                                                color: currentRsvpStatus === 'not_going' ? '#DC2626' : theme.subText,
+                                                                fontWeight: currentRsvpStatus === 'not_going' ? '600' : '400',
+                                                            }}
+                                                        >
+                                                            Not Going
+                                </ThemedText>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+                                        )}
+                                    </View>
                                 )}
                             </ThemedView>
                         );
@@ -365,6 +648,153 @@ const SchoolCalendarScreen = () => {
                     </View>
                 )}
             </ScrollView>
+
+            {/* Time Slot Selection Modal */}
+            <Modal
+                visible={timeSlotModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={closeTimeSlotModal}
+            >
+                <View style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    justifyContent: 'flex-end',
+                }}>
+                    <ThemedView style={{
+                        backgroundColor: theme.bg,
+                        borderTopLeftRadius: 20,
+                        borderTopRightRadius: 20,
+                        padding: 20,
+                        paddingBottom: insets.bottom + 20,
+                        maxHeight: '80%',
+                    }}>
+                        <View style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: 20,
+                        }}>
+                            <ThemedText type="defaultSemiBold" style={{ fontSize: 18, color: theme.text }}>
+                                Choose Time Slot
+                            </ThemedText>
+                            <TouchableOpacity onPress={closeTimeSlotModal}>
+                                <Feather name="x" size={24} color={theme.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {selectedEventForSlot && selectedEventForSlot.timeSlots && Array.isArray(selectedEventForSlot.timeSlots) && selectedEventForSlot.timeSlots.length > 0 ? (
+                            <ScrollView 
+                                showsVerticalScrollIndicator={false}
+                                style={{ maxHeight: 400 }}
+                                contentContainerStyle={{ paddingBottom: 10 }}
+                            >
+                                {selectedEventForSlot.timeSlots.map((slot: TimeSlotDto) => {
+                                    if (!slot || !slot.id) return null;
+                                    
+                                    const currentUser = useStore.getState().user;
+                                    const currentUserInvitee = selectedEventForSlot.invitees?.find(invitee => {
+                                        return invitee.userId === currentUser?.id;
+                                    });
+                                    const isSelected = currentUserInvitee?.selectedTimeSlotId === slot.id;
+                                    const slotsLeft = slot.maxParticipants 
+                                        ? slot.maxParticipants - slot.currentParticipants 
+                                        : null;
+                                    const isFull = slotsLeft !== null && slotsLeft <= 0;
+                                    const isSubmittingSlot = submitting === selectedEventForSlot.id;
+                                    
+                                    return (
+                                        <TouchableOpacity
+                                            key={slot.id}
+                                            style={[
+                                                styles.timeSlotItem,
+                                                { 
+                                                    borderColor: isSelected ? theme.tint : theme.border,
+                                                    backgroundColor: isSelected ? `${theme.tint}15` : theme.panel,
+                                                    opacity: isFull ? 0.5 : 1,
+                                                },
+                                            ]}
+                                            onPress={() => {
+                                                if (!isFull && !isSubmittingSlot && selectedEventForSlot) {
+                                                    handleRSVP(selectedEventForSlot.id, 'going', slot.id);
+                                                }
+                                            }}
+                                            disabled={isFull || isSubmittingSlot}
+                                        >
+                                            <View style={styles.timeSlotInfo}>
+                                                <View style={[
+                                                    styles.radioButton,
+                                                    { 
+                                                        borderColor: isSelected ? theme.tint : theme.border,
+                                                        backgroundColor: isSelected ? theme.tint : 'transparent',
+                                                    },
+                                                ]}>
+                                                    {isSelected && (
+                                                        <View style={{
+                                                            width: 10,
+                                                            height: 10,
+                                                            borderRadius: 5,
+                                                            backgroundColor: theme.bg,
+                                                        }} />
+                                                    )}
+                                                </View>
+                                                <ThemedText type="defaultSemiBold" style={{ 
+                                                    color: theme.text,
+                                                    fontSize: 16,
+                                                }}>
+                                                    {slot.startTime && slot.endTime 
+                                                        ? formatTimeSlotRange(slot.startTime, slot.endTime)
+                                                        : 'Time slot'
+                                                    }
+                                                </ThemedText>
+                                            </View>
+                                            {slotsLeft !== null && (
+                                                <ThemedText type="subText" style={{ 
+                                                    color: theme.subText, 
+                                                    marginTop: 8,
+                                                    fontSize: 14,
+                                                }}>
+                                                    {slotsLeft} of {slot.maxParticipants} slots left
+                                                </ThemedText>
+                                            )}
+                                            {isFull && (
+                                                <ThemedText type="subText" style={{ 
+                                                    color: '#DC2626', 
+                                                    marginTop: 8,
+                                                    fontSize: 14,
+                                                    fontWeight: '600',
+                                                }}>
+                                                    Full
+                                                </ThemedText>
+                                            )}
+                                            {isSubmittingSlot && isSelected && (
+                                                <ActivityIndicator 
+                                                    size="small" 
+                                                    color={theme.tint} 
+                                                    style={{ marginTop: 8 }}
+                                                />
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        ) : (
+                            <View style={{ padding: 40, alignItems: 'center' }}>
+                                <ThemedText style={{ 
+                                    color: theme.subText, 
+                                    textAlign: 'center',
+                                    fontSize: 16,
+                                }}>
+                                    {selectedEventForSlot 
+                                        ? 'No time slots available for this event.'
+                                        : 'Loading...'
+                                    }
+                                </ThemedText>
+                            </View>
+                        )}
+                    </ThemedView>
+                </View>
+            </Modal>
 
         </ThemedView>
     );

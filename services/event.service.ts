@@ -12,7 +12,7 @@ export type EventType =
 
 export type TimeRepetition = 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-export type RSVPStatus = 'pending' | 'accepted' | 'declined';
+export type RSVPStatus = 'pending' | 'going' | 'not_going' | 'maybe';
 
 export interface AuthorResponseDto {
   id: string;
@@ -53,8 +53,9 @@ export interface TimeSlotDto {
 
 export interface RSVPStatsDto {
   total: number;
-  accepted: number;
-  declined: number;
+  going: number;
+  not_going: number;
+  maybe: number;
   pending: number;
 }
 
@@ -137,7 +138,7 @@ export interface EventService {
   create(data: CreateEventDto): Promise<EventResponseDto>;
   update(id: string, data: UpdateEventDto): Promise<EventResponseDto>;
   delete(id: string): Promise<void>;
-  rsvp(id: string, rsvp: boolean): Promise<void>;
+  rsvp(id: string, status: RSVPStatus, timeSlotId?: string): Promise<void>;
   getMyEvents(params?: GetEventsParams): Promise<{ events: EventResponseDto[], limit: number, page: number, total: number }>;
 }
 
@@ -241,9 +242,13 @@ class EventServiceImpl implements EventService {
     }
   }
 
-  async rsvp(id: string, rsvp: boolean): Promise<void> {
+  async rsvp(id: string, status: RSVPStatus, timeSlotId?: string): Promise<void> {
     try {
-      await apiClient.post(`/events/${id}/rsvp`, { rsvp });
+      const body: { status: string; timeSlotId?: string } = { status };
+      if (timeSlotId) {
+        body.timeSlotId = timeSlotId;
+      }
+      await apiClient.patch(`/events/${id}/rsvp`, body);
     } catch (error) {
       const apiError = error as ApiError;
       throw {
