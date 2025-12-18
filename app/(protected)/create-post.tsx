@@ -3,14 +3,18 @@ import { ThemedText } from "@/components/themed-text";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useValidation } from "@/hooks/use-validation";
+import { apiClient } from "@/services/api";
 import { postService } from "@/services/post.service";
 import { useStore } from "@/store";
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Image,
     ScrollView,
     Switch,
     TextInput,
@@ -25,10 +29,20 @@ const CreateNewPost = () => {
   const [tags, setTags] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [textMessages, setTextMessages] = useState<boolean>(false);
-  const [lang, setLang] = useState<OptionsList[]>([
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerResult | null>(null);
+  const [visibility, setVisibility] = useState<OptionsList[]>([
     {
-      label: "EveryOne",
-      value: "e",
+      label: "Everyone",
+      value: "everyone",
+    },
+    {
+      label: "Followers",
+      value: "followers",
+    },
+    {
+      label: "Private",
+      value: "private",
     },
   ]);
 
@@ -153,11 +167,90 @@ const CreateNewPost = () => {
       justifyContent: "space-between",
       paddingVertical: 10,
     },
+    selectedImage: {
+      width: "100%",
+      height: 200,
+      borderRadius: 10,
+      marginTop: 10,
+      resizeMode: "cover",
+    },
+    selectedFileContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: t.panel,
+      padding: 10,
+      borderRadius: 10,
+      marginTop: 10,
+      borderWidth: 1,
+      borderColor: t.border,
+    },
+    removeButton: {
+      marginLeft: 10,
+      padding: 5,
+    },
+    uploadButton: {
+      padding: 10,
+      borderRadius: 8,
+      backgroundColor: t.panel,
+      borderWidth: 1,
+      borderColor: t.border,
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: 60,
+    },
   }));
 
-  useEffect(() => {
-    console.log("lang", lang);
-  }, [lang]);
+
+  const pickImage = async () => {
+    try {
+      // Request permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Sorry, we need camera roll permissions to select images!"
+        );
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+        setSelectedFile(null); // Clear file if image is selected
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image. Please try again.");
+    }
+  };
+
+  const pickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "*/*",
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedFile(result);
+        setSelectedImage(null); // Clear image if file is selected
+      }
+    } catch (error) {
+      console.error("Error picking document:", error);
+      Alert.alert("Error", "Failed to pick document. Please try again.");
+    }
+  };
+
+  const removeSelectedMedia = () => {
+    setSelectedImage(null);
+    setSelectedFile(null);
+  };
 
   const { errors, validate } = useValidation({
     message: { required: true, maxLength: 300, minLength: 2 },
@@ -173,11 +266,11 @@ const CreateNewPost = () => {
           : null;
       },
     },
-    lang: { required: true },
+    visibility: { required: true },
   });
 
   const submitData = async () => {
-    const isValid = validate({ message, tags, lang });
+    const isValid = validate({ message, tags, visibility });
 
     if (!isValid) {
       console.log("Validation errors:", errors);
@@ -193,17 +286,55 @@ const CreateNewPost = () => {
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0);
 
-      // تبدیل visibility: "e" -> "everyone", "s" -> "followers"
-      const visibilityValue = lang[0]?.value === "e" ? "everyone" : "followers";
+      const visibilityValue = visibility[0]?.value;
 
-      const postData = {
-        description: message,
-        tags: tagsArray,
-        recommended: textMessages,
-        visibility: visibilityValue as "everyone" | "followers" | "private",
-      };
+      // اگر فایل یا تصویر انتخاب شده باشد، از FormData استفاده می‌کنیم
+      if (selectedImage || (selectedFile && !selectedFile.canceled)) {
+        const formData = new FormData();
 
-      await postService.create(postData);
+        // اضافه کردن فیلدهای متنی
+        formData.append("description", message);
+        formData.append("recommended", textMessages.toString());
+        formData.append("visibility", visibilityValue);
+
+        // اضافه کردن تگ‌ها
+        tagsArray.forEach((tag, index) => {
+          formData.append(`tags[${index}]`, tag);
+        });
+
+        // اضافه کردن تصویر یا فایل
+        if (selectedImage) {
+          const filename = selectedImage.split("/").pop() || "image.jpg";
+          const match = /\.(\w+)$/.exec(filename);
+          const type = match ? `image/${match[1]}` : "image/jpeg";
+
+          formData.append("images", {
+            uri: selectedImage,
+            name: filename,
+            type: type,
+          } as any);
+        } else if (selectedFile && !selectedFile.canceled && selectedFile.assets[0]) {
+          const file = selectedFile.assets[0];
+          formData.append("files", {
+            uri: file.uri,
+            name: file.name || "file",
+            type: file.mimeType || "application/octet-stream",
+          } as any);
+        }
+
+        // ارسال با FormData
+        await apiClient.uploadFile("/posts", formData);
+      } else {
+        // ارسال بدون فایل (JSON)
+        const postData = {
+          description: message,
+          tags: tagsArray,
+          recommended: textMessages,
+          visibility: visibilityValue as "everyone" | "followers" | "private",
+        };
+
+        await postService.create(postData);
+      }
 
       Alert.alert("Success", "Post created successfully!", [
         {
@@ -256,9 +387,62 @@ const CreateNewPost = () => {
           )}
         </View>
         <View style={styles.uploadDataIcons}>
-          <FontAwesome name="image" size={25} color={theme.text} />
-          <Ionicons name="document-text-outline" size={25} color={theme.text} />
+          <TouchableOpacity
+            style={styles.uploadButton}
+            onPress={pickImage}
+            disabled={!!selectedFile}
+          >
+            <FontAwesome
+              name="image"
+              size={25}
+              color={selectedFile ? theme.subText : theme.text}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.uploadButton}
+            onPress={pickDocument}
+            disabled={!!selectedImage}
+          >
+            <Ionicons
+              name="document-text-outline"
+              size={25}
+              color={selectedImage ? theme.subText : theme.text}
+            />
+          </TouchableOpacity>
         </View>
+
+        {selectedImage && (
+          <View style={{ marginTop: 10 }}>
+            <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
+            <TouchableOpacity
+              style={styles.removeButton}
+              onPress={removeSelectedMedia}
+            >
+              <ThemedText type="error" style={{ textAlign: "center", marginTop: 5 }}>
+                Remove Image
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {selectedFile && !selectedFile.canceled && selectedFile.assets[0] && (
+          <View style={styles.selectedFileContainer}>
+            <Ionicons name="document" size={24} color={theme.text} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <ThemedText type="subtitle" style={{ color: theme.text }}>
+                {selectedFile.assets[0].name}
+              </ThemedText>
+              {selectedFile.assets[0].size && (
+                <ThemedText type="subText">
+                  {(selectedFile.assets[0].size / 1024).toFixed(2)} KB
+                </ThemedText>
+              )}
+            </View>
+            <TouchableOpacity onPress={removeSelectedMedia}>
+              <Ionicons name="close-circle" size={24} color={theme.text} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.tagsBox}>
           <ThemedText
@@ -325,24 +509,26 @@ const CreateNewPost = () => {
 
           <SelectBox
             options={[
-              { label: "EveryOne", value: "e" },
-              { label: "Specific", value: "s" },
+              { label: "Everyone", value: "everyone" },
+              { label: "Followers", value: "followers" },
+              { label: "Private", value: "private" },
             ]}
-            value={lang[0].label} // فقط label برای نمایش در SelectBox
+            value={visibility[0].label} // فقط label برای نمایش در SelectBox
             onChange={(val) => {
               const selectedOption = [
-                { label: "EveryOne", value: "e" },
-                { label: "Specific", value: "s" },
+                { label: "Everyone", value: "everyone" },
+                { label: "Followers", value: "followers" },
+                { label: "Private", value: "private" },
               ].find((opt) => opt.value === val);
 
               if (selectedOption) {
-                setLang([selectedOption]); // کل گزینه رو ذخیره کن
+                setVisibility([selectedOption]); // کل گزینه رو ذخیره کن
               }
             }}
             title="List of Post Visibility"
           />
-          {errors.lang && (
-            <ThemedText style={{ color: "red" }}>{errors.lang}</ThemedText>
+          {errors.visibility && (
+            <ThemedText style={{ color: "red" }}>{errors.visibility}</ThemedText>
           )}
         </View>
 

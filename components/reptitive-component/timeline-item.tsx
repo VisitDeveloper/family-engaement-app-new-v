@@ -1,8 +1,8 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import {
-    CommentResponseDto,
-    commentService,
-    type AuthorResponseDto,
+  CommentResponseDto,
+  commentService,
+  type AuthorResponseDto,
 } from "@/services/comment.service";
 import { useStore } from "@/store";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
