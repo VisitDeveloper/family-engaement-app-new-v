@@ -32,6 +32,7 @@ export interface ResourceItemProps {
   onPress?: (i: any) => void;
   onLike?: () => void;
   onSave?: () => void;
+  onCommentAdded?: () => void;
   lastComment?: CommentResponseDto;
   setComment?: (text: string) => void;
 }
@@ -368,7 +369,10 @@ export default function TimelineItem(props: ResourceItemProps) {
                         content: comment.trim(),
                       });
                       setComment("");
-                      // Optionally refresh comments
+                      // Refresh comments after adding
+                      if (props.onCommentAdded) {
+                        props.onCommentAdded();
+                      }
                     } catch (err: any) {
                       Alert.alert(
                         "Error",

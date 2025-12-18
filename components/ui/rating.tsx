@@ -1,17 +1,23 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { Ionicons } from "@expo/vector-icons"; // اگر Expo استفاده نمی‌کنی باید react-native-vector-icons نصب کنی
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { ThemedText } from "../themed-text";
 
 interface RatingProps {
     maxRating?: number;
     size?: number;
-    onRatingChange?: (e: any) => void
+    onRatingChange?: (e: any) => void;
+    initialRating?: number;
 }
 
-const Rating = ({ maxRating = 5, size = 32, onRatingChange }: RatingProps) => {
-    const [rating, setRating] = useState(0);
+const Rating = ({ maxRating = 5, size = 32, onRatingChange, initialRating = 0 }: RatingProps) => {
+    const [rating, setRating] = useState(initialRating);
+
+    // Update rating when initialRating changes
+    useEffect(() => {
+        setRating(initialRating);
+    }, [initialRating]);
 
     const handlePress = (value: any) => {
         setRating(value);

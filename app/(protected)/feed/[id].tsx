@@ -12,12 +12,13 @@ import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { usePathname } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -82,7 +83,7 @@ const FeedDetailScreen = () => {
         limit: 100,
         sort: "newest",
       });
-      setComments(response.comments);
+      setComments(response || []);
     } catch (err: any) {
       console.error("Error fetching comments:", err);
       // Don't show alert for comments error, just log it
@@ -339,7 +340,33 @@ const FeedDetailScreen = () => {
               console.error("Error toggling save:", error);
             }
           }}
+          onCommentAdded={async () => {
+            await refreshData();
+          }}
         />
+
+        {/* Comments Section */}
+        <View style={styles.commentsSection}>
+          <ThemedText type="subtitle" style={styles.commentsTitle}>
+            Comments ({comments?.length || 0})
+          </ThemedText>
+          {commentsLoading ? (
+            <View style={{ padding: 20, alignItems: "center" }}>
+              <ActivityIndicator size="small" color={theme.tint} />
+            </View>
+          ) : comments.length === 0 ? (
+            <ThemedText type="subText" style={{ textAlign: "center", padding: 20 }}>
+              No comments yet. Be the first to comment!
+            </ThemedText>
+          ) : (
+            <FlatList
+              data={comments}
+              renderItem={renderComment}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+            />
+          )}
+        </View>
       </ScrollView>
     </View>
   );
