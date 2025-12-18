@@ -23,6 +23,7 @@ export interface PostResponseDto {
   updatedAt: string;
   isSaved?: boolean;
   isLiked?: boolean;
+  lastComment?: CommentResponseDto | null;
 }
 
 export interface CommentResponseDto {
@@ -34,6 +35,8 @@ export interface CommentResponseDto {
   repliesCount: number;
   createdAt: string;
   updatedAt: string;
+  isLiked?: boolean;
+  replies?: CommentResponseDto[];
 }
 
 export interface CreatePostDto {
@@ -98,7 +101,6 @@ class PostServiceImpl implements PostService {
       const endpoint = `/posts${queryString ? `?${queryString}` : ''}`;
       
       const response = await apiClient.get<{ posts: PostResponseDto[], limit: number, page: number, total: number }>(endpoint);
-      console.log(response);
       return response;
     } catch (error) {
       const apiError = error as ApiError;

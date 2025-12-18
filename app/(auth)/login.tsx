@@ -81,13 +81,11 @@ export default function LoginScreen() {
 
         // ذخیره user و role - ذخیره تمام اطلاعات user از API
         if (response.user) {
-          
-          console.log("response.user", response.user);
           useStore.getState().setUser({
             // @ts-ignore
             id: response.user.id,
             name:
-              response.user.name ||
+              // response.user.name ||
               response.user.firstName ||
               response.user.lastName
                 ? `${response.user.firstName || ""} ${
@@ -96,8 +94,9 @@ export default function LoginScreen() {
                 : email.split("@")[0],
             // @ts-ignore
             email: response.user.email || email,
-            role: response.user.role || detectedRole || null,
+            // role: response.user.role || detectedRole || null,
             profilePicture: response.user.profilePicture,
+            childName: response.user.childName,
             ...response.user, // ذخیره تمام فیلدهای اضافی
           });
         } else {
@@ -137,7 +136,7 @@ export default function LoginScreen() {
             // @ts-ignore
             id: response.user.id,
             name:
-              response.user.name ||
+              // response.user.name ||
               response.user.firstName ||
               response.user.lastName
                 ? `${response.user.firstName || ""} ${
@@ -146,7 +145,7 @@ export default function LoginScreen() {
                 : email.split("@")[0],
             // @ts-ignore
             email: response.user.email || email,
-            role: response.user.role || detectedRole || undefined,
+            // role: response.user.role || detectedRole || undefined,
             profilePicture: response.user.profilePicture,
             ...response.user, // ذخیره تمام فیلدهای اضافی
           });
