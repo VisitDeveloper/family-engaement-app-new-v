@@ -1,16 +1,22 @@
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
+import {
+  ConversationResponseDto,
+  messagingService,
+} from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { AntDesign, Feather, FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -28,47 +34,6 @@ interface Messages extends Contact {
   group?: boolean;
   admin?: boolean;
 }
-
-const messages: Messages[] = [
-  {
-    id: "1",
-    name: "Ms. Alvarez",
-    message: "Sarah did wonderful work on her math worksheet!",
-    time: "2:30 PM",
-    unread: 2,
-    avatar: null,
-    online: true,
-  },
-  {
-    id: "2",
-    name: "Room 5B Class Updates",
-    message: "Tomorrow is picture day! Please have children...",
-    time: "11:45 AM",
-    online: false,
-    unread: 0,
-    avatar: "https://i.pravatar.cc/150?img=32",
-    group: true,
-  },
-  {
-    id: "3",
-    name: "Principal Johnson",
-    message: "Parent-teacher conferences are scheduled...",
-    time: "Yesterday",
-    unread: 1,
-    online: false,
-    avatar: "https://i.pravatar.cc/150?img=12",
-    admin: true,
-  },
-  {
-    id: "4",
-    name: "Mr. Rodriguez - Art",
-    message: "Jason created a beautiful painting today!",
-    time: "Yesterday",
-    unread: 0,
-    avatar: "https://i.pravatar.cc/150?img=5",
-    online: false,
-  },
-];
 
 // ✅ Message Item Component
 const MessageItem = ({
@@ -115,37 +80,131 @@ const MessageItem = ({
 export default function MessagesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const addChat = useStore((state: any) => state.addChat);
   const theme = useStore((state: any) => state.theme);
+  const conversations = useStore((state: any) => state.conversations);
+  const setConversations = useStore((state: any) => state.setConversations);
+  const setLoading = useStore((state: any) => state.setLoading);
+  const loading = useStore((state: any) => state.loading);
+  const currentUser = useStore((state: any) => state.user);
+  const currentUserId = currentUser?.id || null;
 
   const [query, setQuery] = useState("");
-  const [filteredContacts, setFilteredContacts] = useState<Messages[]>(messages);
+  const [filteredContacts, setFilteredContacts] = useState<Messages[]>([]);
 
-  const handleDebouncedQuery = (value: string) => {
-    if (!value) {
-      setFilteredContacts(messages);
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+  };
+
+  const convertConversationToMessage = useCallback((
+    conv: ConversationResponseDto
+  ): Messages => {
+    const name =
+      typeof conv.name === "string"
+        ? conv.name
+        : conv.type === "direct" &&
+          conv.participants &&
+          conv.participants.length > 0
+        ? conv.participants.find((p) => p.id !== currentUserId)?.firstName ||
+          "Unknown"
+        : "Chat";
+
+    const lastMessage = conv.lastMessage?.content || "";
+    const time = conv.lastMessage
+      ? formatTime(conv.lastMessage.createdAt)
+      : formatTime(conv.updatedAt);
+
+    return {
+      id: conv.id,
+      name,
+      message: lastMessage,
+      time,
+      unread: conv.unreadCount || 0,
+      avatar: conv.imageUrl || null,
+      online: false, // You might want to add online status from participants
+      group: conv.type === "group",
+    };
+  }, [currentUserId]);
+
+  const loadConversations = useCallback(async () => {
+    setLoading(true);
+    try {
+      const convs = await messagingService.getConversations();
+      setConversations(convs.conversations);
+    } catch (error: any) {
+      console.error("Error loading conversations:", error);
+      Alert.alert("Error", error.message || "Failed to load conversations");
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setConversations]);
+
+  const filterConversations = useCallback((searchQuery: string) => {
+    if (conversations.length === 0) {
+      setFilteredContacts([]);
       return;
     }
 
-    const lowerQuery = value.toLowerCase();
-    const results = messages.filter(
-      msg =>
+    const mappedMessages = conversations.map(convertConversationToMessage);
+    
+    if (!searchQuery) {
+      setFilteredContacts(mappedMessages);
+      return;
+    }
+
+    const lowerQuery = searchQuery.toLowerCase();
+    const results = mappedMessages.filter(
+      (msg: Messages) =>
         msg.name.toLowerCase().includes(lowerQuery) ||
         msg.message.toLowerCase().includes(lowerQuery)
     );
 
     setFilteredContacts(results);
-  };
+  }, [conversations, convertConversationToMessage]);
+
+  const handleDebouncedQuery = useCallback((debouncedValue: string) => {
+    filterConversations(debouncedValue);
+  }, [filterConversations]);
+
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
+  useEffect(() => {
+    // Update filtered contacts when conversations change (use current query)
+    // The SearchContainer will handle debounced updates via handleDebouncedQuery
+    if (conversations.length > 0) {
+      filterConversations(query);
+    } else {
+      setFilteredContacts([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversations, convertConversationToMessage]);
 
   const openChat = useCallback(
     (ITEM: Messages) => {
-      addChat(ITEM);
       router.push({
         pathname: "/chat/[chatID]",
         params: { chatID: ITEM.id },
       });
     },
-    [addChat, router]
+    [router]
   );
 
   // ✅ Styles
@@ -228,7 +287,6 @@ export default function MessagesScreen() {
 
   return (
     <View style={styles.container}>
-
       <HeaderTabItem
         title="Messages"
         subTitle="Conversations and notices"
@@ -264,17 +322,32 @@ export default function MessagesScreen() {
       </View>
 
       {/* Message List */}
-      <FlatList
-        data={filteredContacts}
-        keyExtractor={(item) => item.id}
-        style={{ flex: 1, marginTop: -8 }}
-        showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
-        renderItem={({ item }) => (
-          <MessageItem item={item} onPress={openChat} styles={styles} />
-        )}
-      />
+      {loading && filteredContacts.length === 0 ? (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" color={theme.tint} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredContacts}
+          keyExtractor={(item) => item.id}
+          style={{ flex: 1, marginTop: -8 }}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
+          renderItem={({ item }) => (
+            <MessageItem item={item} onPress={openChat} styles={styles} />
+          )}
+          ListEmptyComponent={
+            <View style={{ padding: 20, alignItems: "center" }}>
+              <Text style={{ color: theme.subText }}>
+                No conversations found
+              </Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
