@@ -3,11 +3,16 @@ import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import TimelineItem from "@/components/reptitive-component/timeline-item";
 import { ThemedText } from "@/components/themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { likeService } from "@/services/like.service";
+import { PostResponseDto, postService } from "@/services/post.service";
+import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   ScrollView,
@@ -201,25 +206,90 @@ const TimelineScreen = () => {
       } as const)
   );
   const tabsData = [
-    "All Posts",
-    "Media",
-    "Medias",
-    "Reports",
-    "Highlights",
-    "Saved",
+    { label: "All Posts", filter: "all" as const },
+    { label: "Media", filter: "media" as const },
+    { label: "Reports", filter: "reports" as const },
+    { label: "Highlights", filter: "recommended" as const },
+    { label: "Saved", filter: "saved" as const },
   ];
   const [activeTab, setActiveTab] = useState(0);
+  const [posts, setPosts] = useState<PostResponseDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Helper function to format time ago
+  const formatTimeAgo = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "just now";
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  // Fetch posts from API
+  const fetchPosts = useCallback(
+    async (filter?: "all" | "media" | "reports" | "recommended" | "saved") => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const params = {
+          page: 1,
+          limit: 50,
+          filter: filter || "all",
+        };
+
+        let response;
+        if (filter === "saved") {
+          response = await postService.getSavedPosts(params);
+        } else {
+          response = await postService.getAll(params);
+        }
+
+        setPosts(response.posts);
+      } catch (err: any) {
+        const errorMessage =
+          err.message || "Failed to load posts. Please try again.";
+        setError(errorMessage);
+        Alert.alert("Error", errorMessage);
+        console.error("Error fetching posts:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  // Initial load
+  useEffect(() => {
+    fetchPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Handle tab change
+  const handleTabChange = (index: number) => {
+    setActiveTab(index);
+    const filter = tabsData[index].filter;
+    fetchPosts(filter);
+  };
 
   const renderItem = ({ item, index }: any) => (
     <TouchableOpacity
       style={[styles.tab, activeTab === index && styles.tabActive]}
-      onPress={() => setActiveTab(index)}
+      onPress={() => handleTabChange(index)}
     >
       <ThemedText
         type="subText"
         style={{ color: activeTab === index ? "#fff" : theme.text }}
       >
-        {item}
+        {item.label}
       </ThemedText>
     </TouchableOpacity>
   );
@@ -285,45 +355,108 @@ const TimelineScreen = () => {
         </Link>
       </RoleGuard>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
-      >
-        <TimelineItem
-          name="Ms. Alvarez"
-          seen="2 hours ago"
-          desc="Sarah built an amazing tower with 20 blocks today! She showed excellent spatial reasoning and counted each block as she added it. This demonstrates her growing math skills and patience."
-          numberOfComment={1}
-          numberOfLike={3}
-          commenter="Mom"
-          commnet="This is wonderful! Thank you for sharing."
-          // require('./../../assets/images/partial-react-logo.png')
-          image={require("./../../../assets/images/timeline-1.jpg")}
-        />
+      {loading ? (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" color={theme.tint} />
+          <ThemedText type="subText" style={{ marginTop: 10 }}>
+            Loading posts...
+          </ThemedText>
+        </View>
+      ) : error ? (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          <ThemedText
+            type="default"
+            style={{ color: "#ff4444", textAlign: "center", marginBottom: 10 }}
+          >
+            {error}
+          </ThemedText>
+          <TouchableOpacity
+            onPress={() => fetchPosts(tabsData[activeTab].filter)}
+            style={{
+              backgroundColor: theme.tint,
+              paddingHorizontal: 20,
+              paddingVertical: 10,
+              borderRadius: 8,
+            }}
+          >
+            <ThemedText style={{ color: "#fff" }}>Retry</ThemedText>
+          </TouchableOpacity>
+        </View>
+      ) : posts.length === 0 ? (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          <ThemedText type="subText" style={{ textAlign: "center" }}>
+            No posts found
+          </ThemedText>
+        </View>
+      ) : (
+        <ScrollView
+          style={{ flex: 1 }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
+        >
+          {posts.map((post) => {
+            const authorName =
+              post.author.firstName && post.author.lastName
+                ? `${post.author.firstName} ${post.author.lastName}`
+                : post.author.firstName ||
+                  post.author.lastName ||
+                  post.author.email ||
+                  "Unknown";
 
-        <TimelineItem
-          name="Ms. Alvarez"
-          seen="2 hours ago"
-          desc="Sarah built an amazing tower with 20 blocks today! She showed excellent spatial reasoning and counted each block as she added it. This demonstrates her growing math skills and patience."
-          numberOfComment={1}
-          numberOfLike={3}
-          commenter="Mom"
-          commnet="This is wonderful! Thank you for sharing."
-          image={require("./../../../assets/images/timeline-2.jpg")}
-        />
-
-        <TimelineItem
-          name="Ms. Alvarez"
-          seen="2 hours ago"
-          desc="Sarah built an amazing tower with 20 blocks today! She showed excellent spatial reasoning and counted each block as she added it. This demonstrates her growing math skills and patience."
-          numberOfComment={1}
-          numberOfLike={3}
-          commenter="Mom"
-          commnet="This is wonderful! Thank you for sharing."
-          image={require("./../../../assets/images/timeline-3.jpg")}
-        />
-      </ScrollView>
+            return (
+              <TimelineItem
+                key={post.id}
+                postId={post.id}
+                name={authorName}
+                author={post.author}
+                seen={formatTimeAgo(post.createdAt)}
+                desc={post.description}
+                numberOfComment={post.commentsCount}
+                numberOfLike={post.likesCount}
+                tags={post.tags || []}
+                images={post.images || []}
+                files={post.files || []}
+                recommended={post.recommended}
+                isLiked={post.isLiked}
+                isSaved={post.isSaved}
+                lastComment={post.lastComment || undefined}
+                onLike={async () => {
+                  try {
+                    await likeService.likePost(post.id);
+                    fetchPosts(tabsData[activeTab].filter);
+                  } catch (error) {
+                    console.error("Error toggling like:", error);
+                  }
+                }}
+                onSave={async () => {
+                  try {
+                    await saveService.savePost(post.id);
+                    fetchPosts(tabsData[activeTab].filter);
+                  } catch (error) {
+                    console.error("Error toggling save:", error);
+                  }
+                }}
+              />
+            );
+          })}
+        </ScrollView>
+      )}
     </View>
   );
 };

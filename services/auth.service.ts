@@ -1,4 +1,4 @@
-import { apiClient, ApiError } from './api';
+import { apiClient, ApiError } from "./api";
 
 export interface LoginRequest {
   email: string;
@@ -17,9 +17,11 @@ export interface UserResponseDto {
   email: string;
   firstName?: string;
   lastName?: string;
-  role: 'admin' | 'teacher' | 'parent';
+  role: "admin" | "teacher" | "parent";
   phoneNumber?: string;
   profilePicture?: string;
+  childName?: string;
+  subjects?: string[];
 }
 
 // LoginResponseDto from API
@@ -36,7 +38,7 @@ export interface AuthResponse {
 export interface ChangePasswordRequest {
   oldPassword: string;
   newPassword: string;
-  confirmPassword?: string;
+  // confirmPassword?: string;
 }
 
 export interface ChangePasswordResponse {
@@ -54,7 +56,7 @@ export interface ProfileResponse {
   email: string;
   firstName?: string;
   lastName?: string;
-  role: 'admin' | 'teacher' | 'parent';
+  role: "admin" | "teacher" | "parent";
   phoneNumber?: string;
   profilePicture?: string;
   subjects?: string[]; // Array of subjects/interests
@@ -73,12 +75,18 @@ export interface UserProfile {
   phoneNumber?: string;
   phone?: string; // backward compatibility
   profilePicture?: string;
-  role: 'admin' | 'teacher' | 'parent';
+  role: "admin" | "teacher" | "parent";
   subjects?: string[]; // Array of subjects/interests
   childName?: string; // Child's name (for parent role)
   createdAt?: string;
   updatedAt?: string;
   [key: string]: any;
+}
+
+export interface UpdateProfilePictureResponse {
+  message?: string;
+  profilePicture?: string;
+  user?: ProfileResponse;
 }
 
 export interface AuthService {
@@ -87,13 +95,17 @@ export interface AuthService {
   logout(): Promise<void>;
   changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse>;
   getProfile(): Promise<ProfileResponse>;
+  updateProfilePicture(imageUri: string): Promise<UpdateProfilePictureResponse>;
 }
 
 class AuthServiceImpl implements AuthService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-      
+      const response = await apiClient.post<AuthResponse>(
+        "/auth/login",
+        credentials
+      );
+
       // استفاده از access_token
       const accessToken = response.access_token || response.data?.access_token;
       if (accessToken) {
@@ -109,7 +121,7 @@ class AuthServiceImpl implements AuthService {
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Login failed. Please try again.',
+        message: apiError.message || "Login failed. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -118,7 +130,7 @@ class AuthServiceImpl implements AuthService {
 
   async register(data: RegisterRequest): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<AuthResponse>('/auth/register', {
+      const response = await apiClient.post<AuthResponse>("/auth/register", {
         email: data.email,
         password: data.password,
       });
@@ -138,7 +150,7 @@ class AuthServiceImpl implements AuthService {
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Registration failed. Please try again.',
+        message: apiError.message || "Registration failed. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -149,30 +161,38 @@ class AuthServiceImpl implements AuthService {
     try {
       // فراخوانی API logout در صورت وجود endpoint
       try {
-        await apiClient.post('/auth/logout');
+        await apiClient.post("/auth/logout");
       } catch {
         // اگر endpoint وجود نداشت یا خطا داد، ادامه می‌دهیم
-        console.log('Logout API endpoint not available or failed, clearing token locally');
+        console.log(
+          "Logout API endpoint not available or failed, clearing token locally"
+        );
       }
-      
+
       // پاک کردن token از storage
       await apiClient.clearAuthToken();
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error("Error during logout:", error);
       // حتی اگر خطا رخ دهد، token را پاک می‌کنیم
       await apiClient.clearAuthToken();
     }
   }
 
-  async changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+  async changePassword(
+    data: ChangePasswordRequest
+  ): Promise<ChangePasswordResponse> {
     try {
-      const response = await apiClient.put<ChangePasswordResponse>('/auth/change-password', {
-        oldPassword: data.oldPassword,
-        newPassword: data.newPassword,
-        confirmPassword: data.confirmPassword,
-      });
 
-      // اگر API یک token جدید برگرداند، آن را ذخیره می‌کنیم
+      
+      const response = await apiClient.put<ChangePasswordResponse>(
+        "/auth/change-password",
+        {
+          oldPassword: data.oldPassword,
+          newPassword: data.newPassword,
+          // confirmPassword: data.confirmPassword,
+        }
+      );
+
       const accessToken = response.access_token || response.data?.access_token;
       if (accessToken) {
         await apiClient.setAuthToken(accessToken);
@@ -181,15 +201,16 @@ class AuthServiceImpl implements AuthService {
       return response;
     } catch (error) {
       const apiError = error as ApiError;
-      
+
       // اگر خطای 401 یا 403 باشد، token باطل شده و باید دوباره لاگین کنیم
       if (apiError.status === 401 || apiError.status === 403) {
         // Token باطل شده، آن را پاک می‌کنیم
         await apiClient.clearAuthToken();
       }
-      
+
       throw {
-        message: apiError.message || 'Password change failed. Please try again.',
+        message:
+          apiError.message || "Password change failed. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -198,12 +219,52 @@ class AuthServiceImpl implements AuthService {
 
   async getProfile(): Promise<ProfileResponse> {
     try {
-      const response = await apiClient.get<ProfileResponse>('/auth/profile');
+      const response = await apiClient.get<ProfileResponse>("/auth/profile");
       return response;
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to fetch profile. Please try again.',
+        message:
+          apiError.message || "Failed to fetch profile. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async updateProfilePicture(imageUri: string): Promise<UpdateProfilePictureResponse> {
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      
+      // Extract filename from URI
+      const filename = imageUri.split('/').pop() || 'profile.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      
+      // Append file to FormData
+      formData.append('file', {
+        uri: imageUri,
+        name: filename,
+        type: type,
+      } as any);
+
+      debugger
+
+      const response = await apiClient.uploadFile<UpdateProfilePictureResponse>(
+        "/auth/profile/picture",
+        formData
+      );
+
+      return response;
+    } catch (error) {
+      debugger
+
+      console.log(error)
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message || "Failed to update profile picture. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -212,4 +273,3 @@ class AuthServiceImpl implements AuthService {
 }
 
 export const authService: AuthService = new AuthServiceImpl();
-
