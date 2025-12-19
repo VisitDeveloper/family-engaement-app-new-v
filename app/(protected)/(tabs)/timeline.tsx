@@ -8,7 +8,7 @@ import { PostResponseDto, postService } from "@/services/post.service";
 import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { Link, useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -318,7 +318,10 @@ const TimelineScreen = () => {
       </View>
 
       <RoleGuard roles={["teacher"]}>
-        <Link href="/create-post" style={{ marginTop: 10 }}>
+        <TouchableOpacity
+          onPress={() => router.push("/create-post")}
+          style={{ marginTop: -5 }}
+        >
           <View style={styles.createElement}>
             <Image
               source={
@@ -353,7 +356,7 @@ const TimelineScreen = () => {
             </TouchableOpacity>
           </View>
           {/* آواتار کاربر */}
-        </Link>
+        </TouchableOpacity>
       </RoleGuard>
 
       {loading ? (
