@@ -25,7 +25,7 @@ export interface ConversationResponseDto {
   unreadCount: number;
   lastMessage?: MessageResponseDto | null;
   participantCount: number;
-  participants?: UserDto[];
+  participants?: { id: string; user: UserDto }[];
 }
 
 export interface CreateConversationDto {

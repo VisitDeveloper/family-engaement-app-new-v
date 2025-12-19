@@ -6,7 +6,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { eventService } from "@/services/event.service";
 import { useStore } from "@/store"; // همون Zustand store که theme رو برمی‌گردونه
 import { AntDesign, FontAwesome6, Ionicons } from "@expo/vector-icons";
-import { Redirect, useRouter } from "expo-router";
+import { Redirect, useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 
@@ -97,6 +97,13 @@ export default function ParentDashboard() {
     useEffect(() => {
         fetchUpcomingEvents();
     }, [fetchUpcomingEvents]);
+
+    // Refresh events when screen comes into focus (e.g., after creating an event)
+    useFocusEffect(
+        useCallback(() => {
+            fetchUpcomingEvents();
+        }, [fetchUpcomingEvents])
+    );
 
     const activities: ActivityItem[] = [
         {

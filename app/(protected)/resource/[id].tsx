@@ -9,12 +9,12 @@ import { AntDesign, Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, usePathname, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -29,7 +29,6 @@ const BookDetailScreen = () => {
   console.log("id", id);
 
   const resourceItem = useStore((state: any) => state.getResourceById(`${id}`));
-  debugger;
   console.log(resourceItem, "resourceItem");
   const addResource = useStore((state: any) => state.addResource);
   const [isSaved, setIsSaved] = useState<boolean>(

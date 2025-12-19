@@ -6,7 +6,7 @@ import { useThemedStyles } from '@/hooks/use-theme-style';
 import { EventResponseDto, eventService, RSVPStatus, TimeSlotDto } from '@/services/event.service';
 import { useStore } from '@/store';
 import { AntDesign, Feather, FontAwesome, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -177,6 +177,13 @@ const SchoolCalendarScreen = () => {
     useEffect(() => {
         fetchEvents();
     }, [fetchEvents]);
+
+    // Refresh events when screen comes into focus (e.g., after creating an event)
+    useFocusEffect(
+        useCallback(() => {
+            fetchEvents();
+        }, [fetchEvents])
+    );
 
     const styles = useThemedStyles((t) => ({
         container: { flex: 1, backgroundColor: t.bg, paddingHorizontal: 10 },

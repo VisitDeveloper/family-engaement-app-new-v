@@ -8,8 +8,8 @@ export default function Header({
   userImage,
   logo,
   link,
-  // theme
-}: {
+}: // theme
+{
   userImage: any;
   logo: any;
   link: any;
@@ -18,12 +18,16 @@ export default function Header({
   const insets = useSafeAreaInsets();
   const theme = useStore((state) => state.theme);
 
-
   return (
     <View
       style={[
         styles.safeArea,
-        { paddingTop: Math.min(insets.top, 10), backgroundColor: theme.bg, paddingBottom: 40, height:90  },
+        {
+          paddingTop: Math.min(insets.top, 10),
+          backgroundColor: theme.bg,
+          paddingBottom: 40,
+          height: 90,
+        },
       ]}
     >
       <View style={styles.container}>
@@ -33,10 +37,7 @@ export default function Header({
             <Image source={logo} style={styles.logo} />
           ) : (
             <View
-              style={[
-                styles.logoPlaceholder,
-                { backgroundColor: theme.bg },
-              ]}
+              style={[styles.logoPlaceholder, { backgroundColor: theme.bg }]}
             />
           )}
         </View>
@@ -49,7 +50,7 @@ export default function Header({
                 source={userImage}
                 style={[
                   styles.userImage,
-                  { borderColor: theme.text },
+                  { borderColor: theme.text, backgroundColor: theme.panel },
                 ]}
               />
             ) : (
@@ -57,16 +58,14 @@ export default function Header({
                 name="user-circle"
                 size={50}
                 color={theme.text}
+                style={{ backgroundColor: theme.bg }}
               />
             )}
             <Feather
               name="settings"
               size={15}
               color={theme.text}
-              style={[
-                styles.iconSetting,
-                { backgroundColor: theme.bg },
-              ]}
+              style={[styles.iconSetting, { backgroundColor: theme.bg }]}
             />
           </TouchableOpacity>
         </Link>
@@ -78,7 +77,7 @@ export default function Header({
 const IMAGE_SIZE = 50;
 
 const styles = StyleSheet.create({
-  safeArea: {flex:1, height:90 , marginTop:0,marginBottom:5},
+  safeArea: { flex: 1, height: 90, marginTop: 0, marginBottom: 5 },
   container: {
     flexDirection: "row",
     justifyContent: "space-between",

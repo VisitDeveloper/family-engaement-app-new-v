@@ -344,7 +344,6 @@ const CreateNewPost = () => {
         },
       ]);
     } catch (error: any) {
-      debugger
       const errorMessage =
         error.message || "Failed to create post. Please try again.";
       Alert.alert("Error", errorMessage);

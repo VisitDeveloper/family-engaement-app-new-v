@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { performAutoLogout } from '@/utils/auto-logout';
 
 const API_BASE_URL = 'http://localhost:3006';
 
@@ -102,6 +103,15 @@ class ApiClient {
           status: response.status,
           data,
         };
+        
+        // اگر خطای 401 (Unauthorized) باشد، به صورت خودکار logout می‌کنیم
+        if (response.status === 401) {
+          // اجرای logout خودکار در پس‌زمینه (بدون await تا blocking نشود)
+          performAutoLogout().catch((logoutError) => {
+            console.error('Error during auto logout:', logoutError);
+          });
+        }
+        
         throw error;
       }
 

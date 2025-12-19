@@ -44,38 +44,40 @@ const MessageItem = ({
   item: Messages;
   onPress: (msg: Messages) => void;
   styles: any;
-}) => (
-  <TouchableOpacity onPress={() => onPress(item)}>
-    <View style={styles.messageItem}>
-      {item.avatar ? (
-        <Image source={{ uri: item.avatar }} style={styles.avatar} />
-      ) : (
-        <View style={styles.avatarPlaceholder}>
-          <Text style={{ color: "#fff" }}>
-            {item.name[0]}
-            {item.name.split(" ")[1] ? item.name.split(" ")[1][0] : ""}
+}) => {
+  return (
+    <TouchableOpacity onPress={() => onPress(item)}>
+      <View style={styles.messageItem}>
+        {item.avatar ? (
+          <Image source={{ uri: item.avatar }} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Text style={{ color: "#fff" }}>
+              {item.name[0]}
+              {item.name.split(" ")[1] ? item.name.split(" ")[1][0] : ""}
+            </Text>
+          </View>
+        )}
+
+        <View style={{ flex: 1, marginLeft: 10 }}>
+          <View style={styles.messageHeader}>
+            <Text style={styles.messageName}>{item.name}</Text>
+            <Text style={styles.messageTime}>{item.time}</Text>
+          </View>
+          <Text numberOfLines={1} style={styles.messageText}>
+            {item.message}
           </Text>
         </View>
-      )}
 
-      <View style={{ flex: 1, marginLeft: 10 }}>
-        <View style={styles.messageHeader}>
-          <Text style={styles.messageName}>{item.name}</Text>
-          <Text style={styles.messageTime}>{item.time}</Text>
-        </View>
-        <Text numberOfLines={1} style={styles.messageText}>
-          {item.message}
-        </Text>
+        {item.unread > 0 && (
+          <View style={styles.unreadBadge}>
+            <Text style={{ color: "#fff", fontSize: 12 }}>{item.unread}</Text>
+          </View>
+        )}
       </View>
-
-      {item.unread > 0 && (
-        <View style={styles.unreadBadge}>
-          <Text style={{ color: "#fff", fontSize: 12 }}>{item.unread}</Text>
-        </View>
-      )}
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 export default function MessagesScreen() {
   const insets = useSafeAreaInsets();
@@ -90,6 +92,11 @@ export default function MessagesScreen() {
 
   const [query, setQuery] = useState("");
   const [filteredContacts, setFilteredContacts] = useState<Messages[]>([]);
+
+  // console.log(
+  //   "conversations123",
+  //   conversations.map((c) => c.participants?.map((p) => p.user))
+  // );
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -112,35 +119,56 @@ export default function MessagesScreen() {
     return `${displayHours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
   };
 
-  const convertConversationToMessage = useCallback((
-    conv: ConversationResponseDto
-  ): Messages => {
-    const name =
-      typeof conv.name === "string"
-        ? conv.name
-        : conv.type === "direct" &&
-          conv.participants &&
-          conv.participants.length > 0
-        ? conv.participants.find((p) => p.id !== currentUserId)?.firstName ||
-          "Unknown"
-        : "Chat";
+  const convertConversationToMessage = useCallback(
+    (conv: ConversationResponseDto): Messages => {
+      let name = "Chat";
+      let avatar: string | null = null;
+      if (
+        conv.type === "direct" &&
+        conv.participants &&
+        conv.participants.length > 0
+      ) {
+        // For direct conversations, get name and avatar from the other participant
+        const otherParticipant = conv.participants.find(
+          (p) => p.user.id !== currentUserId
+        );
+        if (otherParticipant) {
+          // Construct full name from firstName and lastName
+          const fullName = `${otherParticipant.user.firstName || ""} ${
+            otherParticipant.user.lastName || ""
+          }`.trim();
+          name = fullName || otherParticipant.user.email || "Unknown";
+          avatar = otherParticipant.user.profilePicture || null;
+        }
+      } else {
+        // For group conversations, use conversation name and imageUrl
+        name =
+          typeof conv.name === "string"
+            ? conv.name
+            : typeof conv.name === "object" && conv.name !== null
+            ? (Object.values(conv.name)[0] as string) || "Group"
+            : "Group";
+        avatar = conv.imageUrl || null;
+      }
 
-    const lastMessage = conv.lastMessage?.content || "";
-    const time = conv.lastMessage
-      ? formatTime(conv.lastMessage.createdAt)
-      : formatTime(conv.updatedAt);
+      const lastMessage = conv.lastMessage?.content || "";
+      const time = conv.lastMessage
+        ? formatTime(conv.lastMessage.createdAt)
+        : formatTime(conv.updatedAt);
 
-    return {
-      id: conv.id,
-      name,
-      message: lastMessage,
-      time,
-      unread: conv.unreadCount || 0,
-      avatar: conv.imageUrl || null,
-      online: false, // You might want to add online status from participants
-      group: conv.type === "group",
-    };
-  }, [currentUserId]);
+      return {
+        id: conv.id,
+        name,
+        message: lastMessage,
+        time,
+        unread: conv.unreadCount || 0,
+        avatar,
+        online: false, // You might want to add online status from participants
+        group: conv.type === "group",
+      };
+    },
+    [currentUserId]
+  );
 
   const loadConversations = useCallback(async () => {
     setLoading(true);
@@ -155,32 +183,38 @@ export default function MessagesScreen() {
     }
   }, [setLoading, setConversations]);
 
-  const filterConversations = useCallback((searchQuery: string) => {
-    if (conversations.length === 0) {
-      setFilteredContacts([]);
-      return;
-    }
+  const filterConversations = useCallback(
+    (searchQuery: string) => {
+      if (conversations.length === 0) {
+        setFilteredContacts([]);
+        return;
+      }
 
-    const mappedMessages = conversations.map(convertConversationToMessage);
-    
-    if (!searchQuery) {
-      setFilteredContacts(mappedMessages);
-      return;
-    }
+      const mappedMessages = conversations.map(convertConversationToMessage);
 
-    const lowerQuery = searchQuery.toLowerCase();
-    const results = mappedMessages.filter(
-      (msg: Messages) =>
-        msg.name.toLowerCase().includes(lowerQuery) ||
-        msg.message.toLowerCase().includes(lowerQuery)
-    );
+      if (!searchQuery) {
+        setFilteredContacts(mappedMessages);
+        return;
+      }
 
-    setFilteredContacts(results);
-  }, [conversations, convertConversationToMessage]);
+      const lowerQuery = searchQuery.toLowerCase();
+      const results = mappedMessages.filter(
+        (msg: Messages) =>
+          msg.name.toLowerCase().includes(lowerQuery) ||
+          msg.message.toLowerCase().includes(lowerQuery)
+      );
 
-  const handleDebouncedQuery = useCallback((debouncedValue: string) => {
-    filterConversations(debouncedValue);
-  }, [filterConversations]);
+      setFilteredContacts(results);
+    },
+    [conversations, convertConversationToMessage]
+  );
+
+  const handleDebouncedQuery = useCallback(
+    (debouncedValue: string) => {
+      filterConversations(debouncedValue);
+    },
+    [filterConversations]
+  );
 
   useEffect(() => {
     loadConversations();

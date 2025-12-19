@@ -7,13 +7,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Image,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface GroupItem {
@@ -35,6 +35,8 @@ export default function NewMessageScreen() {
   const router = useRouter();
   const currentUser = useStore((state: any) => state.user);
   const currentUserId = currentUser?.id || null;
+  const addConversation = useStore((state: any) => state.addConversation);
+  const setConversations = useStore((state: any) => state.setConversations);
 
   const [groups, setGroups] = useState<GroupItem[]>([]);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
@@ -218,6 +220,8 @@ export default function NewMessageScreen() {
           type: "direct",
           memberIds: [contact.id],
         });
+        // Add the new conversation to the store
+        addConversation(newConversation);
         router.push({
           pathname: "/chat/[chatID]",
           params: { chatID: newConversation.id },

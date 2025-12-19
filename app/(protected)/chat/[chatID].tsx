@@ -1,11 +1,11 @@
 import HeaderThreeSections from "@/components/reptitive-component/header-three-sections";
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { ConversationResponseDto, MessageResponseDto, messagingService } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
-import { usePathname, useRouter } from 'expo-router';
+import { usePathname } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { messagingService, MessageResponseDto, ConversationResponseDto } from "@/services/messaging.service";
 
 export default function ChatScreen() {
     const [input, setInput] = useState("");
@@ -174,10 +174,12 @@ export default function ChatScreen() {
         if (!conversation) return 'Chat';
         if (typeof conversation.name === 'string') return conversation.name;
         if (conversation.type === 'direct' && conversation.participants) {
-            const otherParticipant = conversation.participants.find(p => p.id !== currentUserId);
+            const otherParticipant = conversation.participants.find((p: any) => p.user.id !== currentUserId);
             if (otherParticipant) {
-                return `${otherParticipant.firstName || ''} ${otherParticipant.lastName || ''}`.trim() || otherParticipant.email;
+                return `${otherParticipant.user.firstName || ''} ${otherParticipant.user.lastName || ''}`.trim() || otherParticipant.user.email;
             }
+        }else if (conversation.type === 'group' && conversation.name) {
+            return conversation.name;
         }
         return 'Chat';
     };
@@ -212,7 +214,7 @@ export default function ChatScreen() {
                     contentContainerStyle={{ padding: 15 }}
                     showsVerticalScrollIndicator={false}
                     showsHorizontalScrollIndicator={false}
-                    inverted={false}
+                    inverted={true}
                 />
 
                 {/* Input */}

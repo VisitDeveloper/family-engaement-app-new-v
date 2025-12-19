@@ -182,8 +182,6 @@ class AuthServiceImpl implements AuthService {
     data: ChangePasswordRequest
   ): Promise<ChangePasswordResponse> {
     try {
-
-      
       const response = await apiClient.put<ChangePasswordResponse>(
         "/auth/change-password",
         {
@@ -232,24 +230,24 @@ class AuthServiceImpl implements AuthService {
     }
   }
 
-  async updateProfilePicture(imageUri: string): Promise<UpdateProfilePictureResponse> {
+  async updateProfilePicture(
+    imageUri: string
+  ): Promise<UpdateProfilePictureResponse> {
     try {
       // Create FormData for file upload
       const formData = new FormData();
-      
+
       // Extract filename from URI
-      const filename = imageUri.split('/').pop() || 'profile.jpg';
+      const filename = imageUri.split("/").pop() || "profile.jpg";
       const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
-      
+      const type = match ? `image/${match[1]}` : "image/jpeg";
+
       // Append file to FormData
-      formData.append('file', {
+      formData.append("file", {
         uri: imageUri,
         name: filename,
         type: type,
       } as any);
-
-      debugger
 
       const response = await apiClient.uploadFile<UpdateProfilePictureResponse>(
         "/auth/profile/picture",
@@ -258,13 +256,12 @@ class AuthServiceImpl implements AuthService {
 
       return response;
     } catch (error) {
-      debugger
-
-      console.log(error)
+      console.log(error);
       const apiError = error as ApiError;
       throw {
         message:
-          apiError.message || "Failed to update profile picture. Please try again.",
+          apiError.message ||
+          "Failed to update profile picture. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
