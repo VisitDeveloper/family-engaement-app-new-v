@@ -3,7 +3,7 @@ import { ThemedText } from "@/components/themed-text";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useValidation } from "@/hooks/use-validation";
-import { apiClient } from "@/services/api";
+import { messagingService } from "@/services/messaging.service";
 import { postService } from "@/services/post.service";
 import { useStore } from "@/store";
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
@@ -12,14 +12,14 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    Switch,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const CreateNewPost = () => {
@@ -279,7 +279,6 @@ const CreateNewPost = () => {
 
     try {
       setLoading(true);
-
       // تبدیل داده‌ها به فرمت API
       const tagsArray = tags
         .split(",")
@@ -288,53 +287,53 @@ const CreateNewPost = () => {
 
       const visibilityValue = visibility[0]?.value;
 
-      // اگر فایل یا تصویر انتخاب شده باشد، از FormData استفاده می‌کنیم
-      if (selectedImage || (selectedFile && !selectedFile.canceled)) {
-        const formData = new FormData();
+      // آماده‌سازی داده‌های پست
+      const postData: {
+        description: string;
+        tags: string[];
+        recommended: boolean;
+        visibility: "everyone" | "followers" | "private";
+        images?: string[];
+        files?: string[];
+      } = {
+        description: message,
+        tags: tagsArray,
+        recommended: textMessages,
+        visibility: visibilityValue as "everyone" | "followers" | "private",
+      };
 
-        // اضافه کردن فیلدهای متنی
-        formData.append("description", message);
-        formData.append("recommended", textMessages.toString());
-        formData.append("visibility", visibilityValue);
+      // اگر تصویر انتخاب شده باشد، ابتدا آپلود می‌کنیم
+      if (selectedImage) {
+        const filename = selectedImage.split("/").pop() || "image.jpg";
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : "image/jpeg";
 
-        // اضافه کردن تگ‌ها
-        tagsArray.forEach((tag, index) => {
-          formData.append(`tags[${index}]`, tag);
-        });
+        const imageFormData = new FormData();
+        imageFormData.append("file", {
+          uri: selectedImage,
+          name: filename,
+          type: type,
+        } as any);
 
-        // اضافه کردن تصویر یا فایل
-        if (selectedImage) {
-          const filename = selectedImage.split("/").pop() || "image.jpg";
-          const match = /\.(\w+)$/.exec(filename);
-          const type = match ? `image/${match[1]}` : "image/jpeg";
-
-          formData.append("images", {
-            uri: selectedImage,
-            name: filename,
-            type: type,
-          } as any);
-        } else if (selectedFile && !selectedFile.canceled && selectedFile.assets[0]) {
-          const file = selectedFile.assets[0];
-          formData.append("files", {
-            uri: file.uri,
-            name: file.name || "file",
-            type: file.mimeType || "application/octet-stream",
-          } as any);
-        }
-
-        // ارسال با FormData
-        await apiClient.uploadFile("/posts", formData);
-      } else {
-        // ارسال بدون فایل (JSON)
-        const postData = {
-          description: message,
-          tags: tagsArray,
-          recommended: textMessages,
-          visibility: visibilityValue as "everyone" | "followers" | "private",
-        };
-
-        await postService.create(postData);
+        const uploadResponse = await messagingService.uploadImage(imageFormData);
+        postData.images = [uploadResponse.url];
       }
+      // اگر فایل انتخاب شده باشد، ابتدا آپلود می‌کنیم
+      else if (selectedFile && !selectedFile.canceled && selectedFile.assets[0]) {
+        const file = selectedFile.assets[0];
+        const fileFormData = new FormData();
+        fileFormData.append("file", {
+          uri: file.uri,
+          name: file.name || "file",
+          type: file.mimeType || "application/octet-stream",
+        } as any);
+
+        const uploadResponse = await messagingService.uploadFile(fileFormData);
+        postData.files = [uploadResponse.url];
+      }
+
+      // ارسال پست با JSON (همیشه)
+      await postService.create(postData);
 
       Alert.alert("Success", "Post created successfully!", [
         {
@@ -345,6 +344,7 @@ const CreateNewPost = () => {
         },
       ]);
     } catch (error: any) {
+      debugger
       const errorMessage =
         error.message || "Failed to create post. Please try again.";
       Alert.alert("Error", errorMessage);
