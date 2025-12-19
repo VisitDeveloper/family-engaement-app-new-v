@@ -4,12 +4,12 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function ProfileScreen() {
@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     alignSelf: "center",
     marginBottom: 12,
+    backgroundColor: "#f3f3f5"
   },
   name: {
     fontSize: 18,

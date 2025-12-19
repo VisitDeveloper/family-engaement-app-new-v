@@ -255,7 +255,6 @@ export default function CreateGroupScreen() {
   const [groupName, setGroupName] = useState<string>("");
 
   const handleCreateGroup = async () => {
-    debugger;
     if (!groupName.trim()) {
       Alert.alert("Error", "Please enter a group name");
       return;

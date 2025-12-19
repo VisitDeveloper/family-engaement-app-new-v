@@ -256,8 +256,6 @@ const ResourceLibrary = () => {
     try {
       // Fetch full resource details from API
       const fullResource = await resourceService.getById(item.id!);
-
-      debugger;
       // Map to API model structure
       const data = {
         id: fullResource.id,

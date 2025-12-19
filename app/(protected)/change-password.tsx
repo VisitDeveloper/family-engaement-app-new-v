@@ -143,14 +143,12 @@ export default function ChangePassword() {
     setLoading(true);
 
     try {
-      
       const response = await authService.changePassword({
         oldPassword,
         newPassword,
         // confirmPassword,
       });
 
-      
       console.log("response", response);
 
       Alert.alert("Success", "Password changed successfully!", [
@@ -162,8 +160,6 @@ export default function ChangePassword() {
         },
       ]);
     } catch (err) {
-      debugger
-      console.log("err", err);
       const apiError = err as ApiError;
       let errorMessage =
         apiError.message || "Failed to change password. Please try again.";
