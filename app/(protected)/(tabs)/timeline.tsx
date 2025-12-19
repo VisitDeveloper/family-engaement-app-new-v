@@ -8,8 +8,8 @@ import { PostResponseDto, postService } from "@/services/post.service";
 import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -267,11 +267,12 @@ const TimelineScreen = () => {
     []
   );
 
-  // Initial load
-  useEffect(() => {
-    fetchPosts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Refresh posts when screen comes into focus (e.g., after creating a post)
+  useFocusEffect(
+    useCallback(() => {
+      fetchPosts(tabsData[activeTab].filter);
+    }, [fetchPosts, activeTab])
+  );
 
   // Handle tab change
   const handleTabChange = (index: number) => {
@@ -317,7 +318,10 @@ const TimelineScreen = () => {
       </View>
 
       <RoleGuard roles={["teacher"]}>
-        <Link href="/create-post" style={{ marginTop: 10 }}>
+        <TouchableOpacity
+          onPress={() => router.push("/create-post")}
+          style={{ marginTop: -5 }}
+        >
           <View style={styles.createElement}>
             <Image
               source={
@@ -352,7 +356,7 @@ const TimelineScreen = () => {
             </TouchableOpacity>
           </View>
           {/* آواتار کاربر */}
-        </Link>
+        </TouchableOpacity>
       </RoleGuard>
 
       {loading ? (
