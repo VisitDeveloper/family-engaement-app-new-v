@@ -174,10 +174,12 @@ export default function ChatScreen() {
         if (!conversation) return 'Chat';
         if (typeof conversation.name === 'string') return conversation.name;
         if (conversation.type === 'direct' && conversation.participants) {
-            const otherParticipant = conversation.participants.find((p: any) => p.id !== currentUserId);
+            const otherParticipant = conversation.participants.find((p: any) => p.user.id !== currentUserId);
             if (otherParticipant) {
-                return `${otherParticipant.firstName || ''} ${otherParticipant.lastName || ''}`.trim() || otherParticipant.email;
+                return `${otherParticipant.user.firstName || ''} ${otherParticipant.user.lastName || ''}`.trim() || otherParticipant.user.email;
             }
+        }else if (conversation.type === 'group' && conversation.name) {
+            return conversation.name;
         }
         return 'Chat';
     };
