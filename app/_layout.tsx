@@ -1,7 +1,10 @@
 import { useStore } from "@/store";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, LogBox } from "react-native";
+
+// Disable LogBox
+LogBox.ignoreAllLogs();
 
 export default function RootLayout() {
   const router = useRouter();

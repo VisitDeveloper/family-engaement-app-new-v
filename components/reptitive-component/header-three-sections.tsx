@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import React from 'react'
 import { TouchableOpacity, View } from 'react-native'
+import RoleGuard from '../check-permisions'
 import { ThemedText } from '../themed-text'
 
 
@@ -13,6 +14,7 @@ interface HeaderThreeSectionsProps {
     icon?: React.ReactNode | React.ReactElement;
     colorDesc?: string;
     onPress?: () => void;
+    buttonRoles?: string[];
 }
 
 export default function HeaderThreeSections(props: HeaderThreeSectionsProps) {
@@ -55,9 +57,11 @@ export default function HeaderThreeSections(props: HeaderThreeSectionsProps) {
                     </ThemedText>
                 </View>
             </View>
-            <TouchableOpacity onPress={props.onPress}>
-                {props.icon}
-            </TouchableOpacity>
+            <RoleGuard roles={props.buttonRoles || ["admin", "teacher", "parent"]}>
+                <TouchableOpacity onPress={props.onPress}>
+                    {props.icon}
+                </TouchableOpacity>
+            </RoleGuard>
         </View>
     )
 }

@@ -299,11 +299,12 @@ const TimelineScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <HeaderTabItem
-        title="Sarah’s Timeline"
+        title={`${user?.firstName}'s Timeline`}
         subTitle="Learning journey & memories"
         buttonIcon={<Feather name="calendar" size={16} color={theme.tint} />}
         buttonLink="/event"
         buttonTtitle="Events"
+        buttonRoles={["admin", "teacher", "parent"]}
       />
 
       <View style={styles.tabs}>

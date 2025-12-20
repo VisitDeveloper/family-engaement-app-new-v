@@ -365,7 +365,7 @@ const SchoolCalendarScreen = () => {
                 icon={<Ionicons name="add-circle-outline" size={24} color={theme.tint} />}
                 colorDesc={theme.subText}
                 onPress={() => router.push('/create-new-event')}
-
+                buttonRoles={["admin", "teacher"]}
             />
 
             {/* Month Selector */}
