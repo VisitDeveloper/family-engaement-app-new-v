@@ -55,7 +55,7 @@ export default function TimelineItem(props: ResourceItemProps) {
     
     // If URL is relative, prepend base URL
     // Note: Adjust this based on your API base URL
-    const baseUrl = "http://localhost:3006";
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3006';
     return url.startsWith("/") ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
   };
 
