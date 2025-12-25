@@ -33,6 +33,8 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const colorScheme = useStore((state) => state.colorScheme);
+
   const { errors, validate } = useValidation({
     email: {
       required: true,
@@ -86,8 +88,7 @@ export default function LoginScreen() {
             id: response.user.id,
             name:
               // response.user.name ||
-              response.user.firstName ||
-              response.user.lastName
+              response.user.firstName || response.user.lastName
                 ? `${response.user.firstName || ""} ${
                     response.user.lastName || ""
                   }`.trim()
@@ -124,7 +125,8 @@ export default function LoginScreen() {
         });
 
         // بعد از ثبت‌نام موفق، کاربر را لاگین می‌کنیم
-        let detectedRole: "admin" | "teacher" | "parent" | undefined = undefined;
+        let detectedRole: "admin" | "teacher" | "parent" | undefined =
+          undefined;
 
         if (response.user?.role) {
           detectedRole = response.user.role;
@@ -137,8 +139,7 @@ export default function LoginScreen() {
             id: response.user.id,
             name:
               // response.user.name ||
-              response.user.firstName ||
-              response.user.lastName
+              response.user.firstName || response.user.lastName
                 ? `${response.user.firstName || ""} ${
                     response.user.lastName || ""
                   }`.trim()
@@ -258,7 +259,11 @@ export default function LoginScreen() {
         <View style={[styles.element, { borderColor: theme.border }]}>
           <View>
             <Image
-              source={require("./../../assets/images/LOGO.jpeg")}
+              source={
+                colorScheme === "dark"
+                  ? require("./../../assets/images/LOGO-light.png")
+                  : require("./../../assets/images/LOGO-primary.png")
+              }
               style={{
                 width: 100,
                 height: 50,

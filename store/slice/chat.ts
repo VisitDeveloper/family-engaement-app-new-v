@@ -81,11 +81,11 @@ export const createChatSlice: StateCreator<any, [], [], ChatSlice> = (
     set((state: any) => ({
       messages: {
         ...state.messages,
-        [conversationId]: [...(state.messages[conversationId] || []), message],
+        [conversationId]: [message, ...(state.messages[conversationId] || [])],
       },
       conversations: state.conversations.map((c: ConversationResponseDto) =>
         c.id === conversationId
-          ? { ...c, lastMessage: message, unreadCount: c.unreadCount + 1 }
+          ? { ...c, lastMessage: message }
           : c
       ),
     })),

@@ -327,6 +327,7 @@ export default function MessagesScreen() {
         buttonIcon={<Feather name="edit" size={16} color={theme.tint} />}
         buttonLink="/new"
         buttonTtitle="New"
+        buttonRoles={["admin", "teacher"]}
       />
 
       <SearchContainer

@@ -33,6 +33,8 @@ export default function SettingsScreen() {
   const theme = useStore((state) => state.theme);
   const isHighContrast = useStore((state) => state.isHighContrast);
   const toggleHighContrast = useStore((state) => state.toggleHighContrast);
+  const colorScheme = useStore((state) => state.colorScheme);
+  const setColorScheme = useStore((state) => state.setColorScheme);
   const user = useStore((state) => state.user);
   const role = useStore((state) => state.role);
 
@@ -134,15 +136,14 @@ export default function SettingsScreen() {
               { backgroundColor: theme.bg, borderColor: theme.border },
             ]}
           >
-            <TouchableOpacity onPress={() => router.push("/user-profile")} style={styles.profileRow}>
+            <TouchableOpacity
+              onPress={() => router.push("/user-profile")}
+              style={styles.profileRow}
+            >
               <Image
-                source={
-                  user?.profilePicture
-                    ? { uri: user.profilePicture }
-                    : {
-                        uri: "",
-                      }
-                }
+                source={{
+                  uri: user?.profilePicture ? user.profilePicture : "",
+                }}
                 style={styles.avatar}
               />
               <View style={{ flex: 1, marginLeft: 12 }}>
@@ -172,7 +173,7 @@ export default function SettingsScreen() {
                   ""
                 )}
               </View>
-              <View >
+              <View>
                 <Ionicons
                   name="chevron-forward"
                   size={20}
@@ -377,6 +378,29 @@ export default function SettingsScreen() {
             </View>
 
             <View style={styles.separatorSmall} />
+
+            {/* Dark Mode */}
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <ThemedText type="middleTitle" style={{ color: theme.text }}>
+                  Dark Mode
+                </ThemedText>
+                <ThemedText
+                  type="subText"
+                  style={[styles.rowSubtitle, { color: theme.subText }]}
+                >
+                  Switch between light and dark theme
+                </ThemedText>
+              </View>
+              <Switch
+                value={colorScheme === "dark"}
+                onValueChange={(value) => {
+                  setColorScheme(value ? "dark" : "light");
+                }}
+                trackColor={{ false: "#ccc", true: "#a846c2" }}
+                thumbColor={colorScheme === "dark" ? "#fff" : "#fff"}
+              />
+            </View>
 
             <View style={styles.row}>
               <View style={{ flex: 1 }}>

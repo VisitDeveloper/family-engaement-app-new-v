@@ -246,12 +246,7 @@ const TimelineScreen = () => {
           filter: filter || "all",
         };
 
-        let response;
-        if (filter === "saved") {
-          response = await postService.getSavedPosts(params);
-        } else {
-          response = await postService.getAll(params);
-        }
+        const response = await postService.getAll(params);
 
         setPosts(response.posts);
       } catch (err: any) {

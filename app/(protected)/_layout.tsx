@@ -48,10 +48,14 @@ export default function RootLayout() {
       <Header
         link={"/setting"}
         userImage={userImage}
-        logo={require("./../../assets/images/LOGO.jpeg")}
+        logo={
+          colorScheme === "dark"
+            ? require("./../../assets/images/LOGO-light.png")
+            : require("./../../assets/images/LOGO-primary.png")
+        }
       />
     );
-  }, [userImage]);
+  }, [userImage, colorScheme]);
 
   // Memoize screenOptions to prevent re-renders
   const screenOptions = useMemo(

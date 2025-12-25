@@ -15,7 +15,7 @@ import {
 export default function ProfileScreen() {
   const router = useRouter();
   const user = useStore((state) => state.user);
-  
+
   return (
     <ScrollView
       style={styles.container}
@@ -38,16 +38,24 @@ export default function ProfileScreen() {
       <View style={styles.card}>
         <Image
           source={
-            user?.profilePicture
-              ? { uri: user.profilePicture }
-              : { uri: "" }
+            user?.profilePicture ? { uri: user.profilePicture } : { uri: "" }
           }
           style={styles.avatar}
         />
-        <Text style={styles.name}>{`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || ""}</Text>
+        <Text style={styles.name}>
+          {`${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+            user?.name ||
+            ""}
+        </Text>
         <Text style={styles.relation}>
-          {user?.role ? `${user.role.charAt(0).toUpperCase() + user.role.slice(1)}` : ""}
-          {user?.childName ? ` - ${user.childName}` : user?.email ? ` - ${user.email.split('@')[0]}` : ""}
+          {user?.role
+            ? `${user.role.charAt(0).toUpperCase() + user.role.slice(1)}`
+            : ""}
+          {user?.childName
+            ? ` - ${user.childName}`
+            : user?.email
+            ? ` - ${user.email.split("@")[0]}`
+            : ""}
         </Text>
         {user?.subjects && user.subjects.length > 0 ? (
           <View style={styles.tagsContainer}>
@@ -58,9 +66,7 @@ export default function ProfileScreen() {
             ))}
           </View>
         ) : (
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>No subjects</Text>
-          </View>
+          ""
         )}
       </View>
 
@@ -138,7 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     alignSelf: "center",
     marginBottom: 12,
-    backgroundColor: "#f3f3f5"
+    backgroundColor: "#f3f3f5",
   },
   name: {
     fontSize: 18,
