@@ -3,14 +3,17 @@ import { ThemedText } from "@/components/themed-text";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useValidation } from "@/hooks/use-validation";
-import { messagingService, ClassroomResponseDto } from "@/services/messaging.service";
+import {
+  ClassroomResponseDto,
+  messagingService,
+} from "@/services/messaging.service";
 import { postService } from "@/services/post.service";
 import { useStore } from "@/store";
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
-import { useState, useEffect, useCallback } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -22,16 +25,25 @@ import {
   View,
 } from "react-native";
 
-const CreateNewPost = () => {
+const CreateOrEditPost = () => {
   const theme = useStore((s) => s.theme);
   const user = useStore((s) => s.user);
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const postId = params.postId as string | undefined;
+  const isEditMode = !!postId;
+
   const [message, setMessage] = useState<string>("");
   const [tags, setTags] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [textMessages, setTextMessages] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerResult | null>(null);
+  const [selectedFile, setSelectedFile] =
+    useState<DocumentPicker.DocumentPickerResult | null>(null);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [existingFiles, setExistingFiles] = useState<string[]>([]);
+  const [loadingPost, setLoadingPost] = useState<boolean>(false);
+  const hasLoadedFromParams = useRef(false);
   const [visibility, setVisibility] = useState<OptionsList[]>([
     {
       label: "Everyone",
@@ -47,7 +59,8 @@ const CreateNewPost = () => {
     },
   ]);
   const [classrooms, setClassrooms] = useState<OptionsList[]>([]);
-  const [selectedClassroom, setSelectedClassroom] = useState<OptionsList | null>(null);
+  const [selectedClassroom, setSelectedClassroom] =
+    useState<OptionsList | null>(null);
   const [loadingClassrooms, setLoadingClassrooms] = useState<boolean>(false);
   const isTeacher = user?.role === "teacher" || user?.role === "admin";
 
@@ -205,11 +218,11 @@ const CreateNewPost = () => {
     },
   }));
 
-
   const pickImage = async () => {
     try {
       // Request permissions
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
@@ -257,24 +270,34 @@ const CreateNewPost = () => {
     setSelectedFile(null);
   };
 
+  const removeExistingImage = (index: number) => {
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingFile = (index: number) => {
+    setExistingFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const loadClassrooms = useCallback(async () => {
     if (!isTeacher) return;
-    
+
     setLoadingClassrooms(true);
     try {
       const classroomsData = await messagingService.getClassrooms();
-      const mappedClassrooms: OptionsList[] = classroomsData.map((classroom: ClassroomResponseDto) => {
-        const name =
-          typeof classroom.name === "string"
-            ? classroom.name
-            : classroom.name && typeof classroom.name === "object"
-            ? (Object.values(classroom.name)[0] as string) || "Classroom"
-            : "Classroom";
-        return {
-          label: name,
-          value: classroom.id,
-        };
-      });
+      const mappedClassrooms: OptionsList[] = classroomsData.map(
+        (classroom: ClassroomResponseDto) => {
+          const name =
+            typeof classroom.name === "string"
+              ? classroom.name
+              : classroom.name && typeof classroom.name === "object"
+              ? (Object.values(classroom.name)[0] as string) || "Classroom"
+              : "Classroom";
+          return {
+            label: name,
+            value: classroom.id,
+          };
+        }
+      );
       setClassrooms(mappedClassrooms);
     } catch (error: any) {
       console.error("Error loading classrooms:", error);
@@ -287,6 +310,113 @@ const CreateNewPost = () => {
   useEffect(() => {
     loadClassrooms();
   }, [loadClassrooms]);
+
+  const loadPostData = useCallback(async () => {
+    if (!postId) return;
+
+    try {
+      setLoadingPost(true);
+      const post = await postService.getById(postId);
+      setMessage(post.description);
+      setTags(post.tags?.join(",") || "");
+      setTextMessages(post.recommended);
+      setExistingImages(post.images || []);
+      setExistingFiles(post.files || []);
+      setVisibility([
+        {
+          label:
+            post.visibility.charAt(0).toUpperCase() + post.visibility.slice(1),
+          value: post.visibility,
+        },
+      ]);
+      if (post.classroom?.id) {
+        // Wait for classrooms to be loaded first
+        if (classrooms.length === 0) {
+          await loadClassrooms();
+        }
+        // Find classroom in the loaded classrooms list
+        const classroom = classrooms.find((c) => c.value === post.classroom?.id);
+        if (classroom) {
+          setSelectedClassroom(classroom);
+        } else {
+          // If not found in list, load it directly
+          const classroomsData = await messagingService.getClassrooms();
+          const classroomData = classroomsData.find(
+            (c) => c.id === post.classroomId
+          );
+          if (classroomData) {
+            const name =
+              typeof classroomData.name === "string"
+                ? classroomData.name
+                : classroomData.name && typeof classroomData.name === "object"
+                ? (Object.values(classroomData.name)[0] as string) ||
+                  "Classroom"
+                : "Classroom";
+            const classroomOption = {
+              label: name,
+              value: classroomData.id,
+            };
+            setSelectedClassroom(classroomOption);
+            // Also add it to classrooms list if not already there
+            setClassrooms((prev) => {
+              if (!prev.find((c) => c.value === classroomData.id)) {
+                return [...prev, classroomOption];
+              }
+              return prev;
+            });
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error("Error loading post:", error);
+      Alert.alert("Error", "Failed to load post data. Please try again.");
+      router.back();
+    } finally {
+      setLoadingPost(false);
+    }
+  }, [postId, router, classrooms, loadClassrooms]);
+
+  // Load post data if in edit mode
+  useEffect(() => {
+    if (isEditMode && postId) {
+      loadPostData();
+    } else if (params.description && !hasLoadedFromParams.current) {
+      // Load from params if provided (for navigation from edit button)
+      hasLoadedFromParams.current = true;
+      setMessage(params.description as string);
+      setTags((params.tags as string) || "");
+      setTextMessages(params.recommended === "true");
+      if (params.images) {
+        const imageUrls = (params.images as string).split(",").filter(Boolean);
+        setExistingImages(imageUrls);
+      }
+      if (params.files) {
+        const fileUrls = (params.files as string).split(",").filter(Boolean);
+        setExistingFiles(fileUrls);
+      }
+      if (params.visibility) {
+        const visibilityValue = params.visibility as string;
+        setVisibility([
+          {
+            label:
+              visibilityValue.charAt(0).toUpperCase() +
+              visibilityValue.slice(1),
+            value: visibilityValue,
+          },
+        ]);
+      }
+    }
+  }, [
+    isEditMode,
+    postId,
+    loadPostData,
+    params.description,
+    params.tags,
+    params.recommended,
+    params.images,
+    params.files,
+    params.visibility,
+  ]);
 
   const { errors, validate } = useValidation({
     message: { required: true, maxLength: 300, minLength: 2 },
@@ -340,8 +470,9 @@ const CreateNewPost = () => {
         classroomId: selectedClassroom?.value || null,
       };
 
-      // اگر تصویر انتخاب شده باشد، ابتدا آپلود می‌کنیم
+      // Handle images
       if (selectedImage) {
+        // New image selected - upload it
         const filename = selectedImage.split("/").pop() || "image.jpg";
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : "image/jpeg";
@@ -353,11 +484,18 @@ const CreateNewPost = () => {
           type: type,
         } as any);
 
-        const uploadResponse = await messagingService.uploadImage(imageFormData);
+        const uploadResponse = await messagingService.uploadImage(
+          imageFormData
+        );
         postData.images = [uploadResponse.url];
+      } else if (isEditMode && existingImages.length > 0) {
+        // Keep existing images in edit mode
+        postData.images = existingImages;
       }
-      // اگر فایل انتخاب شده باشد، ابتدا آپلود می‌کنیم
-      else if (selectedFile && !selectedFile.canceled && selectedFile.assets[0]) {
+
+      // Handle files
+      if (selectedFile && !selectedFile.canceled && selectedFile.assets[0]) {
+        // New file selected - upload it
         const file = selectedFile.assets[0];
         const fileFormData = new FormData();
         fileFormData.append("file", {
@@ -368,32 +506,68 @@ const CreateNewPost = () => {
 
         const uploadResponse = await messagingService.uploadFile(fileFormData);
         postData.files = [uploadResponse.url];
+      } else if (isEditMode && existingFiles.length > 0) {
+        // Keep existing files in edit mode
+        postData.files = existingFiles;
       }
 
-      // ارسال پست با JSON (همیشه)
-      await postService.create(postData);
-
-      Alert.alert("Success", "Post created successfully!", [
-        {
-          text: "OK",
-          onPress: () => {
-            router.back();
+      // Create or update post
+      if (isEditMode && postId) {
+        await postService.update(postId, postData);
+        Alert.alert("Success", "Post updated successfully!", [
+          {
+            text: "OK",
+            onPress: () => {
+              router.back();
+            },
           },
-        },
-      ]);
+        ]);
+      } else {
+        await postService.create(postData);
+        Alert.alert("Success", "Post created successfully!", [
+          {
+            text: "OK",
+            onPress: () => {
+              router.back();
+            },
+          },
+        ]);
+      }
     } catch (error: any) {
       const errorMessage =
-        error.message || "Failed to create post. Please try again.";
+        error.message ||
+        (isEditMode
+          ? "Failed to update post. Please try again."
+          : "Failed to create post. Please try again.");
       Alert.alert("Error", errorMessage);
-      console.error("Error creating post:", error);
+      console.error(
+        `Error ${isEditMode ? "updating" : "creating"} post:`,
+        error
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  if (loadingPost) {
+    return (
+      <View style={styles.container}>
+        <HeaderInnerPage title={isEditMode ? "Edit Post" : "New Post"} />
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" color={theme.tint} />
+          <ThemedText type="subText" style={{ marginTop: 10 }}>
+            Loading post...
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <HeaderInnerPage title="New Post" />
+      <HeaderInnerPage title={isEditMode ? "Edit Post" : "New Post"} />
 
       <ScrollView
         style={styles.containerScrollBox}
@@ -450,12 +624,18 @@ const CreateNewPost = () => {
 
         {selectedImage && (
           <View style={{ marginTop: 10 }}>
-            <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.selectedImage}
+            />
             <TouchableOpacity
               style={styles.removeButton}
               onPress={removeSelectedMedia}
             >
-              <ThemedText type="error" style={{ textAlign: "center", marginTop: 5 }}>
+              <ThemedText
+                type="error"
+                style={{ textAlign: "center", marginTop: 5 }}
+              >
                 Remove Image
               </ThemedText>
             </TouchableOpacity>
@@ -478,6 +658,66 @@ const CreateNewPost = () => {
             <TouchableOpacity onPress={removeSelectedMedia}>
               <Ionicons name="close-circle" size={24} color={theme.text} />
             </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Existing images in edit mode */}
+        {isEditMode && existingImages.length > 0 && (
+          <View style={{ marginTop: 10 }}>
+            {existingImages.map((imageUrl, index) => (
+              <View key={index} style={{ marginBottom: 10 }}>
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={styles.selectedImage}
+                />
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => removeExistingImage(index)}
+                >
+                  <ThemedText
+                    type="error"
+                    style={{ textAlign: "center", marginTop: 5 }}
+                  >
+                    Remove Image
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Existing files in edit mode */}
+        {isEditMode && existingFiles.length > 0 && (
+          <View style={{ marginTop: 10 }}>
+            {existingFiles.map((fileUrl, index) => {
+              const fileName = fileUrl.split("/").pop() || "File";
+              return (
+                <View key={index} style={styles.selectedFileContainer}>
+                  <Ionicons name="document" size={24} color={theme.text} />
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <ThemedText
+                      type="text"
+                      style={{
+                        color: theme.text,
+                        textOverflow: "ellipsis",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {fileName.length > 30
+                        ? fileName.substring(0, 30) + "..."
+                        : fileName}
+                    </ThemedText>
+                  </View>
+                  <TouchableOpacity onPress={() => removeExistingFile(index)}>
+                    <Ionicons
+                      name="close-circle"
+                      size={24}
+                      color={theme.text}
+                    />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -531,31 +771,30 @@ const CreateNewPost = () => {
                 style={{ flexDirection: "row", gap: 10, alignItems: "center" }}
               >
                 <ThemedText
-                  type="subtitle"
-                  style={{ color: theme.text, fontWeight: 400 }}
+                  type="middleTitle"
+                  style={{ marginBottom: 10, fontWeight: 500 }}
                 >
                   Select Classroom
                 </ThemedText>
               </View>
-              <ThemedText type="subText" style={[styles.rowSubtitle, {}]}>
+              {/* <ThemedText type="subText" style={[styles.rowSubtitle, {}]}>
                 Choose a classroom for this post (optional)
-              </ThemedText>
+              </ThemedText> */}
             </View>
 
             {loadingClassrooms ? (
               <ActivityIndicator size="small" color={theme.tint} />
             ) : (
               <SelectBox
-                options={[
-                  { label: "No Classroom", value: "" },
-                  ...classrooms,
-                ]}
+                options={[{ label: "No Classroom", value: "" }, ...classrooms]}
                 value={selectedClassroom?.label || "No Classroom"}
                 onChange={(val) => {
                   if (val === "") {
                     setSelectedClassroom(null);
                   } else {
-                    const selectedOption = classrooms.find((opt) => opt.value === val);
+                    const selectedOption = classrooms.find(
+                      (opt) => opt.value === val
+                    );
                     if (selectedOption) {
                       setSelectedClassroom(selectedOption);
                     }
@@ -576,8 +815,8 @@ const CreateNewPost = () => {
                                 <AntDesign name="star" size={12} color="#fff" />
                             </View> */}
               <ThemedText
-                type="subtitle"
-                style={{ color: theme.text, fontWeight: 400 }}
+                type="middleTitle"
+                style={{ marginBottom: 4, fontWeight: 500 }}
               >
                 Post Visibility
               </ThemedText>
@@ -608,7 +847,9 @@ const CreateNewPost = () => {
             title="List of Post Visibility"
           />
           {errors.visibility && (
-            <ThemedText style={{ color: "red" }}>{errors.visibility}</ThemedText>
+            <ThemedText style={{ color: "red" }}>
+              {errors.visibility}
+            </ThemedText>
           )}
         </View>
 
@@ -620,7 +861,9 @@ const CreateNewPost = () => {
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <ThemedText style={styles.readText}>Create Post</ThemedText>
+            <ThemedText style={styles.readText}>
+              {isEditMode ? "Update Post" : "Create Post"}
+            </ThemedText>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -628,4 +871,4 @@ const CreateNewPost = () => {
   );
 };
 
-export default CreateNewPost;
+export default CreateOrEditPost;

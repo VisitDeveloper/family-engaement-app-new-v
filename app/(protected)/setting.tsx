@@ -728,10 +728,10 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, padding: 10, paddingTop: 0, paddingHorizontal: 0 },
+  page: { flex: 1, padding: 10, paddingHorizontal: 0 },
   container: {
     alignSelf: "center",
-    marginBottom: 30,
+    marginBottom: 0,
     paddingHorizontal: 0,
   },
   headerRow: {

@@ -711,8 +711,10 @@ export default function TimelineItem({
                     style={styles.fileIcon}
                   />
                   <View style={styles.fileInfo}>
-                    <ThemedText type="subText" style={styles.fileName}>
-                      {fileName}
+                    <ThemedText type="subText" style={[styles.fileName, { textOverflow: "ellipsis", overflow: "hidden", fontSize: 12 }]}>
+                      {fileName.length > 30
+                        ? fileName.substring(0, 30) + "..."
+                        : fileName}
                     </ThemedText>
                   </View>
                   <Ionicons

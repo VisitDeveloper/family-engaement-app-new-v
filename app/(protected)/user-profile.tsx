@@ -30,8 +30,8 @@ export default function ProfileScreen() {
   const [uploading, setUploading] = useState<boolean>(false);
 
   const styles = useThemedStyles((theme) => ({
-    container: { flex: 1, padding: 10, backgroundColor: theme.bg },
-    containerScrollView: { flex: 1, backgroundColor: theme.bg },
+    container: { flex: 1, padding: 10, paddingHorizontal: 0, backgroundColor: theme.bg },
+    containerScrollView: { flex: 1, padding: 10, paddingTop: 20, backgroundColor: theme.bg },
     card: {
       borderWidth: 1,
       borderRadius: 10,
@@ -339,7 +339,7 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <HeaderInnerPage
         title="Profile & Account Settings"
-        addstyles={{ marginBottom: 20 }}
+        addstyles={{ marginBottom: 0 }}
       />
 
       <ScrollView style={styles.containerScrollView}>

@@ -1,4 +1,5 @@
-import { apiClient, ApiError } from './api';
+import { apiClient, ApiError } from "./api";
+import { ClassroomResponseDto } from "./messaging.service";
 
 export interface AuthorResponseDto {
   id: string;
@@ -13,10 +14,11 @@ export interface PostResponseDto {
   description: string;
   tags?: string[] | null;
   recommended: boolean;
-  visibility: 'everyone' | 'followers' | 'private';
+  visibility: "everyone" | "followers" | "private";
   images?: string[] | null;
   files?: string[] | null;
   classroomId?: string | null;
+  classroom?: ClassroomResponseDto | null;  
   author: AuthorResponseDto;
   likesCount: number;
   commentsCount: number;
@@ -45,7 +47,7 @@ export interface CreatePostDto {
   description: string;
   tags?: string[];
   recommended?: boolean;
-  visibility?: 'everyone' | 'followers' | 'private';
+  visibility?: "everyone" | "followers" | "private";
   images?: string[];
   files?: string[];
   classroomId?: string | null;
@@ -55,7 +57,7 @@ export interface UpdatePostDto {
   description?: string;
   tags?: string[];
   recommended?: boolean;
-  visibility?: 'everyone' | 'followers' | 'private';
+  visibility?: "everyone" | "followers" | "private";
   images?: string[];
   files?: string[];
   classroomId?: string | null;
@@ -68,11 +70,18 @@ export interface CreateCommentDto {
 export interface GetPostsParams {
   page?: number;
   limit?: number;
-  filter?: 'all' | 'media' | 'reports' | 'recommended' | 'saved';
+  filter?: "all" | "media" | "reports" | "recommended" | "saved";
 }
 
 export interface PostService {
-  getAll(params?: GetPostsParams): Promise<{ posts: PostResponseDto[], limit: number, page: number, total: number }>;
+  getAll(
+    params?: GetPostsParams
+  ): Promise<{
+    posts: PostResponseDto[];
+    limit: number;
+    page: number;
+    total: number;
+  }>;
   getById(id: string): Promise<PostResponseDto>;
   create(data: CreatePostDto): Promise<PostResponseDto>;
   update(id: string, data: UpdatePostDto): Promise<PostResponseDto>;
@@ -80,36 +89,61 @@ export interface PostService {
   likePost(id: string): Promise<void>;
   savePost(id: string): Promise<void>;
   getPostComments(id: string): Promise<CommentResponseDto[]>;
-  createComment(id: string, data: CreateCommentDto): Promise<CommentResponseDto>;
-  replyToComment(commentId: string, data: CreateCommentDto): Promise<CommentResponseDto>;
+  createComment(
+    id: string,
+    data: CreateCommentDto
+  ): Promise<CommentResponseDto>;
+  replyToComment(
+    commentId: string,
+    data: CreateCommentDto
+  ): Promise<CommentResponseDto>;
   likeComment(commentId: string): Promise<void>;
-  getSavedPosts(params?: GetPostsParams): Promise<{ posts: PostResponseDto[], limit: number, page: number, total: number }>;
+  getSavedPosts(
+    params?: GetPostsParams
+  ): Promise<{
+    posts: PostResponseDto[];
+    limit: number;
+    page: number;
+    total: number;
+  }>;
 }
 
 class PostServiceImpl implements PostService {
-  async getAll(params?: GetPostsParams): Promise<{ posts: PostResponseDto[], limit: number, page: number, total: number }> {
+  async getAll(
+    params?: GetPostsParams
+  ): Promise<{
+    posts: PostResponseDto[];
+    limit: number;
+    page: number;
+    total: number;
+  }> {
     try {
       const queryParams = new URLSearchParams();
-      
+
       if (params?.page) {
-        queryParams.append('page', params.page.toString());
+        queryParams.append("page", params.page.toString());
       }
       if (params?.limit) {
-        queryParams.append('limit', params.limit.toString());
+        queryParams.append("limit", params.limit.toString());
       }
       if (params?.filter) {
-        queryParams.append('filter', params.filter);
+        queryParams.append("filter", params.filter);
       }
 
       const queryString = queryParams.toString();
-      const endpoint = `/posts${queryString ? `?${queryString}` : ''}`;
-      
-      const response = await apiClient.get<{ posts: PostResponseDto[], limit: number, page: number, total: number }>(endpoint);
+      const endpoint = `/posts${queryString ? `?${queryString}` : ""}`;
+
+      const response = await apiClient.get<{
+        posts: PostResponseDto[];
+        limit: number;
+        page: number;
+        total: number;
+      }>(endpoint);
       return response;
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to fetch posts. Please try again.',
+        message: apiError.message || "Failed to fetch posts. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -123,7 +157,7 @@ class PostServiceImpl implements PostService {
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to fetch post. Please try again.',
+        message: apiError.message || "Failed to fetch post. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -132,12 +166,12 @@ class PostServiceImpl implements PostService {
 
   async create(data: CreatePostDto): Promise<PostResponseDto> {
     try {
-      const response = await apiClient.post<PostResponseDto>('/posts', data);
+      const response = await apiClient.post<PostResponseDto>("/posts", data);
       return response;
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to create post. Please try again.',
+        message: apiError.message || "Failed to create post. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -146,12 +180,15 @@ class PostServiceImpl implements PostService {
 
   async update(id: string, data: UpdatePostDto): Promise<PostResponseDto> {
     try {
-      const response = await apiClient.put<PostResponseDto>(`/posts/${id}`, data);
+      const response = await apiClient.put<PostResponseDto>(
+        `/posts/${id}`,
+        data
+      );
       return response;
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to update post. Please try again.',
+        message: apiError.message || "Failed to update post. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -164,7 +201,7 @@ class PostServiceImpl implements PostService {
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to delete post. Please try again.',
+        message: apiError.message || "Failed to delete post. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -177,7 +214,7 @@ class PostServiceImpl implements PostService {
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to like post. Please try again.',
+        message: apiError.message || "Failed to like post. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -190,7 +227,7 @@ class PostServiceImpl implements PostService {
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to save post. Please try again.',
+        message: apiError.message || "Failed to save post. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -199,40 +236,57 @@ class PostServiceImpl implements PostService {
 
   async getPostComments(id: string): Promise<CommentResponseDto[]> {
     try {
-      const response = await apiClient.get<CommentResponseDto[]>(`/posts/${id}/comments`);
+      const response = await apiClient.get<CommentResponseDto[]>(
+        `/posts/${id}/comments`
+      );
       return response;
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to fetch comments. Please try again.',
+        message:
+          apiError.message || "Failed to fetch comments. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
     }
   }
 
-  async createComment(id: string, data: CreateCommentDto): Promise<CommentResponseDto> {
+  async createComment(
+    id: string,
+    data: CreateCommentDto
+  ): Promise<CommentResponseDto> {
     try {
-      const response = await apiClient.post<CommentResponseDto>(`/posts/${id}/comments`, data);
+      const response = await apiClient.post<CommentResponseDto>(
+        `/posts/${id}/comments`,
+        data
+      );
       return response;
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to create comment. Please try again.',
+        message:
+          apiError.message || "Failed to create comment. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
     }
   }
 
-  async replyToComment(commentId: string, data: CreateCommentDto): Promise<CommentResponseDto> {
+  async replyToComment(
+    commentId: string,
+    data: CreateCommentDto
+  ): Promise<CommentResponseDto> {
     try {
-      const response = await apiClient.post<CommentResponseDto>(`/posts/comments/${commentId}/reply`, data);
+      const response = await apiClient.post<CommentResponseDto>(
+        `/posts/comments/${commentId}/reply`,
+        data
+      );
       return response;
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to reply to comment. Please try again.',
+        message:
+          apiError.message || "Failed to reply to comment. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
@@ -245,29 +299,39 @@ class PostServiceImpl implements PostService {
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to like comment. Please try again.',
+        message:
+          apiError.message || "Failed to like comment. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
     }
   }
 
-  async getSavedPosts(params?: GetPostsParams): Promise<{ posts: PostResponseDto[], limit: number, page: number, total: number }> {
+  async getSavedPosts(
+    params?: GetPostsParams
+  ): Promise<{
+    posts: PostResponseDto[];
+    limit: number;
+    page: number;
+    total: number;
+  }> {
     try {
       const queryParams = new URLSearchParams();
-      
+
       if (params?.page) {
-        queryParams.append('page', params.page.toString());
+        queryParams.append("page", params.page.toString());
       }
       if (params?.limit) {
-        queryParams.append('limit', params.limit.toString());
+        queryParams.append("limit", params.limit.toString());
       }
 
       const queryString = queryParams.toString();
-      const endpoint = `/posts/saved/all${queryString ? `?${queryString}` : ''}`;
-      
+      const endpoint = `/posts/saved/all${
+        queryString ? `?${queryString}` : ""
+      }`;
+
       const response = await apiClient.get<PostResponseDto[]>(endpoint);
-      
+
       return {
         posts: Array.isArray(response) ? response : [],
         limit: params?.limit || 10,
@@ -277,7 +341,8 @@ class PostServiceImpl implements PostService {
     } catch (error) {
       const apiError = error as ApiError;
       throw {
-        message: apiError.message || 'Failed to fetch saved posts. Please try again.',
+        message:
+          apiError.message || "Failed to fetch saved posts. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

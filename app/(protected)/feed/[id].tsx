@@ -225,7 +225,7 @@ const FeedDetailScreen = () => {
           }}
           onEdit={() => {
             router.push({
-              pathname: "/create-post",
+              pathname: "/create-or-edit-post",
               params: {
                 postId: post.id,
                 description: post.description,

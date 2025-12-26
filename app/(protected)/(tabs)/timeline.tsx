@@ -334,7 +334,7 @@ const TimelineScreen = () => {
       >
         <RoleGuard roles={["teacher"]}>
           <TouchableOpacity
-            onPress={() => router.push("/create-post")}
+            onPress={() => router.push("/create-or-edit-post")}
             style={{ marginTop: -5 }}
           >
             <View style={styles.createElement}>
@@ -355,12 +355,12 @@ const TimelineScreen = () => {
                   placeholderTextColor="#8E8E93"
                   multiline={false}
                   editable={false}
-                  onPress={() => router.push("/create-post")}
+                  onPress={() => router.push("/create-or-edit-post")}
                 />
               </View>
 
               {/* آیکون گالری */}
-              <TouchableOpacity onPress={() => router.push("/create-post")}>
+              <TouchableOpacity onPress={() => router.push("/create-or-edit-post")}>
                 <Ionicons
                   name="image-outline"
                   size={26}
@@ -487,7 +487,7 @@ const TimelineScreen = () => {
                     }}
                     onEdit={() => {
                       router.push({
-                        pathname: "/create-post",
+                        pathname: "/create-or-edit-post",
                         params: {
                           postId: post.id,
                           description: post.description,
