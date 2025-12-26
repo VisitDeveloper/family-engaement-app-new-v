@@ -278,7 +278,7 @@ const BookDetailScreen = () => {
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.readBtn}>
             <Feather name="eye" size={18} color="white" />
-            <ThemedText style={styles.readText}>Read Book</ThemedText>
+            <ThemedText style={styles.readText}>View Activity</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity style={styles.shareBtn}>
             <AntDesign name="download" size={18} color={theme.tint} />

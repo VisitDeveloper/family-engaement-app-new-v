@@ -1,3 +1,4 @@
+import RoleGuard from "@/components/check-permisions";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
 import {
@@ -5,7 +6,7 @@ import {
   messagingService,
 } from "@/services/messaging.service";
 import { useStore } from "@/store";
-import { AntDesign, Feather, FontAwesome5 } from "@expo/vector-icons";
+import { AntDesign, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -337,24 +338,18 @@ export default function MessagesScreen() {
         placeholder="Search Conversations..."
       />
 
-      {/* Filter Buttons */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          onPress={() => router.push("/ai-assisstant")}
-          style={[styles.filterBtn, { borderColor: theme.tint }]}
-        >
-          <FontAwesome5 name="robot" size={15} color={theme.tint} />
-          <Text style={{ color: theme.tint }}>AI Assistant</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => router.push("/emergency")}
-          style={[styles.filterBtn, { borderColor: theme.emergencyColor }]}
-        >
-          <AntDesign name="warning" size={15} color={theme.emergencyColor} />
-          <Text style={{ color: theme.emergencyColor }}>Emergency</Text>
-        </TouchableOpacity>
-      </View>
+      <RoleGuard roles={["admin", "teacher"]}>
+        {/* Filter Buttons */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            onPress={() => router.push("/emergency")}
+            style={[styles.filterBtn, { borderColor: theme.emergencyColor }]}
+          >
+            <AntDesign name="warning" size={15} color={theme.emergencyColor} />
+            <Text style={{ color: theme.emergencyColor }}>Emergency</Text>
+          </TouchableOpacity>
+        </View>
+      </RoleGuard>
 
       {/* Message List */}
       {loading && filteredContacts.length === 0 ? (

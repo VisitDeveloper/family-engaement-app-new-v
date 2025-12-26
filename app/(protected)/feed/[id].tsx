@@ -323,7 +323,8 @@ const FeedDetailScreen = () => {
           recommended={post.recommended}
           isLiked={post.isLiked}
           isSaved={post.isSaved}
-          lastComment={post.lastComment || undefined}
+          comments={post.comments || []}
+          hasMoreComments={post.hasMoreComments || false}
           onLike={async () => {
             try {
               await likeService.likePost(post.id);
@@ -355,7 +356,10 @@ const FeedDetailScreen = () => {
               <ActivityIndicator size="small" color={theme.tint} />
             </View>
           ) : comments.length === 0 ? (
-            <ThemedText type="subText" style={{ textAlign: "center", padding: 20 }}>
+            <ThemedText
+              type="subText"
+              style={{ textAlign: "center", padding: 20 }}
+            >
               No comments yet. Be the first to comment!
             </ThemedText>
           ) : (

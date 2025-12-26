@@ -8,7 +8,7 @@ import { useStore } from "@/store";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Alert, TextInput, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
@@ -33,7 +33,9 @@ export interface ResourceItemProps {
   onLike?: () => void;
   onSave?: () => void;
   onCommentAdded?: () => void;
-  lastComment?: CommentResponseDto;
+  comments?: CommentResponseDto[];
+  hasMoreComments?: boolean;
+  lastComment?: CommentResponseDto; // For backward compatibility
   setComment?: (text: string) => void;
 }
 
@@ -43,6 +45,24 @@ export default function TimelineItem(props: ResourceItemProps) {
   const router = useRouter();
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
+  const [expandedComments, setExpandedComments] = useState<CommentResponseDto[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+
+  // Number of comments to show initially
+  const INITIAL_COMMENTS_TO_SHOW = 2;
+
+  // Handle backward compatibility: convert lastComment to comments array if needed
+  const displayComments = useMemo(() => {
+    if (props.comments && props.comments.length > 0) {
+      return props.comments;
+    }
+    // Fallback to lastComment for backward compatibility
+    if (props.lastComment) {
+      return [props.lastComment];
+    }
+    return [];
+  }, [props.comments, props.lastComment]);
 
   // Helper function to format image URL
   const formatImageUrl = (url: string | undefined | null): string | null => {
@@ -277,47 +297,150 @@ export default function TimelineItem(props: ResourceItemProps) {
 
         {/* Comments */}
         <View style={styles.comments}>
-          {props.lastComment && (
-            <View style={styles.commentRow}>
-              {props.lastComment.author.profilePicture ? (
-                <Image
-                  source={{ uri: props.lastComment.author.profilePicture }}
-                  style={{
-                    ...styles.avatar,
-                    width: 24,
-                    height: 24,
-                    marginRight: 0,
-                  }}
-                />
-              ) : (
-                <Ionicons
-                  name="person-circle"
-                  size={24}
-                  color={theme.subText}
-                />
+          {displayComments.length > 0 && (
+            <>
+              {(showAllComments ? displayComments : displayComments.slice(0, INITIAL_COMMENTS_TO_SHOW)).map((commentItem) => (
+                <View key={commentItem.id} style={styles.commentRow}>
+                  {commentItem.author.profilePicture ? (
+                    <Image
+                      source={{ uri: commentItem.author.profilePicture }}
+                      style={{
+                        ...styles.avatar,
+                        width: 24,
+                        height: 24,
+                        marginRight: 0,
+                      }}
+                    />
+                  ) : (
+                    <Ionicons
+                      name="person-circle"
+                      size={24}
+                      color={theme.subText}
+                    />
+                  )}
+                  <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", alignItems: "center" }}>
+                    <ThemedText
+                      type="defaultSemiBold"
+                      style={{ color: theme.text, paddingLeft: 8, fontSize: 12 }}
+                    >
+                      {commentItem.author.firstName && commentItem.author.lastName
+                        ? `${commentItem.author.firstName} ${commentItem.author.lastName}`
+                        : commentItem.author.firstName ||
+                          commentItem.author.lastName ||
+                          commentItem.author.email ||
+                          "Unknown"}
+                    </ThemedText>
+                    <ThemedText
+                      type="subText"
+                      style={[styles.generalmargin, { color: theme.text, flex: 1 }]}
+                    >
+                      {commentItem.content}
+                    </ThemedText>
+                  </View>
+                </View>
+              ))}
+              {displayComments.length > INITIAL_COMMENTS_TO_SHOW && !showAllComments && (
+                <View
+                  // onPress={() => {
+                    // if (props.hasMoreComments && props.postId) {
+                    //   // If there are more comments on the server, fetch them
+                    //   setLoadingComments(true);
+                    //   commentService
+                    //     .getPostComments(props.postId, {
+                    //       page: 1,
+                    //       limit: 100,
+                    //       sort: "newest",
+                    //     })
+                    //     .then((allComments) => {
+                    //       setExpandedComments(allComments);
+                    //       setShowAllComments(true);
+                    //     })
+                    //     .catch((err) => {
+                    //       console.error("Error fetching comments:", err);
+                    //       // Fallback: just show all available comments
+                    //       setShowAllComments(true);
+                    //     })
+                    //     .finally(() => {
+                    //       setLoadingComments(false);
+                    //     });
+                    // } else {
+                    //   // Just expand to show all available comments
+                    //   setShowAllComments(true);
+                    // }
+                  // }}
+                  style={{ marginTop: 5, paddingVertical: 5 }}
+                >
+                  <ThemedText
+                    type="subText"
+                    style={{ color: theme.subText, fontSize: 12 }}
+                  >
+                    {loadingComments ? "Loading..." : `View all ${props.numberOfComment} comments`}
+                  </ThemedText>
+                </View>
               )}
-              <ThemedText
-                type="defaultSemiBold"
-                style={{ color: theme.text, paddingLeft: 8, fontSize: 12 }}
-              >
-                {props.lastComment.author.firstName &&
-                props.lastComment.author.lastName
-                  ? `${props.lastComment.author.firstName} ${props.lastComment.author.lastName}`
-                  : props.lastComment.author.firstName ||
-                    props.lastComment.author.lastName ||
-                    props.lastComment.author.email ||
-                    "Unknown"}
-              </ThemedText>
-              <ThemedText
-                type="subText"
-                style={[styles.generalmargin, { color: theme.text }]}
-              >
-                {props.lastComment.content}
-              </ThemedText>
-            </View>
+              {showAllComments && expandedComments.length > 0 && (
+                <>
+                  {expandedComments
+                    .filter((c) => !displayComments.some((pc) => pc.id === c.id))
+                    .map((commentItem) => (
+                      <View key={commentItem.id} style={styles.commentRow}>
+                        {commentItem.author.profilePicture ? (
+                          <Image
+                            source={{ uri: commentItem.author.profilePicture }}
+                            style={{
+                              ...styles.avatar,
+                              width: 24,
+                              height: 24,
+                              marginRight: 0,
+                            }}
+                          />
+                        ) : (
+                          <Ionicons
+                            name="person-circle"
+                            size={24}
+                            color={theme.subText}
+                          />
+                        )}
+                        <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", alignItems: "center" }}>
+                          <ThemedText
+                            type="defaultSemiBold"
+                            style={{ color: theme.text, paddingLeft: 8, fontSize: 12 }}
+                          >
+                            {commentItem.author.firstName && commentItem.author.lastName
+                              ? `${commentItem.author.firstName} ${commentItem.author.lastName}`
+                              : commentItem.author.firstName ||
+                                commentItem.author.lastName ||
+                                commentItem.author.email ||
+                                "Unknown"}
+                          </ThemedText>
+                          <ThemedText
+                            type="subText"
+                            style={[styles.generalmargin, { color: theme.text, flex: 1 }]}
+                          >
+                            {commentItem.content}
+                          </ThemedText>
+                        </View>
+                      </View>
+                    ))}
+                </>
+              )}
+              {showAllComments && expandedComments.length === 0 && displayComments.length > INITIAL_COMMENTS_TO_SHOW && (
+                <TouchableOpacity
+                  onPress={() => setShowAllComments(false)}
+                  style={{ marginTop: 5, paddingVertical: 5 }}
+                >
+                  <ThemedText
+                    type="subText"
+                    style={{ color: theme.subText, fontSize: 12 }}
+                  >
+                    Show less
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </>
           )}
           {/* Fallback for old commenter/commnet props */}
-          {!props.lastComment && props.commenter && props.commnet && (
+          {displayComments.length === 0 && props.commenter && props.commnet && (
             <View style={styles.commentRow}>
               <ThemedText type="defaultSemiBold" style={{ color: theme.text }}>
                 {props.commenter}:

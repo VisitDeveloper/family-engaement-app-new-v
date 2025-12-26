@@ -150,15 +150,25 @@ export default function SettingsScreen() {
                 <ThemedText type="subtitle" style={{ color: theme.text }}>
                   {user?.firstName + " " + user?.lastName || "User"}
                 </ThemedText>
-                <ThemedText
-                  type="subText"
-                  style={[styles.role, { color: theme.subText }]}
-                >
-                  {role
-                    ? `${role.charAt(0).toUpperCase() + role.slice(1)}`
-                    : "No role assigned"}{" "}
-                  {user?.childName ? ` - ${user.childName}` : ""}
-                </ThemedText>
+
+                {role &&
+                (role.toLowerCase() !== "parent" || user?.childName) ? (
+                  <ThemedText
+                    type="subText"
+                    style={[styles.role, { color: theme.subText }]}
+                  >
+                    {role && role.toLowerCase() !== "parent"
+                      ? `${role.charAt(0).toUpperCase() + role.slice(1)}`
+                      : ""}{" "}
+                    {user?.childName
+                      ? `${
+                          role && role.toLowerCase() !== "parent" ? " - " : ""
+                        }${user.childName}`
+                      : ""}
+                  </ThemedText>
+                ) : (
+                  ""
+                )}
                 {user?.subjects && user.subjects.length > 0 ? (
                   <View style={styles.tagsContainer}>
                     {user.subjects.map((subject, index) => (

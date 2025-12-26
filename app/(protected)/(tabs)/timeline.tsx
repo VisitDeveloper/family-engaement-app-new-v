@@ -435,7 +435,8 @@ const TimelineScreen = () => {
                 recommended={post.recommended}
                 isLiked={post.isLiked}
                 isSaved={post.isSaved}
-                lastComment={post.lastComment || undefined}
+                comments={post.comments || []}
+                hasMoreComments={post.hasMoreComments || false}
                 onLike={async () => {
                   try {
                     await likeService.likePost(post.id);

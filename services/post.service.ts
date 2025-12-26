@@ -23,7 +23,8 @@ export interface PostResponseDto {
   updatedAt: string;
   isSaved?: boolean;
   isLiked?: boolean;
-  lastComment?: CommentResponseDto | null;
+  comments?: CommentResponseDto[];
+  hasMoreComments?: boolean;
 }
 
 export interface CommentResponseDto {

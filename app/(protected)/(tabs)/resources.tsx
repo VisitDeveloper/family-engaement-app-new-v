@@ -11,7 +11,7 @@ import {
 } from "@/services/resource.service";
 import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -291,6 +291,9 @@ const ResourceLibrary = () => {
       <HeaderTabItem
         title="Resource Library"
         subTitle="200+ books and activities"
+        buttonIcon={<FontAwesome5 name="robot" size={15} color={theme.tint} />}
+        buttonLink="/ai-assisstant"
+        buttonTtitle="AI Assistant"
       />
 
       {/* Search Box با استفاده از کامپوننت عمومی */}
