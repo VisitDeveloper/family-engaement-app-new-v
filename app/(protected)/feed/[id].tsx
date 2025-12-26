@@ -16,6 +16,8 @@ import {
   Alert,
   FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   TouchableOpacity,
   View,
@@ -304,11 +306,17 @@ const FeedDetailScreen = () => {
     <View style={styles.container}>
       <HeaderInnerPage title="Back to Timeline" />
 
-      <ScrollView
+      <KeyboardAvoidingView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         <TimelineItem
           postId={post.id}
           name={authorName}
@@ -371,7 +379,8 @@ const FeedDetailScreen = () => {
             />
           )}
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };

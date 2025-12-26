@@ -15,6 +15,8 @@ import {
   Alert,
   FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   TextInput,
   TouchableOpacity,
@@ -405,12 +407,18 @@ const TimelineScreen = () => {
           </ThemedText>
         </View>
       ) : (
-        <ScrollView
+        <KeyboardAvoidingView
           style={{ flex: 1 }}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
-          {posts.map((post) => {
+          <ScrollView
+            style={{ flex: 1 }}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {posts.map((post) => {
             const authorName =
               post.author.firstName && post.author.lastName
                 ? `${post.author.firstName} ${post.author.lastName}`
@@ -459,7 +467,8 @@ const TimelineScreen = () => {
               />
             );
           })}
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       )}
     </View>
   );
