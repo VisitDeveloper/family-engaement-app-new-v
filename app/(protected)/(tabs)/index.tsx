@@ -246,7 +246,7 @@ export default function MessagesScreen() {
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        container: { flex: 1, padding: 10, backgroundColor: theme.bg },
+        container: { flex: 1, padding: 0, backgroundColor: theme.bg },
         searchContainer: {
           flexDirection: "row",
           alignItems: "center",
@@ -269,7 +269,8 @@ export default function MessagesScreen() {
           justifyContent: "space-between",
           alignItems: "center",
           gap: 15,
-          marginVertical: 10,
+          marginVertical: 5,
+          paddingHorizontal: 10,
           borderBottomColor: theme.border,
           borderBottomWidth: 1,
         },
@@ -289,6 +290,7 @@ export default function MessagesScreen() {
           flexDirection: "row",
           alignItems: "center",
           paddingVertical: 10,
+          paddingHorizontal: 10,
           borderBottomWidth: 1,
           borderColor: theme.border,
         },
@@ -329,14 +331,17 @@ export default function MessagesScreen() {
         buttonLink="/new"
         buttonTtitle="New"
         buttonRoles={["admin", "teacher"]}
+        addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
       />
 
-      <SearchContainer
-        query={query}
-        onChangeQuery={setQuery}
-        onDebouncedQuery={handleDebouncedQuery}
-        placeholder="Search Conversations..."
-      />
+      <View style={{ paddingHorizontal: 10 }}>
+        <SearchContainer
+          query={query}
+          onChangeQuery={setQuery}
+          onDebouncedQuery={handleDebouncedQuery}
+          placeholder="Search Conversations..."
+        />
+      </View>
 
       <RoleGuard roles={["admin", "teacher"]}>
         {/* Filter Buttons */}

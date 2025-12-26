@@ -200,10 +200,6 @@ function CreateNewEvent() {
       console.log("Form has errors", errors);
       return;
     }
-    if (selected.length === 0) {
-      Alert.alert("Error", "Please at least select one person");
-      return;
-    }
 
     try {
       setLoading(true);
@@ -241,7 +237,9 @@ function CreateNewEvent() {
           : undefined,
         repeat: repeat ? (repeatType[0].value as RepeatType) : "none",
         requestRSVP: requestRSVP || undefined,
-        inviteeIds: selected,
+        // Events are visible to all group members by default
+        // Only send inviteeIds if specific people are selected (optional)
+        inviteeIds: selected.length > 0 ? selected : undefined,
       };
 
       await eventService.create(eventData);
@@ -824,8 +822,17 @@ function CreateNewEvent() {
 
         <View style={styles.card}>
           <View style={styles.row}>
-            <View>
-              <ThemedText style={styles.sectionTitle}>Invitees</ThemedText>
+            <View style={styles.switchColumn}>
+              <ThemedText style={styles.sectionTitle}>Invitees (Optional)</ThemedText>
+              <ThemedText
+                type="subText"
+                style={[
+                  styles.sectionTitle,
+                  { color: theme.subText, margin: 0, fontSize: 12 },
+                ]}
+              >
+                Events are visible to all group members by default. Select specific people only if needed.
+              </ThemedText>
             </View>
 
             <View style={styles.wrapperInviteesShows}>
