@@ -246,6 +246,8 @@ const BookDetailScreen = () => {
           source={{ uri: resourceItem?.imageUrl ? resourceItem.imageUrl : "" }}
           style={styles.cover}
           resizeMode="cover"
+          accessibilityRole="image"
+          accessibilityLabel={`Cover image for ${resourceItem?.title || "resource"}`}
         />
 
         {/* Chips */}
@@ -257,8 +259,15 @@ const BookDetailScreen = () => {
           <TouchableOpacity
             onPress={() => openResource(resourceItem!)}
             style={styles.rating}
+            accessibilityRole="button"
+            accessibilityLabel={`View ratings. Current rating: ${(
+              resourceItem?.averageRating ||
+              resourceItem?.rating ||
+              0
+            ).toFixed(1)} stars`}
+            accessibilityHint="Double tap to view and rate this resource"
           >
-            <FontAwesome name="star" size={16} color="#FACC15" />
+            <FontAwesome name="star" size={16} color="#FACC15" accessibilityElementsHidden={true} importantForAccessibility="no" />
             <ThemedText type="subText">
               {(
                 resourceItem?.averageRating ||

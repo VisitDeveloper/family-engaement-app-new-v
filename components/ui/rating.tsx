@@ -45,22 +45,31 @@ const Rating = ({ maxRating = 5, size = 32, onRatingChange, initialRating = 0 }:
     }))
 
     return (
-        <View style={styles.container}>
+        <View style={styles.container} accessibilityRole="radiogroup" accessibilityLabel={`Rating: ${rating} out of ${maxRating} stars`}>
             <View style={styles.innerBox}>
 
                 {Array.from({ length: maxRating }, (_, index) => {
                     const starValue = index + 1;
+                    const isSelected = starValue <= rating;
                     return (
                         <TouchableOpacity
                             key={index}
                             onPress={() => handlePress(starValue)}
                             activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Rate ${starValue} out of ${maxRating} stars`}
+                            accessibilityHint={isSelected 
+                                ? `Currently selected. Double tap to change rating to ${starValue} stars`
+                                : `Double tap to rate ${starValue} out of ${maxRating} stars`}
+                            accessibilityState={{ selected: isSelected }}
                         >
                             <Ionicons
                                 name={starValue <= rating ? "star" : "star-outline"}
                                 size={size}
                                 color={starValue <= rating ? "#FFD700" : "#999"}
                                 style={styles.star}
+                                accessibilityElementsHidden={true}
+                                importantForAccessibility="no"
                             />
                         </TouchableOpacity>
                     );

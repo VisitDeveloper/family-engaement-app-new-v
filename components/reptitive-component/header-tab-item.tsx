@@ -74,6 +74,9 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
             <TouchableOpacity
               style={styles.eventButton}
               onPress={() => router.push(props.buttonLink as any)}
+              accessibilityRole="button"
+              accessibilityLabel={props.buttonTtitle}
+              accessibilityHint={`Double tap to ${props.buttonTtitle?.toLowerCase()}`}
             >
               {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
               {props.buttonIcon ? props.buttonIcon : null}
@@ -88,6 +91,9 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
             <TouchableOpacity
               style={styles.eventButton}
               onPress={() => router.push(props.buttonSecondLink as any)}
+              accessibilityRole="button"
+              accessibilityLabel={props.buttonSecondTtitle || "Action button"}
+              accessibilityHint={props.buttonSecondTtitle ? `Double tap to ${props.buttonSecondTtitle.toLowerCase()}` : "Double tap to perform action"}
             >
               {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
               {props.buttonSecondIcon ? props.buttonSecondIcon : null}

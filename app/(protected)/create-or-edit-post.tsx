@@ -588,6 +588,9 @@ const CreateOrEditPost = () => {
             placeholder="What do you want to talk about?"
             placeholderTextColor={theme.subText}
             multiline
+            accessibilityLabel="Post description"
+            accessibilityHint="Enter the description for your post. Maximum 300 characters."
+            maxLength={300}
           />
           <ThemedText
             type="subText"

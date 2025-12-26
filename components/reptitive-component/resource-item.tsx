@@ -49,9 +49,20 @@ const ResourceItem = (props: ResourceItemProps) => {
 
   return (
     <View style={props.styles.item}>
-      <TouchableOpacity onPress={props.onPress} activeOpacity={0.7}>
+      <TouchableOpacity 
+        onPress={props.onPress} 
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`${props.title}, ${displayType}, Rating: ${rating.toFixed(1)}`}
+        accessibilityHint={`Double tap to view details of ${props.title}`}
+      >
         <View>
-          <Image source={imageSource} style={props.styles.image} />
+          <Image 
+            source={imageSource} 
+            style={props.styles.image}
+            accessibilityRole="image"
+            accessibilityLabel={`Cover image for ${props.title}`}
+          />
         </View>
         <View style={props.styles.textContainer}>
           <View style={props.styles.typeContainer}>
@@ -80,6 +91,10 @@ const ResourceItem = (props: ResourceItemProps) => {
         onPress={handleSavePress}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={props.isSaved ? `Remove ${props.title} from saved` : `Save ${props.title}`}
+        accessibilityHint={props.isSaved ? "Double tap to unsave this resource" : "Double tap to save this resource"}
+        accessibilityState={{ selected: props.isSaved }}
         style={{
           position: "absolute",
           bottom: 5,
@@ -93,6 +108,8 @@ const ResourceItem = (props: ResourceItemProps) => {
             props.isSaved && { color: theme.tint },
           ]}
           size={20}
+          accessibilityElementsHidden={true}
+          importantForAccessibility="no"
         />
       </TouchableOpacity>
     </View>

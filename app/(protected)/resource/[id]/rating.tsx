@@ -188,6 +188,8 @@ const RatingScreen = () => {
                     source={{ uri: resourceItem?.imageUrl ? resourceItem.imageUrl : "" }}
                     style={styles.cover}
                     resizeMode="cover"
+                    accessibilityRole="image"
+                    accessibilityLabel={`Cover image for ${resourceItem?.title || "resource"}`}
                 />
 
                 <View style={styles.chipRow}>
@@ -216,6 +218,10 @@ const RatingScreen = () => {
                     onPress={handleRatingSubmit} 
                     style={[styles.readBtn, isSubmitting && { opacity: 0.6 }]}
                     disabled={isSubmitting}
+                    accessibilityRole="button"
+                    accessibilityLabel={isSubmitting ? "Submitting rating" : "Submit rating"}
+                    accessibilityHint="Double tap to submit your rating for this resource"
+                    accessibilityState={{ disabled: isSubmitting }}
                 >
                     {isSubmitting ? (
                         <ActivityIndicator color="white" />

@@ -503,6 +503,8 @@ export default function TimelineItem({
             <Image
               source={{ uri: props.author?.profilePicture || "" }}
               style={styles.avatar}
+              accessibilityRole="image"
+              accessibilityLabel={`${props.name}'s profile picture`}
             />
           ) : (
             <View style={styles.avatar}>
@@ -530,6 +532,10 @@ export default function TimelineItem({
                   e.stopPropagation();
                   setShowDropdown(!showDropdown);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel="Post options"
+                accessibilityHint="Double tap to open menu with edit and delete options"
+                accessibilityState={{ expanded: showDropdown }}
                 style={{
                   padding: 6,
                 }}
@@ -538,6 +544,8 @@ export default function TimelineItem({
                   name="ellipsis-horizontal"
                   size={20}
                   color={theme.text}
+                  accessibilityElementsHidden={true}
+                  importantForAccessibility="no"
                 />
               </TouchableOpacity>
               {showDropdown && (
@@ -553,11 +561,16 @@ export default function TimelineItem({
                         props.onEdit();
                       }
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Edit post"
+                    accessibilityHint="Double tap to edit this post"
                   >
                     <Ionicons
                       name="create-outline"
                       size={18}
                       color={theme.text}
+                      accessibilityElementsHidden={true}
+                      importantForAccessibility="no"
                     />
                     <ThemedText type="subText" style={{ color: theme.text }}>
                       Edit
@@ -594,8 +607,11 @@ export default function TimelineItem({
                         ]
                       );
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete post"
+                    accessibilityHint="Double tap to delete this post. This action cannot be undone."
                   >
-                    <Ionicons name="trash-outline" size={18} color="#ff4444" />
+                    <Ionicons name="trash-outline" size={18} color="#ff4444" accessibilityElementsHidden={true} importantForAccessibility="no" />
                     <ThemedText type="subText" style={{ color: "#ff4444" }}>
                       Delete
                     </ThemedText>
@@ -646,6 +662,8 @@ export default function TimelineItem({
               <Image
                 source={{ uri: imageUrl }}
                 style={styles.postImage}
+                accessibilityRole="image"
+                accessibilityLabel={`Image attached to post by ${props.name}`}
                 // contentFit="cover"
                 // transition={200}
                 onError={(error) => {
@@ -703,12 +721,17 @@ export default function TimelineItem({
                   style={styles.fileItem}
                   onPress={() => handleFilePress(fileUrl)}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Download file: ${fileName}`}
+                  accessibilityHint="Double tap to download this file"
                 >
                   <Ionicons
                     name={getFileIcon() as any}
                     size={24}
                     color={theme.tint}
                     style={styles.fileIcon}
+                    accessibilityElementsHidden={true}
+                    importantForAccessibility="no"
                   />
                   <View style={styles.fileInfo}>
                     <ThemedText type="subText" style={[styles.fileName, { textOverflow: "ellipsis", overflow: "hidden", fontSize: 12 }]}>
@@ -721,6 +744,8 @@ export default function TimelineItem({
                     name="download-outline"
                     size={20}
                     color={theme.subText}
+                    accessibilityElementsHidden={true}
+                    importantForAccessibility="no"
                   />
                 </TouchableOpacity>
               );
@@ -731,11 +756,20 @@ export default function TimelineItem({
         {/* Actions */}
         <View style={styles.actions}>
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.ationItem} onPress={props.onLike}>
+            <TouchableOpacity 
+              style={styles.ationItem} 
+              onPress={props.onLike}
+              accessibilityRole="button"
+              accessibilityLabel={props.isLiked ? "Unlike post" : "Like post"}
+              accessibilityHint={`${props.numberOfLike} likes. Double tap to ${props.isLiked ? "unlike" : "like"} this post`}
+              accessibilityState={{ selected: props.isLiked }}
+            >
               <EvilIcons
                 name={props.isLiked ? "heart" : "heart"}
                 size={22}
                 color={props.isLiked ? theme.tint : theme.text}
+                accessibilityElementsHidden={true}
+                importantForAccessibility="no"
               />
               <ThemedText
                 type="subText"
@@ -747,11 +781,18 @@ export default function TimelineItem({
                 {props.numberOfLike}
               </ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.ationItem}>
+            <TouchableOpacity 
+              style={styles.ationItem}
+              accessibilityRole="button"
+              accessibilityLabel={`${props.numberOfComment} comments`}
+              accessibilityHint="Double tap to view comments"
+            >
               <Ionicons
                 name="chatbubble-outline"
                 size={16}
                 color={theme.text}
+                accessibilityElementsHidden={true}
+                importantForAccessibility="no"
               />
               <ThemedText
                 type="subText"
@@ -761,20 +802,35 @@ export default function TimelineItem({
               </ThemedText>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.ationItem}>
+            <TouchableOpacity 
+              style={styles.ationItem}
+              accessibilityRole="button"
+              accessibilityLabel="Share post"
+              accessibilityHint="Double tap to share this post"
+            >
               <Ionicons
                 name="return-up-forward-outline"
                 size={18}
                 color={theme.text}
+                accessibilityElementsHidden={true}
+                importantForAccessibility="no"
               />
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity onPress={props.onSave}>
+          <TouchableOpacity 
+            onPress={props.onSave}
+            accessibilityRole="button"
+            accessibilityLabel={props.isSaved ? "Remove from saved" : "Save post"}
+            accessibilityHint={`Double tap to ${props.isSaved ? "unsave" : "save"} this post`}
+            accessibilityState={{ selected: props.isSaved }}
+          >
             <Ionicons
               name={props.isSaved ? "bookmark" : "bookmark-outline"}
               size={20}
               color={props.isSaved ? theme.tint : theme.text}
+              accessibilityElementsHidden={true}
+              importantForAccessibility="no"
             />
           </TouchableOpacity>
         </View>
@@ -808,6 +864,8 @@ export default function TimelineItem({
                             height: 24,
                             marginRight: 0,
                           }}
+                          accessibilityRole="image"
+                          accessibilityLabel={`${commentItem.author.firstName || commentItem.author.email}'s profile picture`}
                         />
                       ) : (
                         <Ionicons

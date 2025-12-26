@@ -137,10 +137,20 @@ export default function ChatScreen() {
                     <Text style={isMe ? styles.messageText : styles.messageOtherText}>{item.content}</Text>
                 )}
                 {item.type === "image" && item.mediaUrl && (
-                    <Image source={{ uri: item.mediaUrl }} style={styles.imageThumbnail} />
+                    <Image 
+                        source={{ uri: item.mediaUrl }} 
+                        style={styles.imageThumbnail}
+                        accessibilityRole="image"
+                        accessibilityLabel="Image attachment"
+                    />
                 )}
                 {item.type === "video" && item.mediaUrl && (
-                    <Image source={{ uri: item.mediaUrl }} style={styles.videoThumbnail} />
+                    <Image 
+                        source={{ uri: item.mediaUrl }} 
+                        style={styles.videoThumbnail}
+                        accessibilityRole="image"
+                        accessibilityLabel="Video thumbnail"
+                    />
                 )}
                 {item.type === "audio" && item.mediaUrl && (
                     <View style={styles.audioPlayer}>
@@ -226,11 +236,18 @@ export default function ChatScreen() {
                         onChangeText={setInput}
                         onSubmitEditing={handleSendMessage}
                         editable={!sending}
+                        accessibilityLabel="Message input"
+                        accessibilityHint="Type your message here"
+                        accessibilityState={{ disabled: sending }}
                     />
                     <TouchableOpacity 
                         style={[styles.sendButton, sending && { opacity: 0.5 }]}
                         onPress={handleSendMessage}
                         disabled={sending || !input.trim()}
+                        accessibilityRole="button"
+                        accessibilityLabel="Send message"
+                        accessibilityHint="Double tap to send your message"
+                        accessibilityState={{ disabled: sending || !input.trim() }}
                     >
                         {sending ? (
                             <ActivityIndicator size="small" color="#fff" />

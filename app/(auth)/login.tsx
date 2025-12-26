@@ -270,6 +270,8 @@ export default function LoginScreen() {
                 alignSelf: "center",
                 marginBottom: 5,
               }}
+              accessibilityRole="image"
+              accessibilityLabel="Family App Logo"
               // resizeMode="contain"
             />
           </View>
@@ -293,6 +295,9 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={styles.switchZone}
               onPress={() => toggleSwitch("login")}
+              accessibilityRole="button"
+              accessibilityLabel="Switch to login"
+              accessibilityState={{ selected: activeTab === "login" }}
             >
               <Text
                 style={[
@@ -307,6 +312,9 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={styles.switchZone}
               onPress={() => toggleSwitch("register")}
+              accessibilityRole="button"
+              accessibilityLabel="Switch to register"
+              accessibilityState={{ selected: activeTab === "register" }}
             >
               <Text
                 style={[
@@ -345,6 +353,11 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               placeholder="Please insert your email"
               placeholderTextColor={theme.subText}
+              accessibilityLabel="Email"
+              accessibilityHint="Enter your email address"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              textContentType="emailAddress"
             />
             {errors.email && (
               <ThemedText type="error">{errors.email}</ThemedText>
@@ -366,6 +379,10 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               placeholder="Please insert your password"
               placeholderTextColor={theme.subText}
+              accessibilityLabel="Password"
+              accessibilityHint="Enter your password"
+              textContentType="password"
+              autoCapitalize="none"
             />
             {errors.password && (
               <ThemedText type="error">{errors.password}</ThemedText>
@@ -388,6 +405,10 @@ export default function LoginScreen() {
                 onChangeText={setConfirmPassword}
                 placeholder="Please insert your confirm password"
                 placeholderTextColor={theme.subText}
+                accessibilityLabel="Confirm Password"
+                accessibilityHint="Re-enter your password to confirm"
+                textContentType="password"
+                autoCapitalize="none"
               />
               {errors.confirmPassword && (
                 <ThemedText type="error">{errors.confirmPassword}</ThemedText>
@@ -403,6 +424,8 @@ export default function LoginScreen() {
                 backgroundColor: "#ffebee",
                 borderRadius: 5,
               }}
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
             >
               <ThemedText type="error" style={{ textAlign: "center" }}>
                 {error}
@@ -413,6 +436,18 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={handleLogin}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel={loading
+              ? activeTab === "login"
+                ? "Logging in"
+                : "Registering"
+              : activeTab === "login"
+              ? "Login"
+              : "Register"}
+            accessibilityState={{ disabled: loading }}
+            accessibilityHint={activeTab === "login" 
+              ? "Submit your login credentials"
+              : "Submit your registration information"}
             style={{
               paddingHorizontal: 30,
               paddingVertical: 12,
