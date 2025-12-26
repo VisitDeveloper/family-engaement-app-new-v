@@ -300,7 +300,7 @@ const TimelineScreen = () => {
         subTitle="Learning journey & memories"
         buttonIcon={<Feather name="calendar" size={16} color={theme.tint} />}
         buttonLink="/event"
-        buttonTtitle="Events"
+        buttonTtitle="School Calendar"
         buttonRoles={["admin", "teacher", "parent"]}
       />
 
