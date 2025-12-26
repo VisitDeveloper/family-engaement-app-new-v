@@ -8,14 +8,11 @@ import { likeService } from "@/services/like.service";
 import { PostResponseDto, postService } from "@/services/post.service";
 import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
-import { AntDesign, Ionicons } from "@expo/vector-icons";
-import { usePathname } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -26,6 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const FeedDetailScreen = () => {
   const param = usePathname();
+  const router = useRouter();
   const pathID = param.split("/");
   const id = pathID.pop();
 
@@ -35,7 +33,6 @@ const FeedDetailScreen = () => {
   const [post, setPost] = useState<PostResponseDto | null>(null);
   const [comments, setComments] = useState<CommentResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [commentsLoading, setCommentsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Helper function to format time ago
@@ -79,7 +76,6 @@ const FeedDetailScreen = () => {
     if (!id) return;
 
     try {
-      setCommentsLoading(true);
       const response = await commentService.getPostComments(id, {
         page: 1,
         limit: 100,
@@ -89,8 +85,6 @@ const FeedDetailScreen = () => {
     } catch (err: any) {
       console.error("Error fetching comments:", err);
       // Don't show alert for comments error, just log it
-    } finally {
-      setCommentsLoading(false);
     }
   }, [id]);
 
@@ -113,62 +107,6 @@ const FeedDetailScreen = () => {
         scroll: {
           paddingBottom: insets.bottom + 30,
           paddingHorizontal: 16,
-        },
-        commentsSection: {
-          padding: 15,
-          borderTopWidth: 1,
-          borderColor: t.border,
-          marginTop: 10,
-        },
-        commentsTitle: {
-          fontSize: 18,
-          fontWeight: "600",
-          color: t.text,
-          marginBottom: 15,
-        },
-        commentItem: {
-          flexDirection: "row",
-          paddingVertical: 12,
-          borderBottomWidth: 1,
-          borderColor: t.border,
-        },
-        commentAvatar: {
-          width: 32,
-          height: 32,
-          borderRadius: 16,
-          backgroundColor: t.panel,
-          marginRight: 10,
-          borderWidth: 1,
-          borderColor: t.border,
-        },
-        commentContent: {
-          flex: 1,
-        },
-        commentAuthor: {
-          fontSize: 14,
-          fontWeight: "600",
-          color: t.text,
-          marginBottom: 4,
-        },
-        commentText: {
-          fontSize: 14,
-          color: t.text,
-          marginBottom: 4,
-        },
-        commentMeta: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 15,
-          marginTop: 4,
-        },
-        commentAction: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 4,
-        },
-        commentTime: {
-          fontSize: 12,
-          color: t.subText,
         },
         loadingContainer: {
           flex: 1,
@@ -234,74 +172,6 @@ const FeedDetailScreen = () => {
         post.author.email ||
         "Unknown";
 
-  const renderComment = ({ item }: { item: CommentResponseDto }) => {
-    const commentAuthorName =
-      item.author.firstName && item.author.lastName
-        ? `${item.author.firstName} ${item.author.lastName}`
-        : item.author.firstName ||
-          item.author.lastName ||
-          item.author.email ||
-          "Unknown";
-
-    return (
-      <View style={styles.commentItem}>
-        {item.author.profilePicture ? (
-          <Image
-            source={{ uri: item.author.profilePicture }}
-            style={styles.commentAvatar}
-          />
-        ) : (
-          <View style={styles.commentAvatar}>
-            <Ionicons name="person-circle" size={32} color={theme.subText} />
-          </View>
-        )}
-        <View style={styles.commentContent}>
-          <ThemedText type="defaultSemiBold" style={styles.commentAuthor}>
-            {commentAuthorName}
-          </ThemedText>
-          <ThemedText type="subText" style={styles.commentText}>
-            {item.content}
-          </ThemedText>
-          <View style={styles.commentMeta}>
-            <ThemedText type="subLittleText" style={styles.commentTime}>
-              {formatTimeAgo(item.createdAt)}
-            </ThemedText>
-            <TouchableOpacity
-              style={styles.commentAction}
-              onPress={async () => {
-                try {
-                  if (item.isLiked) {
-                    await likeService.unlikeComment(item.id);
-                  } else {
-                    await likeService.likeComment(item.id);
-                  }
-                  await fetchComments();
-                } catch (err) {
-                  console.error("Error toggling comment like:", err);
-                }
-              }}
-            >
-              <AntDesign
-                name={item.isLiked ? "heart" : ("hearto" as any)}
-                size={14}
-                color={item.isLiked ? theme.tint : theme.subText}
-              />
-              <ThemedText type="subLittleText" style={{ color: theme.subText }}>
-                {item.likesCount}
-              </ThemedText>
-            </TouchableOpacity>
-            {item.repliesCount > 0 && (
-              <ThemedText type="subLittleText" style={{ color: theme.subText }}>
-                {item.repliesCount}{" "}
-                {item.repliesCount === 1 ? "reply" : "replies"}
-              </ThemedText>
-            )}
-          </View>
-        </View>
-      </View>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <HeaderInnerPage title="Back to Timeline" />
@@ -331,8 +201,9 @@ const FeedDetailScreen = () => {
           recommended={post.recommended}
           isLiked={post.isLiked}
           isSaved={post.isSaved}
-          comments={post.comments || []}
+          comments={comments.length > 0 ? comments : (post.comments || [])}
           hasMoreComments={post.hasMoreComments || false}
+          showAllCommentsByDefault={true}
           onLike={async () => {
             try {
               await likeService.likePost(post.id);
@@ -352,33 +223,31 @@ const FeedDetailScreen = () => {
           onCommentAdded={async () => {
             await refreshData();
           }}
+          onEdit={() => {
+            router.push({
+              pathname: "/create-post",
+              params: {
+                postId: post.id,
+                description: post.description,
+                tags: post.tags?.join(",") || "",
+                recommended: post.recommended ? "true" : "false",
+                visibility: post.visibility,
+                images: post.images?.join(",") || "",
+                files: post.files?.join(",") || "",
+              },
+            });
+          }}
+          onDelete={async () => {
+            try {
+              await postService.delete(post.id);
+              Alert.alert("Success", "Post deleted successfully");
+              router.back();
+            } catch (error: any) {
+              Alert.alert("Error", error.message || "Failed to delete post");
+              console.error("Error deleting post:", error);
+            }
+          }}
         />
-
-        {/* Comments Section */}
-        <View style={styles.commentsSection}>
-          <ThemedText type="subtitle" style={styles.commentsTitle}>
-            Comments ({comments?.length || 0})
-          </ThemedText>
-          {commentsLoading ? (
-            <View style={{ padding: 20, alignItems: "center" }}>
-              <ActivityIndicator size="small" color={theme.tint} />
-            </View>
-          ) : comments.length === 0 ? (
-            <ThemedText
-              type="subText"
-              style={{ textAlign: "center", padding: 20 }}
-            >
-              No comments yet. Be the first to comment!
-            </ThemedText>
-          ) : (
-            <FlatList
-              data={comments}
-              renderItem={renderComment}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-            />
-          )}
-        </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

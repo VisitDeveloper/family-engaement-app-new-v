@@ -16,6 +16,7 @@ export interface PostResponseDto {
   visibility: 'everyone' | 'followers' | 'private';
   images?: string[] | null;
   files?: string[] | null;
+  classroomId?: string | null;
   author: AuthorResponseDto;
   likesCount: number;
   commentsCount: number;
@@ -47,6 +48,7 @@ export interface CreatePostDto {
   visibility?: 'everyone' | 'followers' | 'private';
   images?: string[];
   files?: string[];
+  classroomId?: string | null;
 }
 
 export interface UpdatePostDto {
@@ -56,6 +58,7 @@ export interface UpdatePostDto {
   visibility?: 'everyone' | 'followers' | 'private';
   images?: string[];
   files?: string[];
+  classroomId?: string | null;
 }
 
 export interface CreateCommentDto {

@@ -3,14 +3,14 @@ import { ThemedText } from "@/components/themed-text";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useValidation } from "@/hooks/use-validation";
-import { messagingService } from "@/services/messaging.service";
+import { messagingService, ClassroomResponseDto } from "@/services/messaging.service";
 import { postService } from "@/services/post.service";
 import { useStore } from "@/store";
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -24,6 +24,7 @@ import {
 
 const CreateNewPost = () => {
   const theme = useStore((s) => s.theme);
+  const user = useStore((s) => s.user);
   const router = useRouter();
   const [message, setMessage] = useState<string>("");
   const [tags, setTags] = useState<string>("");
@@ -45,6 +46,10 @@ const CreateNewPost = () => {
       value: "private",
     },
   ]);
+  const [classrooms, setClassrooms] = useState<OptionsList[]>([]);
+  const [selectedClassroom, setSelectedClassroom] = useState<OptionsList | null>(null);
+  const [loadingClassrooms, setLoadingClassrooms] = useState<boolean>(false);
+  const isTeacher = user?.role === "teacher" || user?.role === "admin";
 
   const styles = useThemedStyles((t) => ({
     container: { flex: 1, padding: 10, backgroundColor: t.bg },
@@ -252,6 +257,37 @@ const CreateNewPost = () => {
     setSelectedFile(null);
   };
 
+  const loadClassrooms = useCallback(async () => {
+    if (!isTeacher) return;
+    
+    setLoadingClassrooms(true);
+    try {
+      const classroomsData = await messagingService.getClassrooms();
+      const mappedClassrooms: OptionsList[] = classroomsData.map((classroom: ClassroomResponseDto) => {
+        const name =
+          typeof classroom.name === "string"
+            ? classroom.name
+            : classroom.name && typeof classroom.name === "object"
+            ? (Object.values(classroom.name)[0] as string) || "Classroom"
+            : "Classroom";
+        return {
+          label: name,
+          value: classroom.id,
+        };
+      });
+      setClassrooms(mappedClassrooms);
+    } catch (error: any) {
+      console.error("Error loading classrooms:", error);
+      Alert.alert("Error", "Failed to load classrooms. Please try again.");
+    } finally {
+      setLoadingClassrooms(false);
+    }
+  }, [isTeacher]);
+
+  useEffect(() => {
+    loadClassrooms();
+  }, [loadClassrooms]);
+
   const { errors, validate } = useValidation({
     message: { required: true, maxLength: 300, minLength: 2 },
     tags: {
@@ -295,11 +331,13 @@ const CreateNewPost = () => {
         visibility: "everyone" | "followers" | "private";
         images?: string[];
         files?: string[];
+        classroomId?: string | null;
       } = {
         description: message,
         tags: tagsArray,
         recommended: textMessages,
         visibility: visibilityValue as "everyone" | "followers" | "private",
+        classroomId: selectedClassroom?.value || null,
       };
 
       // اگر تصویر انتخاب شده باشد، ابتدا آپلود می‌کنیم
@@ -485,6 +523,49 @@ const CreateNewPost = () => {
             thumbColor={textMessages ? "#fff" : "#fff"}
           />
         </View>
+
+        {isTeacher && (
+          <View style={styles.column}>
+            <View style={{ flex: 1 }}>
+              <View
+                style={{ flexDirection: "row", gap: 10, alignItems: "center" }}
+              >
+                <ThemedText
+                  type="subtitle"
+                  style={{ color: theme.text, fontWeight: 400 }}
+                >
+                  Select Classroom
+                </ThemedText>
+              </View>
+              <ThemedText type="subText" style={[styles.rowSubtitle, {}]}>
+                Choose a classroom for this post (optional)
+              </ThemedText>
+            </View>
+
+            {loadingClassrooms ? (
+              <ActivityIndicator size="small" color={theme.tint} />
+            ) : (
+              <SelectBox
+                options={[
+                  { label: "No Classroom", value: "" },
+                  ...classrooms,
+                ]}
+                value={selectedClassroom?.label || "No Classroom"}
+                onChange={(val) => {
+                  if (val === "") {
+                    setSelectedClassroom(null);
+                  } else {
+                    const selectedOption = classrooms.find((opt) => opt.value === val);
+                    if (selectedOption) {
+                      setSelectedClassroom(selectedOption);
+                    }
+                  }
+                }}
+                title="List of Classrooms"
+              />
+            )}
+          </View>
+        )}
 
         <View style={styles.column}>
           <View style={{ flex: 1 }}>

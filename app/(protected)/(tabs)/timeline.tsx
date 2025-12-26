@@ -215,8 +215,8 @@ const TimelineScreen = () => {
   const tabsData = [
     { label: "All Posts", filter: "all" as const },
     { label: "Media", filter: "media" as const },
-    { label: "Reports", filter: "reports" as const },
-    { label: "Highlights", filter: "recommended" as const },
+    // { label: "Reports", filter: "reports" as const },
+    { label: "Recommended", filter: "recommended" as const },
     { label: "Saved", filter: "saved" as const },
   ];
   const [activeTab, setActiveTab] = useState(0);
@@ -465,6 +465,7 @@ const TimelineScreen = () => {
                     isSaved={post.isSaved}
                     comments={post.comments || []}
                     hasMoreComments={post.hasMoreComments || false}
+                    showCommentInput={false}
                     onLike={async () => {
                       try {
                         await likeService.likePost(post.id);
@@ -483,6 +484,30 @@ const TimelineScreen = () => {
                     }}
                     onCommentAdded={async () => {
                       fetchPosts(tabsData[activeTab].filter);
+                    }}
+                    onEdit={() => {
+                      router.push({
+                        pathname: "/create-post",
+                        params: {
+                          postId: post.id,
+                          description: post.description,
+                          tags: post.tags?.join(",") || "",
+                          recommended: post.recommended ? "true" : "false",
+                          visibility: post.visibility,
+                          images: post.images?.join(",") || "",
+                          files: post.files?.join(",") || "",
+                        },
+                      });
+                    }}
+                    onDelete={async () => {
+                      try {
+                        await postService.delete(post.id);
+                        Alert.alert("Success", "Post deleted successfully");
+                        fetchPosts(tabsData[activeTab].filter);
+                      } catch (error: any) {
+                        Alert.alert("Error", error.message || "Failed to delete post");
+                        console.error("Error deleting post:", error);
+                      }
                     }}
                   />
                 );
