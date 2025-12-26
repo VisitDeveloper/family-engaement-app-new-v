@@ -1,33 +1,32 @@
-import RoleGuard from "@/components/check-permisions";
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import {
-    EventResponseDto,
-    eventService,
-    RSVPStatus,
-    TimeSlotDto,
+  EventResponseDto,
+  eventService,
+  RSVPStatus,
+  TimeSlotDto,
 } from "@/services/event.service";
 import { useStore } from "@/store";
 import {
-    AntDesign,
-    Feather,
-    FontAwesome6,
-    MaterialIcons,
+  AntDesign,
+  Feather,
+  FontAwesome6,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    Linking,
-    Platform,
-    ScrollView,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Linking,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -574,11 +573,6 @@ const EventDetailScreen = () => {
         <ThemedView style={styles.card}>
           <View style={styles.cardHeader}>
             <ThemedText style={styles.cardTitle}>Event Details</ThemedText>
-            <RoleGuard roles={["admin", "teacher"]}>
-              <TouchableOpacity style={styles.editButton}>
-                <Feather name="edit-2" size={18} color={theme.tint} />
-              </TouchableOpacity>
-            </RoleGuard>
           </View>
 
           <View style={styles.detailRow}>
@@ -626,9 +620,6 @@ const EventDetailScreen = () => {
         <ThemedView style={styles.card}>
           <View style={styles.cardHeader}>
             <ThemedText style={styles.cardTitle}>Date and Time</ThemedText>
-            <TouchableOpacity style={styles.editButton}>
-              <Feather name="edit-2" size={18} color={theme.tint} />
-            </TouchableOpacity>
           </View>
 
           <View style={styles.detailRow}>
@@ -676,9 +667,6 @@ const EventDetailScreen = () => {
           <ThemedView style={styles.card}>
             <View style={styles.cardHeader}>
               <ThemedText style={styles.cardTitle}>Invitees</ThemedText>
-              <TouchableOpacity style={styles.editButton}>
-                <Feather name="edit-2" size={18} color={theme.tint} />
-              </TouchableOpacity>
             </View>
 
             {/* RSVP Status Badges */}

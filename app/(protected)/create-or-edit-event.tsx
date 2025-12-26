@@ -16,8 +16,8 @@ import { ParentDto, userService } from "@/services/user.service";
 import { useStore } from "@/store";
 import { enumToOptions } from "@/utils/make-array-for-select-box";
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -79,9 +79,12 @@ const convertParentToInvitee = (parent: ParentDto): Invitee => {
 function CreateNewEvent() {
   const theme = useStore((state) => state.theme);
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const eventId = params.eventId as string | undefined;
+  const isEditMode = !!eventId;
 
   const [eventTitle, setEventTitle] = useState<string>("");
-  const firstElementArray = enumToOptions(EventType);
+  const firstElementArray = useMemo(() => enumToOptions(EventType), []);
   const [eventType, setEventType] = useState<OptionsList[]>([
     firstElementArray[0],
   ]);
@@ -118,7 +121,7 @@ function CreateNewEvent() {
   };
 
   const [repeat, setRepeat] = useState<boolean>(false);
-  const firstElementArrayOfRepeatType = enumToOptions(RepeatTypeEnum);
+  const firstElementArrayOfRepeatType = useMemo(() => enumToOptions(RepeatTypeEnum), []);
   const [repeatType, setRepeatType] = useState<OptionsList[]>([
     firstElementArrayOfRepeatType[0],
   ]);
@@ -127,6 +130,7 @@ function CreateNewEvent() {
   const [selected, setSelected] = useState<string[]>([]);
   const [parents, setParents] = useState<Invitee[]>([]);
   const [loadingParents, setLoadingParents] = useState<boolean>(false);
+  const [loadingEvent, setLoadingEvent] = useState<boolean>(false);
 
   // Fetch parents from API
   const fetchParents = useCallback(async () => {
@@ -152,6 +156,142 @@ function CreateNewEvent() {
   useEffect(() => {
     fetchParents();
   }, [fetchParents]);
+
+  // Load event data if in edit mode
+  const loadEventData = useCallback(async () => {
+    if (!eventId) return;
+
+    try {
+      setLoadingEvent(true);
+      const eventData = await eventService.getById(eventId);
+
+      // Populate form fields with event data
+      setEventTitle(eventData.title);
+      
+      // Set event type - convert from lowercase API format to enum format
+      const matchingType = firstElementArray.find(
+        (opt) => opt.value.toLowerCase() === eventData.type.toLowerCase()
+      );
+      if (matchingType) {
+        setEventType([matchingType]);
+      }
+
+      setDescription(extractString(eventData.description));
+      const locationString = extractString(eventData.location);
+      setLocation(locationString);
+      
+      // Set locationName from location if it's a string, otherwise use location string
+      if (locationString) {
+        setLocationName(locationString);
+      }
+      
+      if (eventData.locationLatitude) {
+        setLocationLatitude(eventData.locationLatitude.toString());
+      }
+      if (eventData.locationLongitude) {
+        setLocationLongitude(eventData.locationLongitude.toString());
+      }
+
+      setRequestRSVP(eventData.requestRSVP || false);
+      
+      // Parse dates
+      if (eventData.startDate) {
+        setStartDate(new Date(eventData.startDate));
+      }
+      if (eventData.endDate) {
+        setEndDate(new Date(eventData.endDate));
+      }
+
+      setAllDayEvent(eventData.allDay || false);
+
+      // Parse times if not all day
+      if (!eventData.allDay && eventData.startTime) {
+        const startTimeStr = typeof eventData.startTime === "string" 
+          ? eventData.startTime 
+          : (eventData.startTime as any).time || (eventData.startTime as any).value || "";
+        if (startTimeStr) {
+          const [hours, minutes] = startTimeStr.split(":").map(Number);
+          const startDateObj = new Date(eventData.startDate);
+          startDateObj.setHours(hours || 0, minutes || 0, 0, 0);
+          setStartDateTime(startDateObj);
+        }
+      }
+
+      if (!eventData.allDay && eventData.endTime) {
+        const endTimeStr = typeof eventData.endTime === "string"
+          ? eventData.endTime
+          : (eventData.endTime as any).time || (eventData.endTime as any).value || "";
+        if (endTimeStr) {
+          const [hours, minutes] = endTimeStr.split(":").map(Number);
+          const endDateObj = new Date(eventData.endDate);
+          endDateObj.setHours(hours || 0, minutes || 0, 0, 0);
+          setEndDateTime(endDateObj);
+        }
+      }
+
+      setMultipleTimeSlots(eventData.multipleTimeSlots || false);
+      setRestrictNumberOfPeopleInASlot(eventData.slotRestriction || false);
+      
+      if (eventData.slotDuration) {
+        const duration = typeof eventData.slotDuration === "number"
+          ? eventData.slotDuration
+          : (eventData.slotDuration as any).value || 30;
+        setSlotDuration(duration);
+      }
+
+      if (eventData.maxParticipantsPerSlot) {
+        setCounter(eventData.maxParticipantsPerSlot);
+      }
+
+      setRepeat(eventData.repeat !== "none");
+      if (eventData.repeat && eventData.repeat !== "none") {
+        const matchingRepeat = firstElementArrayOfRepeatType.find(
+          (opt) => opt.value === eventData.repeat
+        );
+        if (matchingRepeat) {
+          setRepeatType([matchingRepeat]);
+        }
+      }
+
+      // Set selected invitees if any
+      if (eventData.invitees && eventData.invitees.length > 0) {
+        setSelected(eventData.invitees.map((inv) => inv.userId));
+      }
+    } catch (error: any) {
+      console.error("Error loading event:", error);
+      Alert.alert(
+        "Error",
+        error.message || "Failed to load event. Please try again."
+      );
+      router.back();
+    } finally {
+      setLoadingEvent(false);
+    }
+  }, [eventId, router, firstElementArray, firstElementArrayOfRepeatType]);
+
+  useEffect(() => {
+    if (isEditMode && eventId) {
+      loadEventData();
+    }
+  }, [isEditMode, eventId, loadEventData]);
+
+  // Helper function to extract string from description/location
+  const extractString = (
+    value: Record<string, any> | string | null | undefined
+  ): string => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value !== null) {
+      return (
+        (value as any).en ||
+        (value as any).fa ||
+        (value as any).text ||
+        (value as any).value ||
+        JSON.stringify(value)
+      );
+    }
+    return String(value);
+  };
 
   const toggleSelect = (id: string) => {
     setSelected((prev) =>
@@ -242,19 +382,28 @@ function CreateNewEvent() {
         inviteeIds: selected.length > 0 ? selected : undefined,
       };
 
-      await eventService.create(eventData);
-
-      Alert.alert("Success", "Event created successfully!", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
+      if (isEditMode && eventId) {
+        await eventService.update(eventId, eventData);
+        Alert.alert("Success", "Event updated successfully!", [
+          {
+            text: "OK",
+            onPress: () => router.back(),
+          },
+        ]);
+      } else {
+        await eventService.create(eventData);
+        Alert.alert("Success", "Event created successfully!", [
+          {
+            text: "OK",
+            onPress: () => router.back(),
+          },
+        ]);
+      }
     } catch (error: any) {
-      console.error("Error creating event:", error);
+      console.error(`Error ${isEditMode ? "updating" : "creating"} event:`, error);
       Alert.alert(
         "Error",
-        error.message || "Failed to create event. Please try again."
+        error.message || `Failed to ${isEditMode ? "update" : "create"} event. Please try again.`
       );
     } finally {
       setLoading(false);
@@ -433,10 +582,34 @@ function CreateNewEvent() {
     },
   }));
 
+  if (loadingEvent) {
+    return (
+      <View style={styles.container}>
+        <HeaderInnerPage
+          title={isEditMode ? "Edit Event" : "Create New Event"}
+          addstyles={{ marginBottom: 20 }}
+        />
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          <ActivityIndicator size="large" color={theme.tint} />
+          <ThemedText style={{ marginTop: 10, color: theme.subText }}>
+            Loading event...
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <HeaderInnerPage
-        title="Create New Event"
+        title={isEditMode ? "Edit Event" : "Create New Event"}
         addstyles={{ marginBottom: 20 }}
       />
 
@@ -951,7 +1124,13 @@ function CreateNewEvent() {
           disabled={loading}
         >
           <ThemedText style={styles.buttonText}>
-            {loading ? "Creating..." : "Create Event"}
+            {loading
+              ? isEditMode
+                ? "Updating..."
+                : "Creating..."
+              : isEditMode
+              ? "Update Event"
+              : "Create Event"}
           </ThemedText>
         </TouchableOpacity>
       </ScrollView>

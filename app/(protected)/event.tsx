@@ -4,31 +4,32 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import {
-    EventResponseDto,
-    eventService,
-    RSVPStatus,
-    TimeSlotDto,
+  EventResponseDto,
+  eventService,
+  RSVPStatus,
+  TimeSlotDto,
 } from "@/services/event.service";
 import { useStore } from "@/store";
 import {
-    AntDesign,
-    Feather,
-    FontAwesome,
-    FontAwesome6,
-    Ionicons,
-    MaterialIcons,
+  AntDesign,
+  Feather,
+  FontAwesome,
+  FontAwesome6,
+  Ionicons,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Linking,
-    Modal,
-    Platform,
-    ScrollView,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -273,6 +274,23 @@ const SchoolCalendarScreen = () => {
   const [expandedRsvpEventId, setExpandedRsvpEventId] = useState<string | null>(
     null
   );
+  const [openDropdownEventId, setOpenDropdownEventId] = useState<string | null>(
+    null
+  );
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const currentUser = useStore((s) => s.user);
+  const isAdmin = currentUser?.role === "admin";
+  const isTeacher = currentUser?.role === "teacher";
+  
+  // Helper function to check if user can edit/delete an event
+  const canEditDeleteEvent = (event: EventResponseDto): boolean => {
+    if (isAdmin) return true; // Admins can edit/delete any event
+    if (isTeacher) {
+      // Teachers can only edit/delete events they created
+      return event.creatorId === currentUser?.id;
+    }
+    return false;
+  };
 
   const monthTitle = useMemo(() => {
     const months = [
@@ -329,6 +347,8 @@ const SchoolCalendarScreen = () => {
   useFocusEffect(
     useCallback(() => {
       fetchEvents();
+      // Close dropdown when screen comes into focus
+      setOpenDropdownEventId(null);
     }, [fetchEvents])
   );
 
@@ -454,6 +474,32 @@ const SchoolCalendarScreen = () => {
       alignItems: "center",
       justifyContent: "center",
     },
+    dropdownContainer: {
+      position: "relative",
+    },
+    dropdownMenu: {
+      position: "absolute",
+      top: 30,
+      right: 0,
+      backgroundColor: theme.bg,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
+      minWidth: 120,
+      zIndex: 1000,
+      elevation: 5,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+    },
+    dropdownItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      gap: 8,
+    },
   }));
 
   const handlePrev = () => {
@@ -521,6 +567,46 @@ const SchoolCalendarScreen = () => {
     setExpandedRsvpEventId(expandedRsvpEventId === eventId ? null : eventId);
   };
 
+  const handleEditEvent = (eventId: string) => {
+    setOpenDropdownEventId(null);
+    router.push(`/create-or-edit-event?eventId=${eventId}`);
+  };
+
+  const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
+    setOpenDropdownEventId(null);
+    Alert.alert(
+      "Delete Event",
+      `Are you sure you want to delete "${eventTitle}"? This action cannot be undone.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setDeletingEventId(eventId);
+              await eventService.delete(eventId);
+              Alert.alert("Success", "Event deleted successfully!");
+              // Refresh events
+              await fetchEvents();
+            } catch (error: any) {
+              console.error("Error deleting event:", error);
+              Alert.alert(
+                "Error",
+                error.message || "Failed to delete event. Please try again."
+              );
+            } finally {
+              setDeletingEventId(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <ThemedView style={styles.container}>
       <HeaderThreeSections
@@ -530,7 +616,7 @@ const SchoolCalendarScreen = () => {
           <Ionicons name="add-circle-outline" size={24} color={theme.tint} />
         }
         colorDesc={theme.subText}
-        onPress={() => router.push("/create-new-event")}
+        onPress={() => router.push("/create-or-edit-event")}
         buttonRoles={["admin", "teacher"]}
       />
 
@@ -647,12 +733,95 @@ const SchoolCalendarScreen = () => {
                 onPress={() => router.push(`/event/${ev.id}`)}
               >
                 <ThemedView style={styles.card}>
-                  <ThemedText
-                    type="defaultSemiBold"
-                    style={{ color: theme.text }}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      marginBottom: 8,
+                    }}
                   >
-                    {ev.title}
-                  </ThemedText>
+                    <ThemedText
+                      type="defaultSemiBold"
+                      style={{ color: theme.text, flex: 1 }}
+                    >
+                      {ev.title}
+                    </ThemedText>
+                    {canEditDeleteEvent(ev) && (
+                      <View style={styles.dropdownContainer}>
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            setOpenDropdownEventId(
+                              openDropdownEventId === ev.id ? null : ev.id
+                            );
+                          }}
+                          style={{
+                            padding: 6,
+                          }}
+                        >
+                          <Ionicons
+                            name="ellipsis-horizontal"
+                            size={20}
+                            color={theme.text}
+                          />
+                        </TouchableOpacity>
+                        {openDropdownEventId === ev.id && (
+                          <Pressable
+                            onPress={(e) => e.stopPropagation()}
+                            style={styles.dropdownMenu}
+                          >
+                            <TouchableOpacity
+                              style={styles.dropdownItem}
+                              onPress={() => handleEditEvent(ev.id)}
+                            >
+                              <Ionicons
+                                name="create-outline"
+                                size={18}
+                                color={theme.text}
+                              />
+                              <ThemedText
+                                type="subText"
+                                style={{ color: theme.text }}
+                              >
+                                Edit
+                              </ThemedText>
+                            </TouchableOpacity>
+                            <View
+                              style={{
+                                height: 1,
+                                backgroundColor: theme.border,
+                                marginVertical: 4,
+                              }}
+                            />
+                            <TouchableOpacity
+                              style={styles.dropdownItem}
+                              onPress={() => handleDeleteEvent(ev.id, ev.title)}
+                              disabled={deletingEventId === ev.id}
+                            >
+                              {deletingEventId === ev.id ? (
+                                <ActivityIndicator size="small" color="#DC2626" />
+                              ) : (
+                                <Ionicons
+                                  name="trash-outline"
+                                  size={18}
+                                  color="#DC2626"
+                                />
+                              )}
+                              <ThemedText
+                                type="subText"
+                                style={{
+                                  color: deletingEventId === ev.id ? theme.subText : "#DC2626",
+                                }}
+                              >
+                                Delete
+                              </ThemedText>
+                            </TouchableOpacity>
+                          </Pressable>
+                        )}
+                      </View>
+                    )}
+                  </View>
 
                   {/* Kind Chip */}
                   <View style={[styles.chip, { backgroundColor: chip.bg }]}>
