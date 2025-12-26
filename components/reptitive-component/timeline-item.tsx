@@ -4,6 +4,7 @@ import {
   commentService,
   type AuthorResponseDto,
 } from "@/services/comment.service";
+import { likeService } from "@/services/like.service";
 import { useStore } from "@/store";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -46,8 +47,13 @@ export default function TimelineItem(props: ResourceItemProps) {
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
-  const [expandedComments, setExpandedComments] = useState<CommentResponseDto[]>([]);
+  const [expandedComments, setExpandedComments] = useState<
+    CommentResponseDto[]
+  >([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [commentLikes, setCommentLikes] = useState<
+    Record<string, { isLiked: boolean; likesCount: number }>
+  >({});
 
   // Number of comments to show initially
   const INITIAL_COMMENTS_TO_SHOW = 2;
@@ -64,18 +70,75 @@ export default function TimelineItem(props: ResourceItemProps) {
     return [];
   }, [props.comments, props.lastComment]);
 
+  // Initialize comment likes state from props
+  React.useEffect(() => {
+    const likesState: Record<string, { isLiked: boolean; likesCount: number }> =
+      {};
+    displayComments.forEach((comment) => {
+      likesState[comment.id] = {
+        isLiked: comment.isLiked || false,
+        likesCount: comment.likesCount || 0,
+      };
+    });
+    setCommentLikes(likesState);
+  }, [displayComments]);
+
+  // Handle comment like
+  const handleCommentLike = async (commentId: string) => {
+    // Find the comment to get initial state if not in commentLikes
+    const comment =
+      displayComments.find((c) => c.id === commentId) ||
+      expandedComments.find((c) => c.id === commentId);
+    const currentState = commentLikes[commentId] || {
+      isLiked: comment?.isLiked || false,
+      likesCount: comment?.likesCount || 0,
+    };
+
+    const isLiked = currentState.isLiked;
+
+    // Optimistic update
+    setCommentLikes((prev) => ({
+      ...prev,
+      [commentId]: {
+        isLiked: !isLiked,
+        likesCount: isLiked
+          ? prev[commentId].likesCount - 1
+          : prev[commentId].likesCount + 1,
+      },
+    }));
+
+    try {
+      if (isLiked) {
+        await likeService.unlikeComment(commentId);
+      } else {
+        await likeService.likeComment(commentId);
+      }
+      // Refresh comments to get updated state
+      if (props.onCommentAdded) {
+        props.onCommentAdded();
+      }
+    } catch (err: any) {
+      // Revert on error
+      setCommentLikes((prev) => ({
+        ...prev,
+        [commentId]: currentState,
+      }));
+      console.error("Error toggling comment like:", err);
+    }
+  };
+
   // Helper function to format image URL
   const formatImageUrl = (url: string | undefined | null): string | null => {
     if (!url || url.trim() === "") return null;
-    
+
     // If URL is already absolute (starts with http:// or https://), return as is
     if (url.startsWith("http://") || url.startsWith("https://")) {
       return url;
     }
-    
+
     // If URL is relative, prepend base URL
     // Note: Adjust this based on your API base URL
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3006';
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3006";
     return url.startsWith("/") ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
   };
 
@@ -299,7 +362,10 @@ export default function TimelineItem(props: ResourceItemProps) {
         <View style={styles.comments}>
           {displayComments.length > 0 && (
             <>
-              {(showAllComments ? displayComments : displayComments.slice(0, INITIAL_COMMENTS_TO_SHOW)).map((commentItem) => (
+              {(showAllComments
+                ? displayComments
+                : displayComments.slice(0, INITIAL_COMMENTS_TO_SHOW)
+              ).map((commentItem) => (
                 <View key={commentItem.id} style={styles.commentRow}>
                   {commentItem.author.profilePicture ? (
                     <Image
@@ -318,12 +384,24 @@ export default function TimelineItem(props: ResourceItemProps) {
                       color={theme.subText}
                     />
                   )}
-                  <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", alignItems: "center" }}>
+                  <View
+                    style={{
+                      flex: 1,
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                    }}
+                  >
                     <ThemedText
                       type="defaultSemiBold"
-                      style={{ color: theme.text, paddingLeft: 8, fontSize: 12 }}
+                      style={{
+                        color: theme.text,
+                        paddingLeft: 8,
+                        fontSize: 12,
+                      }}
                     >
-                      {commentItem.author.firstName && commentItem.author.lastName
+                      {commentItem.author.firstName &&
+                      commentItem.author.lastName
                         ? `${commentItem.author.firstName} ${commentItem.author.lastName}`
                         : commentItem.author.firstName ||
                           commentItem.author.lastName ||
@@ -332,16 +410,58 @@ export default function TimelineItem(props: ResourceItemProps) {
                     </ThemedText>
                     <ThemedText
                       type="subText"
-                      style={[styles.generalmargin, { color: theme.text, flex: 1 }]}
+                      style={[
+                        styles.generalmargin,
+                        { color: theme.text, flex: 1 },
+                      ]}
                     >
                       {commentItem.content}
                     </ThemedText>
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginLeft: 8,
+                        gap: 4,
+                      }}
+                      onPress={() => handleCommentLike(commentItem.id)}
+                    >
+                      <EvilIcons
+                        // name={props.isLiked ? "heart" : "heart"}
+                        name={
+                          commentLikes[commentItem.id]?.isLiked ??
+                          commentItem.isLiked
+                            ? "heart"
+                            : ("heart" as any)
+                        }
+                        size={14}
+                        color={
+                          commentLikes[commentItem.id]?.isLiked ??
+                          commentItem.isLiked
+                            ? theme.tint
+                            : theme.subText
+                        }
+                      />
+                      {((commentLikes[commentItem.id]?.likesCount ??
+                        commentItem.likesCount) ||
+                        0) > 0 && (
+                        <ThemedText
+                          type="subLittleText"
+                          style={{ color: theme.subText, fontSize: 11 }}
+                        >
+                          {commentLikes[commentItem.id]?.likesCount ??
+                            commentItem.likesCount ??
+                            0}
+                        </ThemedText>
+                      )}
+                    </TouchableOpacity>
                   </View>
                 </View>
               ))}
-              {displayComments.length > INITIAL_COMMENTS_TO_SHOW && !showAllComments && (
-                <View
-                  // onPress={() => {
+              {displayComments.length > INITIAL_COMMENTS_TO_SHOW &&
+                !showAllComments && (
+                  <View
+                    // onPress={() => {
                     // if (props.hasMoreComments && props.postId) {
                     //   // If there are more comments on the server, fetch them
                     //   setLoadingComments(true);
@@ -367,21 +487,25 @@ export default function TimelineItem(props: ResourceItemProps) {
                     //   // Just expand to show all available comments
                     //   setShowAllComments(true);
                     // }
-                  // }}
-                  style={{ marginTop: 5, paddingVertical: 5 }}
-                >
-                  <ThemedText
-                    type="subText"
-                    style={{ color: theme.subText, fontSize: 12 }}
+                    // }}
+                    style={{ marginTop: 5, paddingVertical: 5 }}
                   >
-                    {loadingComments ? "Loading..." : `View all ${props.numberOfComment} comments`}
-                  </ThemedText>
-                </View>
-              )}
+                    <ThemedText
+                      type="subText"
+                      style={{ color: theme.subText, fontSize: 12 }}
+                    >
+                      {loadingComments
+                        ? "Loading..."
+                        : `View all ${props.numberOfComment} comments`}
+                    </ThemedText>
+                  </View>
+                )}
               {showAllComments && expandedComments.length > 0 && (
                 <>
                   {expandedComments
-                    .filter((c) => !displayComments.some((pc) => pc.id === c.id))
+                    .filter(
+                      (c) => !displayComments.some((pc) => pc.id === c.id)
+                    )
                     .map((commentItem) => (
                       <View key={commentItem.id} style={styles.commentRow}>
                         {commentItem.author.profilePicture ? (
@@ -401,12 +525,24 @@ export default function TimelineItem(props: ResourceItemProps) {
                             color={theme.subText}
                           />
                         )}
-                        <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", alignItems: "center" }}>
+                        <View
+                          style={{
+                            flex: 1,
+                            flexDirection: "row",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                          }}
+                        >
                           <ThemedText
                             type="defaultSemiBold"
-                            style={{ color: theme.text, paddingLeft: 8, fontSize: 12 }}
+                            style={{
+                              color: theme.text,
+                              paddingLeft: 8,
+                              fontSize: 12,
+                            }}
                           >
-                            {commentItem.author.firstName && commentItem.author.lastName
+                            {commentItem.author.firstName &&
+                            commentItem.author.lastName
                               ? `${commentItem.author.firstName} ${commentItem.author.lastName}`
                               : commentItem.author.firstName ||
                                 commentItem.author.lastName ||
@@ -415,28 +551,70 @@ export default function TimelineItem(props: ResourceItemProps) {
                           </ThemedText>
                           <ThemedText
                             type="subText"
-                            style={[styles.generalmargin, { color: theme.text, flex: 1 }]}
+                            style={[
+                              styles.generalmargin,
+                              { color: theme.text, flex: 1 },
+                            ]}
                           >
                             {commentItem.content}
                           </ThemedText>
+                          <TouchableOpacity
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginLeft: 8,
+                              gap: 4,
+                            }}
+                            onPress={() => handleCommentLike(commentItem.id)}
+                          >
+                            <AntDesign
+                              name={
+                                commentLikes[commentItem.id]?.isLiked ??
+                                commentItem.isLiked
+                                  ? "heart"
+                                  : ("hearto" as any)
+                              }
+                              size={14}
+                              color={
+                                commentLikes[commentItem.id]?.isLiked ??
+                                commentItem.isLiked
+                                  ? theme.tint
+                                  : theme.subText
+                              }
+                            />
+                            {((commentLikes[commentItem.id]?.likesCount ??
+                              commentItem.likesCount) ||
+                              0) > 0 && (
+                              <ThemedText
+                                type="subLittleText"
+                                style={{ color: theme.subText, fontSize: 11 }}
+                              >
+                                {commentLikes[commentItem.id]?.likesCount ??
+                                  commentItem.likesCount ??
+                                  0}
+                              </ThemedText>
+                            )}
+                          </TouchableOpacity>
                         </View>
                       </View>
                     ))}
                 </>
               )}
-              {showAllComments && expandedComments.length === 0 && displayComments.length > INITIAL_COMMENTS_TO_SHOW && (
-                <TouchableOpacity
-                  onPress={() => setShowAllComments(false)}
-                  style={{ marginTop: 5, paddingVertical: 5 }}
-                >
-                  <ThemedText
-                    type="subText"
-                    style={{ color: theme.subText, fontSize: 12 }}
+              {showAllComments &&
+                expandedComments.length === 0 &&
+                displayComments.length > INITIAL_COMMENTS_TO_SHOW && (
+                  <TouchableOpacity
+                    onPress={() => setShowAllComments(false)}
+                    style={{ marginTop: 5, paddingVertical: 5 }}
                   >
-                    Show less
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
+                    <ThemedText
+                      type="subText"
+                      style={{ color: theme.subText, fontSize: 12 }}
+                    >
+                      Show less
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
             </>
           )}
           {/* Fallback for old commenter/commnet props */}
