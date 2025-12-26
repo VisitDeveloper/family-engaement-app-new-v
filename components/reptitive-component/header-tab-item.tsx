@@ -2,7 +2,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { useRouter } from "expo-router";
 import React from "react";
-import { TouchableOpacity, View } from "react-native";
+import { StyleProp, TouchableOpacity, View, ViewStyle } from "react-native";
 import RoleGuard from "../check-permisions";
 import { ThemedText } from "../themed-text";
 
@@ -19,6 +19,7 @@ interface HeaderTabItemProps {
 
   title: string;
   subTitle: string;
+  addstyles?: StyleProp<ViewStyle>;
 }
 
 export default function HeaderTabItem(props: HeaderTabItemProps) {
@@ -56,7 +57,7 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
   );
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, props.addstyles]}>
       <View style={styles.headerWrap}>
         <ThemedText type="subtitle" style={styles.headerTitle}>
           {props.title}

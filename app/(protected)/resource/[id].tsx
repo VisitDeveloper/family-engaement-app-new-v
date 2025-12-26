@@ -74,7 +74,7 @@ const BookDetailScreen = () => {
   const styles = useThemedStyles(
     (t) =>
       ({
-        container: { flex: 1, backgroundColor: t.bg, padding: 10 },
+        container: { flex: 1, backgroundColor: t.bg, padding: 0 },
         header: {
           flexDirection: "row",
           alignItems: "center",
@@ -139,6 +139,7 @@ const BookDetailScreen = () => {
         },
         scroll: {
           padding: 16,
+          paddingTop: 10,
           paddingBottom: insets.bottom + 30,
         },
       } as const)

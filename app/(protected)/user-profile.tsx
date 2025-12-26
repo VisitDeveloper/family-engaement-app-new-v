@@ -30,7 +30,7 @@ export default function ProfileScreen() {
   const [uploading, setUploading] = useState<boolean>(false);
 
   const styles = useThemedStyles((theme) => ({
-    container: { flex: 1, padding: 10, paddingHorizontal: 0, backgroundColor: theme.bg },
+    container: { flex: 1, padding: 10, paddingTop: 0, paddingHorizontal: 0, backgroundColor: theme.bg },
     containerScrollView: { flex: 1, padding: 10, paddingTop: 20, backgroundColor: theme.bg },
     card: {
       borderWidth: 1,

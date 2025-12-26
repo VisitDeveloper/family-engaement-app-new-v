@@ -71,8 +71,8 @@ export default function ChangePassword() {
   });
 
   const styles = useThemedStyles((theme) => ({
-    container: { flex: 1, padding: 10, backgroundColor: theme.bg },
-    containerScrollView: { flex: 1, backgroundColor: theme.bg },
+    container: { flex: 1, padding: 0, backgroundColor: theme.bg },
+    containerScrollView: { flex: 1, backgroundColor: theme.bg, paddingHorizontal: 10, paddingTop: 20, paddingBottom: 100 },
     card: {
       borderWidth: 1,
       borderRadius: 10,
@@ -196,7 +196,7 @@ export default function ChangePassword() {
     <View style={styles.container}>
       <HeaderInnerPage
         title="Change Password"
-        addstyles={{ marginBottom: 10 }}
+        addstyles={{ marginBottom: 0 }}
       />
 
       <ScrollView

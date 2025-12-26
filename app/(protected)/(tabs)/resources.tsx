@@ -207,7 +207,7 @@ const ResourceLibrary = () => {
   }));
 
   const styles = useThemedStyles((theme) => ({
-    container: { flex: 1, backgroundColor: theme.bg, padding: 10 },
+    container: { flex: 1, backgroundColor: theme.bg, padding: 0 },
     header: { fontSize: 24, fontWeight: "bold", color: theme.text },
     row: { justifyContent: "space-between", marginBottom: 10 },
   }));
@@ -294,25 +294,28 @@ const ResourceLibrary = () => {
         buttonIcon={<FontAwesome5 name="robot" size={15} color={theme.tint} />}
         buttonLink="/ai-assisstant"
         buttonTtitle="AI Assistant"
+        addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
       />
 
-      {/* Search Box با استفاده از کامپوننت عمومی */}
-      <SearchContainer
-        query={query}
-        onChangeQuery={setQuery}
-        onDebouncedQuery={handleDebouncedQuery}
-        placeholder="Search Resources..."
-      />
+      <View style={{ paddingHorizontal: 10, paddingTop: 10 }}>
+        <SearchContainer
+          query={query}
+          onChangeQuery={setQuery}
+          onDebouncedQuery={handleDebouncedQuery}
+          placeholder="Search Resources..."
+        />
+      </View>
 
       {/* Category Tabs */}
       <View
         style={{
           flexDirection: "row",
-          marginBottom: 10,
+          marginBottom: 0,
           gap: 5,
           paddingVertical: 10,
           borderBottomWidth: 1,
           borderColor: theme.border,
+          paddingHorizontal: 10,
         }}
       >
         {["All", "Book", "Activity", "Video", "Saved"].map((cat) => (
@@ -393,7 +396,7 @@ const ResourceLibrary = () => {
           extraData={filteredResources}
           keyExtractor={(item) => item.id!}
           numColumns={2}
-          style={{ flex: 1 }}
+          style={{ flex: 1, paddingHorizontal: 10, paddingTop: 20 }}
           columnWrapperStyle={styles.row}
           contentContainerStyle={{
             flexGrow: 1,
