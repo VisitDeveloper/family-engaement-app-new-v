@@ -8,7 +8,7 @@ import { useStore } from '@/store';
 import { AntDesign, Feather, FontAwesome, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Helper function to format date
@@ -89,6 +89,49 @@ const extractString = (value: Record<string, any> | string | null | undefined): 
         return (value as any).en || (value as any).fa || (value as any).text || (value as any).value || JSON.stringify(value);
     }
     return String(value);
+};
+
+// Helper function to open location in maps
+const openLocationInMaps = async (event: EventResponseDto) => {
+    let url: string | null = null;
+    
+    // Prefer platform-specific maps, fallback to coordinates or location text
+    if (Platform.OS === 'ios' && event.appleMapsUrl) {
+        url = event.appleMapsUrl;
+    } else if (Platform.OS === 'android' && event.googleMapsUrl) {
+        url = event.googleMapsUrl;
+    } else if (event.appleMapsUrl) {
+        url = event.appleMapsUrl;
+    } else if (event.googleMapsUrl) {
+        url = event.googleMapsUrl;
+    } else if (event.locationLatitude && event.locationLongitude) {
+        // Generate maps URL from coordinates
+        const lat = event.locationLatitude;
+        const lng = event.locationLongitude;
+        const locationName = encodeURIComponent(extractString(event.location) || 'Location');
+        
+        if (Platform.OS === 'ios') {
+            url = `https://maps.apple.com/?ll=${lat},${lng}&q=${locationName}`;
+        } else {
+            url = `https://www.google.com/maps?q=${lat},${lng}&label=${locationName}`;
+        }
+    }
+    
+    if (url) {
+        try {
+            const canOpen = await Linking.canOpenURL(url);
+            if (canOpen) {
+                await Linking.openURL(url);
+            } else {
+                Alert.alert('Error', 'Unable to open maps application.');
+            }
+        } catch (error) {
+            console.error('Error opening maps:', error);
+            Alert.alert('Error', 'Failed to open maps. Please try again.');
+        }
+    } else {
+        Alert.alert('No Location', 'Location information is not available for this event.');
+    }
 };
 
 type EventKind = 'Conference' | 'Fieldtrip' | 'Event' | 'Holiday';
@@ -236,11 +279,13 @@ const SchoolCalendarScreen = () => {
             flexDirection: 'row',
             alignItems: 'flex-start',
             gap: 10,
+            flexWrap: 'wrap',
         },
         metaItem: {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 5,
+            flexShrink: 1,
         },
         desc: { marginTop: 10, color: t.text },
         endmessage: {
@@ -465,10 +510,26 @@ const SchoolCalendarScreen = () => {
                                         <ThemedText type="subText" style={{ color: theme.subText }}>{timeText}</ThemedText>
                                     </View>
                                     {!!locationText && (
-                                        <View style={styles.metaItem}>
-                                            <Feather name="map-pin" size={16} color={theme.text} />
-                                            <ThemedText type="subText" style={{ color: theme.subText }}>{locationText}</ThemedText>
-                                        </View>
+                                        <TouchableOpacity 
+                                            style={[styles.metaItem, { flex: 1, flexShrink: 1, minWidth: 0 }]}
+                                            onPress={() => openLocationInMaps(ev)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Feather name="map-pin" size={16} color={theme.tint} />
+                                            <ThemedText 
+                                                type="subText" 
+                                                style={{ 
+                                                    color: theme.tint, 
+                                                    textDecorationLine: 'underline',
+                                                    flex: 1,
+                                                    flexShrink: 1
+                                                }}
+                                                numberOfLines={1}
+                                                ellipsizeMode="tail"
+                                            >
+                                                {locationText}
+                                            </ThemedText>
+                                        </TouchableOpacity>
                                     )}
                                 </View>
 

@@ -3,13 +3,14 @@ import { ThemedText } from "@/components/themed-text";
 import Badge from "@/components/ui/badge";
 import DatePicker from "@/components/ui/date-picker";
 import Divider from "@/components/ui/divider";
+import MapPicker from "@/components/ui/map-picker";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useValidation } from "@/hooks/use-validation";
 import {
-    eventService,
-    EventType as EventTypeEnum,
-    RepeatType,
+  eventService,
+  EventType as EventTypeEnum,
+  RepeatType,
 } from "@/services/event.service";
 import { ParentDto, userService } from "@/services/user.service";
 import { useStore } from "@/store";
@@ -18,14 +19,14 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    Switch,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 enum EventType {
@@ -86,6 +87,10 @@ function CreateNewEvent() {
   ]);
   const [description, setDescription] = useState<string>("");
   const [location, setLocation] = useState<string>("");
+  const [locationLatitude, setLocationLatitude] = useState<string>("");
+  const [locationLongitude, setLocationLongitude] = useState<string>("");
+  const [locationName, setLocationName] = useState<string>("");
+  const [mapPickerVisible, setMapPickerVisible] = useState<boolean>(false);
   const [requestRSVP, setRequestRSVP] = useState<boolean>(false);
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
@@ -217,6 +222,12 @@ function CreateNewEvent() {
         type: eventType[0].value as EventTypeEnum,
         description: description || undefined,
         location: location || undefined,
+        locationLatitude: locationLatitude
+          ? parseFloat(locationLatitude)
+          : undefined,
+        locationLongitude: locationLongitude
+          ? parseFloat(locationLongitude)
+          : undefined,
         startDate: formatDate(startDate),
         endDate: formatDate(endDate),
         allDay: allDayEvent,
@@ -404,6 +415,24 @@ function CreateNewEvent() {
       marginTop: -8,
       marginLeft: 3,
     },
+    mapPickerButton: {
+      padding: 12,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    mapPickerButtonContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      flex: 1,
+    },
+    coordinatesDisplay: {
+      marginTop: 8,
+      padding: 8,
+      backgroundColor: theme.panel,
+      borderRadius: 8,
+      gap: 4,
+    },
   }));
 
   return (
@@ -482,13 +511,30 @@ function CreateNewEvent() {
           <View style={styles.row}>
             <ThemedText style={styles.sectionTitle}>Location</ThemedText>
           </View>
-          <TextInput
-            value={location}
-            onChangeText={setLocation}
-            placeholder="Venue Details"
-            placeholderTextColor={theme.subText}
-            style={styles.input}
-          />
+          <TouchableOpacity
+            style={[styles.input, styles.mapPickerButton]}
+            onPress={() => setMapPickerVisible(true)}
+          >
+            <View style={styles.mapPickerButtonContent}>
+              <Feather name="map-pin" size={20} color={theme.tint} />
+              <ThemedText
+                style={{
+                  color:
+                    locationLatitude && locationLongitude
+                      ? theme.text
+                      : theme.subText,
+                  flex: 1,
+                }}
+              >
+                {locationName || (locationLatitude && locationLongitude
+                  ? `${parseFloat(locationLatitude).toFixed(6)}, ${parseFloat(
+                      locationLongitude
+                    ).toFixed(6)}`
+                  : "Tap to select location on map")}
+              </ThemedText>
+              <Feather name="chevron-right" size={20} color={theme.subText} />
+            </View>
+          </TouchableOpacity>
 
           {errors.location && (
             <ThemedText type="subLittleText" style={styles.error}>
@@ -902,6 +948,23 @@ function CreateNewEvent() {
           </ThemedText>
         </TouchableOpacity>
       </ScrollView>
+
+      <MapPicker
+        visible={mapPickerVisible}
+        onClose={() => setMapPickerVisible(false)}
+        onSelectLocation={(lat, lng, name) => {
+          setLocationLatitude(lat.toString());
+          setLocationLongitude(lng.toString());
+          setLocationName(name || "");
+          if (name) {
+            setLocation(name);
+          }
+        }}
+        initialLatitude={locationLatitude ? parseFloat(locationLatitude) : null}
+        initialLongitude={
+          locationLongitude ? parseFloat(locationLongitude) : null
+        }
+      />
     </View>
   );
 }

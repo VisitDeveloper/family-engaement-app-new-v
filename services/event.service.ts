@@ -65,6 +65,10 @@ export interface EventResponseDto {
   type: string; // lowercase: "conference", "fieldtrip", etc.
   description: Record<string, any> | string; // Can be object or string
   location: Record<string, any> | string; // Can be object or string
+  locationLatitude?: number | null;
+  locationLongitude?: number | null;
+  appleMapsUrl?: string | null;
+  googleMapsUrl?: string | null;
   startDate: string;
   endDate: string;
   allDay: boolean;
@@ -90,6 +94,8 @@ export interface CreateEventDto {
   type: EventType;
   description?: string;
   location?: string;
+  locationLatitude?: number;
+  locationLongitude?: number;
   startDate: string;
   endDate: string;
   allDay?: boolean;
@@ -109,6 +115,8 @@ export interface UpdateEventDto {
   type?: EventType;
   description?: string;
   location?: string;
+  locationLatitude?: number;
+  locationLongitude?: number;
   startDate?: string;
   endDate?: string;
   allDay?: boolean;
@@ -120,7 +128,6 @@ export interface UpdateEventDto {
   maxParticipantsPerSlot?: number;
   repeat?: RepeatType;
   requestRSVP?: boolean;
-  inviteeIds?: string[];
 }
 
 export interface GetEventsParams {
@@ -217,7 +224,12 @@ class EventServiceImpl implements EventService {
 
   async update(id: string, data: UpdateEventDto): Promise<EventResponseDto> {
     try {
-      const response = await apiClient.put<EventResponseDto>(`/events/${id}`, data);
+      // Convert EventType to lowercase for API if provided
+      const requestData = {
+        ...data,
+        ...(data.type && { type: data.type.toLowerCase() as any }),
+      };
+      const response = await apiClient.put<EventResponseDto>(`/events/${id}`, requestData);
       return response;
     } catch (error) {
       const apiError = error as ApiError;
