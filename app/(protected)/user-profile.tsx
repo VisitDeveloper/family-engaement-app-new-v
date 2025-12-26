@@ -9,13 +9,13 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function ProfileScreen() {
@@ -368,28 +368,8 @@ export default function ProfileScreen() {
             {displayName}
           </ThemedText>
           <ThemedText type="subText" style={styles.subText}>
-            {role && role.toLowerCase() !== "parent"
-              ? `${role.charAt(0).toUpperCase() + role.slice(1)}`
-              : ""}{" "}
-            {profile?.childName
-              ? `${role && role.toLowerCase() !== "parent" ? " - " : ""}${
-                  profile.childName
-                }`
-              : ""}
+            {profile?.childName ? profile.childName : ""}
           </ThemedText>
-          {profile?.subjects && profile.subjects.length > 0 ? (
-            <View style={styles.tagsContainer}>
-              {profile.subjects.map((subject, index) => (
-                <View key={index} style={styles.tag}>
-                  <ThemedText type="subText" style={styles.tagText}>
-                    {subject}
-                  </ThemedText>
-                </View>
-              ))}
-            </View>
-          ) : (
-            ""
-          )}
         </View>
 
         {/* Contact */}

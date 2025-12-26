@@ -151,34 +151,13 @@ export default function SettingsScreen() {
                   {user?.firstName + " " + user?.lastName || "User"}
                 </ThemedText>
 
-                {role &&
-                (role.toLowerCase() !== "parent" || user?.childName) ? (
+                {user?.childName ? (
                   <ThemedText
                     type="subText"
                     style={[styles.role, { color: theme.subText }]}
                   >
-                    {role && role.toLowerCase() !== "parent"
-                      ? `${role.charAt(0).toUpperCase() + role.slice(1)}`
-                      : ""}{" "}
-                    {user?.childName
-                      ? `${
-                          role && role.toLowerCase() !== "parent" ? " - " : ""
-                        }${user.childName}`
-                      : ""}
+                    {user?.childName ? user.childName : ""}
                   </ThemedText>
-                ) : (
-                  ""
-                )}
-                {user?.subjects && user.subjects.length > 0 ? (
-                  <View style={styles.tagsContainer}>
-                    {user.subjects.map((subject, index) => (
-                      <View key={index} style={styles.tag}>
-                        <ThemedText type="subText" style={styles.tagText}>
-                          {subject}
-                        </ThemedText>
-                      </View>
-                    ))}
-                  </View>
                 ) : (
                   ""
                 )}
@@ -749,10 +728,11 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, padding: 10, paddingTop: 0 },
+  page: { flex: 1, padding: 10, paddingTop: 0, paddingHorizontal: 0 },
   container: {
     alignSelf: "center",
     marginBottom: 30,
+    paddingHorizontal: 0,
   },
   headerRow: {
     paddingVertical: 16,

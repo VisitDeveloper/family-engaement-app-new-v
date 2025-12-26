@@ -2,7 +2,6 @@ import { Colors } from "@/constants/theme";
 import { useStore } from "@/store";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
 import {
   Image,
   ScrollView,
@@ -48,26 +47,8 @@ export default function ProfileScreen() {
             ""}
         </Text>
         <Text style={styles.relation}>
-          {user?.role
-            ? `${user.role.charAt(0).toUpperCase() + user.role.slice(1)}`
-            : ""}
-          {user?.childName
-            ? ` - ${user.childName}`
-            : user?.email
-            ? ` - ${user.email.split("@")[0]}`
-            : ""}
+          {user?.childName ? user.childName : ""}
         </Text>
-        {user?.subjects && user.subjects.length > 0 ? (
-          <View style={styles.tagsContainer}>
-            {user.subjects.map((subject, index) => (
-              <View key={index} style={styles.tag}>
-                <Text style={styles.tagText}>{subject}</Text>
-              </View>
-            ))}
-          </View>
-        ) : (
-          ""
-        )}
       </View>
 
       {/* Classrooms Attached */}

@@ -32,7 +32,12 @@ const TimelineScreen = () => {
   const styles = useThemedStyles(
     (theme) =>
       ({
-        container: { flex: 1, backgroundColor: theme.bg, padding: 10 },
+        container: {
+          flex: 1,
+          backgroundColor: theme.bg,
+          paddingHorizontal: 0,
+          paddingVertical: 10,
+        },
         // tabs: {
         //   flexDirection: 'row',
         //   paddingVertical: 10,
@@ -66,7 +71,7 @@ const TimelineScreen = () => {
         tabs: {
           borderBottomWidth: 1,
           borderColor: theme.border,
-          paddingVertical: 10,
+          paddingVertical: 5,
         },
         tab: {
           paddingHorizontal: 12,
@@ -295,14 +300,17 @@ const TimelineScreen = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <HeaderTabItem
-        title={`${user?.firstName}'s Timeline`}
-        subTitle="Learning journey & memories"
-        buttonIcon={<Feather name="calendar" size={16} color={theme.tint} />}
-        buttonLink="/event"
-        buttonTtitle="School Calendar"
-        buttonRoles={["admin", "teacher", "parent"]}
-      />
+
+      <View style={{ paddingHorizontal: 10 }}>
+        <HeaderTabItem
+          title={`${user?.firstName}'s Timeline`}
+          subTitle="Learning journey & memories"
+          buttonIcon={<Feather name="calendar" size={16} color={theme.tint} />}
+          buttonLink="/event"
+          buttonTtitle="School Calendar"
+          buttonRoles={["admin", "teacher", "parent"]}
+        />
+      </View>
 
       <View style={styles.tabs}>
         <FlatList
@@ -315,161 +323,174 @@ const TimelineScreen = () => {
         />
       </View>
 
-      <RoleGuard roles={["teacher"]}>
-        <TouchableOpacity
-          onPress={() => router.push("/create-post")}
-          style={{ marginTop: -5 }}
-        >
-          <View style={styles.createElement}>
-            <Image
-              source={
-                user?.profilePicture
-                  ? { uri: user.profilePicture }
-                  : { uri: "" }
-              }
-              style={styles.avatarcreate}
-            />
-
-            {/* ناحیه ورودی متن */}
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Write a new post ..."
-                placeholderTextColor="#8E8E93"
-                // value={inputText}
-                // onChangeText={setInputText}
-                multiline={false}
-                editable={false}
-              />
-            </View>
-
-            {/* آیکون گالری */}
-            <TouchableOpacity onPress={() => console.log("Open Gallery")}>
-              <Ionicons
-                name="image-outline"
-                size={26}
-                color="#8E8E93"
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-          </View>
-          {/* آواتار کاربر */}
-        </TouchableOpacity>
-      </RoleGuard>
-
-      {loading ? (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" color={theme.tint} />
-          <ThemedText type="subText" style={{ marginTop: 10 }}>
-            Loading posts...
-          </ThemedText>
-        </View>
-      ) : error ? (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 20,
-          }}
-        >
-          <ThemedText
-            type="default"
-            style={{ color: "#ff4444", textAlign: "center", marginBottom: 10 }}
-          >
-            {error}
-          </ThemedText>
+      <View
+        style={{
+          paddingHorizontal: 10,
+          display: "flex",
+          flexDirection: "column",
+          gap: 0,
+          flex: 1,
+        }}
+      >
+        <RoleGuard roles={["teacher"]}>
           <TouchableOpacity
-            onPress={() => fetchPosts(tabsData[activeTab].filter)}
+            onPress={() => router.push("/create-post")}
+            style={{ marginTop: -5 }}
+          >
+            <View style={styles.createElement}>
+              <Image
+                source={
+                  user?.profilePicture
+                    ? { uri: user.profilePicture }
+                    : { uri: "" }
+                }
+                style={styles.avatarcreate}
+              />
+
+              {/* ناحیه ورودی متن */}
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Write a new post ..."
+                  placeholderTextColor="#8E8E93"
+                  multiline={false}
+                  editable={false}
+                  onPress={() => router.push("/create-post")}
+                />
+              </View>
+
+              {/* آیکون گالری */}
+              <TouchableOpacity onPress={() => router.push("/create-post")}>
+                <Ionicons
+                  name="image-outline"
+                  size={26}
+                  color="#8E8E93"
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
+            </View>
+            {/* آواتار کاربر */}
+          </TouchableOpacity>
+        </RoleGuard>
+
+        {loading ? (
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
+            <ActivityIndicator size="large" color={theme.tint} />
+            <ThemedText type="subText" style={{ marginTop: 10 }}>
+              Loading posts...
+            </ThemedText>
+          </View>
+        ) : error ? (
+          <View
             style={{
-              backgroundColor: theme.tint,
-              paddingHorizontal: 20,
-              paddingVertical: 10,
-              borderRadius: 8,
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 20,
             }}
           >
-            <ThemedText style={{ color: "#fff" }}>Retry</ThemedText>
-          </TouchableOpacity>
-        </View>
-      ) : posts.length === 0 ? (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 20,
-          }}
-        >
-          <ThemedText type="subText" style={{ textAlign: "center" }}>
-            No posts found
-          </ThemedText>
-        </View>
-      ) : (
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-        >
-          <ScrollView
-            style={{ flex: 1 }}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
-            keyboardShouldPersistTaps="handled"
+            <ThemedText
+              type="default"
+              style={{
+                color: "#ff4444",
+                textAlign: "center",
+                marginBottom: 10,
+              }}
+            >
+              {error}
+            </ThemedText>
+            <TouchableOpacity
+              onPress={() => fetchPosts(tabsData[activeTab].filter)}
+              style={{
+                backgroundColor: theme.tint,
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderRadius: 8,
+              }}
+            >
+              <ThemedText style={{ color: "#fff" }}>Retry</ThemedText>
+            </TouchableOpacity>
+          </View>
+        ) : posts.length === 0 ? (
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 20,
+            }}
           >
-            {posts.map((post) => {
-            const authorName =
-              post.author.firstName && post.author.lastName
-                ? `${post.author.firstName} ${post.author.lastName}`
-                : post.author.firstName ||
-                  post.author.lastName ||
-                  post.author.email ||
-                  "Unknown";
+            <ThemedText type="subText" style={{ textAlign: "center" }}>
+              No posts found
+            </ThemedText>
+          </View>
+        ) : (
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+          >
+            <ScrollView
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {posts.map((post) => {
+                const authorName =
+                  post.author.firstName && post.author.lastName
+                    ? `${post.author.firstName} ${post.author.lastName}`
+                    : post.author.firstName ||
+                      post.author.lastName ||
+                      post.author.email ||
+                      "Unknown";
 
-            return (
-              <TimelineItem
-                key={post.id}
-                postId={post.id}
-                name={authorName}
-                author={post.author}
-                seen={formatTimeAgo(post.createdAt)}
-                desc={post.description}
-                numberOfComment={post.commentsCount}
-                numberOfLike={post.likesCount}
-                tags={post.tags || []}
-                images={post.images || []}
-                files={post.files || []}
-                recommended={post.recommended}
-                isLiked={post.isLiked}
-                isSaved={post.isSaved}
-                comments={post.comments || []}
-                hasMoreComments={post.hasMoreComments || false}
-                onLike={async () => {
-                  try {
-                    await likeService.likePost(post.id);
-                    fetchPosts(tabsData[activeTab].filter);
-                  } catch (error) {
-                    console.error("Error toggling like:", error);
-                  }
-                }}
-                onSave={async () => {
-                  try {
-                    await saveService.savePost(post.id);
-                    fetchPosts(tabsData[activeTab].filter);
-                  } catch (error) {
-                    console.error("Error toggling save:", error);
-                  }
-                }}
-                onCommentAdded={async () => {
-                  fetchPosts(tabsData[activeTab].filter);
-                }}
-              />
-            );
-          })}
-          </ScrollView>
-        </KeyboardAvoidingView>
-      )}
+                return (
+                  <TimelineItem
+                    key={post.id}
+                    postId={post.id}
+                    name={authorName}
+                    author={post.author}
+                    seen={formatTimeAgo(post.createdAt)}
+                    desc={post.description}
+                    numberOfComment={post.commentsCount}
+                    numberOfLike={post.likesCount}
+                    tags={post.tags || []}
+                    images={post.images || []}
+                    files={post.files || []}
+                    recommended={post.recommended}
+                    isLiked={post.isLiked}
+                    isSaved={post.isSaved}
+                    comments={post.comments || []}
+                    hasMoreComments={post.hasMoreComments || false}
+                    onLike={async () => {
+                      try {
+                        await likeService.likePost(post.id);
+                        fetchPosts(tabsData[activeTab].filter);
+                      } catch (error) {
+                        console.error("Error toggling like:", error);
+                      }
+                    }}
+                    onSave={async () => {
+                      try {
+                        await saveService.savePost(post.id);
+                        fetchPosts(tabsData[activeTab].filter);
+                      } catch (error) {
+                        console.error("Error toggling save:", error);
+                      }
+                    }}
+                    onCommentAdded={async () => {
+                      fetchPosts(tabsData[activeTab].filter);
+                    }}
+                  />
+                );
+              })}
+            </ScrollView>
+          </KeyboardAvoidingView>
+        )}
+      </View>
     </View>
   );
 };
