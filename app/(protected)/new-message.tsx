@@ -36,12 +36,14 @@ export default function NewMessageScreen() {
   const currentUser = useStore((state: any) => state.user);
   const currentUserId = currentUser?.id || null;
   const addConversation = useStore((state: any) => state.addConversation);
-  const setConversations = useStore((state: any) => state.setConversations);
 
   const [groups, setGroups] = useState<GroupItem[]>([]);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(true);
+  const [loadingMoreContacts, setLoadingMoreContacts] = useState(false);
+  const [contactsPage, setContactsPage] = useState(1);
+  const [hasMoreContacts, setHasMoreContacts] = useState(true);
 
   const styles = useThemedStyles(
     (t) =>
@@ -154,37 +156,109 @@ export default function NewMessageScreen() {
     }
   }, []);
 
-  const loadContacts = useCallback(async () => {
-    setLoadingContacts(true);
-    try {
-      const response = await userService.getAll({ limit: 100 });
-      const mappedContacts: ContactItem[] = response.users
-        .filter((user) => user.id !== currentUserId)
-        .map((user) => ({
-          id: user.id,
-          name:
-            `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-            user.email,
-          role:
-            user.role === "admin"
-              ? "Admin"
-              : user.role === "teacher"
-              ? "Teacher"
-              : undefined,
-          image: user.profilePicture || null,
-          initials:
-            `${user.firstName?.[0] || ""}${
-              user.lastName?.[0] || ""
-            }`.toUpperCase() || user.email[0].toUpperCase(),
-        }));
-      setContacts(mappedContacts);
-    } catch (error: any) {
-      console.error("Error loading contacts:", error);
-      Alert.alert("Error", error.message || "Failed to load contacts");
-    } finally {
-      setLoadingContacts(false);
+  const loadContacts = useCallback(
+    async (page: number = 1, append: boolean = false) => {
+      if (append) {
+        setLoadingMoreContacts(true);
+      } else {
+        setLoadingContacts(true);
+      }
+
+      try {
+        const currentUserRole = currentUser?.role;
+
+        // تعیین پارامترهای فیلتر بر اساس نقش کاربر
+        let apiParams: {
+          page: number;
+          limit: number;
+          role?:
+            | "parent"
+            | "teacher"
+            | "student"
+            | ("parent" | "teacher" | "student")[];
+        } = {
+          page,
+          limit: 20,
+        };
+
+        // اگر معلم است، فقط والدین را بگیر
+        if (currentUserRole === "teacher") {
+          apiParams.role = ["parent"];
+        }
+        // اگر والد است، فقط معلمان را بگیر
+        else if (currentUserRole === "parent") {
+          apiParams.role = ["teacher"];
+        }
+        // اگر ادمین است، همه role ها را بگیر (parent, teacher, student)
+        else if (currentUserRole === "admin") {
+          apiParams.role = ["parent", "teacher"];
+        }
+        // API خودش ادمین‌ها را فیلتر می‌کند
+
+        const response = await userService.getAll(apiParams);
+
+        // فیلتر کردن: حذف کاربر فعلی و اطمینان از اینکه هیچ ادمینی نمایش داده نشود
+        const mappedContacts: ContactItem[] = response.users
+          .filter((user) => {
+            // حذف کاربر فعلی
+            if (user.id === currentUserId) return false;
+            // حذف ادمین‌ها (به عنوان یک لایه امنیتی اضافی)
+            if (user.role === "admin") return false;
+            return true;
+          })
+          .map((user) => ({
+            id: user.id,
+            name:
+              `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+              user.email,
+            role:
+              user.role === "teacher"
+                ? "Teacher"
+                : user.role === "parent"
+                ? "Parent"
+                : "Student",
+            image: user.profilePicture || null,
+            initials:
+              `${user.firstName?.[0] || ""}${
+                user.lastName?.[0] || ""
+              }`.toUpperCase() || user.email[0].toUpperCase(),
+          }));
+
+        if (append) {
+          setContacts((prev) => [...prev, ...mappedContacts]);
+        } else {
+          setContacts(mappedContacts);
+        }
+
+        setContactsPage(page);
+        setHasMoreContacts(
+          page <
+            (response.totalPages || Math.ceil(response.total / response.limit))
+        );
+      } catch (error: any) {
+        console.error("Error loading contacts:", error);
+        if (!append) {
+          Alert.alert("Error", error.message || "Failed to load contacts");
+        }
+      } finally {
+        setLoadingContacts(false);
+        setLoadingMoreContacts(false);
+      }
+    },
+    [currentUserId, currentUser?.role]
+  );
+
+  const loadMoreContacts = useCallback(() => {
+    if (!loadingMoreContacts && hasMoreContacts && !loadingContacts) {
+      loadContacts(contactsPage + 1, true);
     }
-  }, [currentUserId]);
+  }, [
+    loadingMoreContacts,
+    hasMoreContacts,
+    loadingContacts,
+    contactsPage,
+    loadContacts,
+  ]);
 
   useEffect(() => {
     loadGroups();
@@ -256,7 +330,12 @@ export default function NewMessageScreen() {
     );
   };
 
-  const renderContactItem = ({ item }: { item: ContactItem }) => {
+  const renderContactItem = ({
+    item,
+  }: {
+    item: ContactItem;
+    index?: number;
+  }) => {
     return (
       <TouchableOpacity
         style={styles.row}
@@ -272,7 +351,9 @@ export default function NewMessageScreen() {
         <View style={styles.itemContent}>
           <View style={styles.itemHeader}>
             <Text style={styles.itemName}>{item.name}</Text>
-            {item.role && <Text style={styles.roleBadge}>{item.role}</Text>}
+            {item.role?.toLowerCase() === "teacher" && (
+              <Text style={styles.roleBadge}>{item.role}</Text>
+            )}
           </View>
           {item.lastSeen && (
             <Text style={styles.lastSeen}>Last Seen: {item.lastSeen}</Text>
@@ -330,12 +411,21 @@ export default function NewMessageScreen() {
           showsHorizontalScrollIndicator={false}
           style={{ minHeight: 200, height: 200 }}
           data={contacts}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
           renderItem={renderContactItem}
+          onEndReached={loadMoreContacts}
+          onEndReachedThreshold={0.5}
           ListEmptyComponent={
             <View style={{ padding: 20, alignItems: "center" }}>
               <Text style={{ color: theme.subText }}>No contacts found</Text>
             </View>
+          }
+          ListFooterComponent={
+            loadingMoreContacts ? (
+              <View style={{ padding: 20, alignItems: "center" }}>
+                <ActivityIndicator size="small" color={theme.tint} />
+              </View>
+            ) : null
           }
         />
       )}

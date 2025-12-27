@@ -7,13 +7,14 @@ export interface ParentDto {
   lastName?: string | null;
   profilePicture?: string | null;
   phoneNumber?: string | null;
-  role?: 'parent' | 'admin' | 'teacher';
+  role?: 'parent' | 'admin' | 'teacher' | 'student';
   childName?: string | null;
 }
 
 export interface GetParentsParams {
   page?: number;
   limit?: number;
+  search?: string;
 }
 
 // Standard NestJS/Swagger paginated response structure
@@ -32,13 +33,15 @@ export interface UserListItemDto {
   lastName?: string | null;
   profilePicture?: string | null;
   phoneNumber?: string | null;
-  role?: 'parent' | 'admin' | 'teacher';
+  role?: 'parent' | 'admin' | 'teacher' | 'student';
   childName?: string | null;
 }
 
 export interface GetUsersParams {
   page?: number;
   limit?: number;
+  search?: string;
+  role?: 'parent' | 'teacher' | 'student' | ('parent' | 'teacher' | 'student')[];
 }
 
 export interface GetUsersResponse {
@@ -65,6 +68,19 @@ class UserServiceImpl implements UserService {
       if (params?.limit) {
         queryParams.append('limit', params.limit.toString());
       }
+      if (params?.search) {
+        queryParams.append('search', params.search);
+      }
+      if (params?.role) {
+        // اگر role یک array است، هر کدام را جداگانه اضافه کن
+        if (Array.isArray(params.role)) {
+          params.role.forEach((r) => {
+            queryParams.append('role', r);
+          });
+        } else {
+          queryParams.append('role', params.role);
+        }
+      }
 
       const queryString = queryParams.toString();
       const endpoint = `/users${queryString ? `?${queryString}` : ''}`;
@@ -90,6 +106,9 @@ class UserServiceImpl implements UserService {
       }
       if (params?.limit) {
         queryParams.append('limit', params.limit.toString());
+      }
+      if (params?.search) {
+        queryParams.append('search', params.search);
       }
 
       const queryString = queryParams.toString();

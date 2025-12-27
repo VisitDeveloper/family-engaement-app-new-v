@@ -328,7 +328,7 @@ export default function MessagesScreen() {
         title="Messages"
         subTitle="Conversations and notices"
         buttonIcon={<Feather name="edit" size={16} color={theme.tint} />}
-        buttonLink="/new"
+        buttonLink="/new-message"
         buttonTtitle="New"
         buttonRoles={["admin", "teacher"]}
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
