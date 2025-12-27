@@ -7,6 +7,7 @@ import {
 } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { AntDesign, Feather } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -220,6 +221,13 @@ export default function MessagesScreen() {
   useEffect(() => {
     loadConversations();
   }, [loadConversations]);
+
+  // Refresh conversations when screen comes into focus (e.g., after creating a group or sending a message)
+  useFocusEffect(
+    useCallback(() => {
+      loadConversations();
+    }, [loadConversations])
+  );
 
   useEffect(() => {
     // Update filtered contacts when conversations change (use current query)

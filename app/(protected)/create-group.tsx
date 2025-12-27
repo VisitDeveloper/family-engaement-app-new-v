@@ -42,6 +42,7 @@ export default function CreateGroupScreen() {
   const theme = useStore((state) => state.theme);
   const currentUser = useStore((state: any) => state.user);
   const currentUserId = currentUser?.id || null;
+  const addConversation = useStore((state: any) => state.addConversation);
 
   const [data, setData] = useState<Invitee[]>([]);
   const [group, setGroup] = useState<Classroom[]>([]);
@@ -281,6 +282,9 @@ export default function CreateGroupScreen() {
             : undefined,
         memberIds: selected,
       });
+
+      // Add the new conversation to the store
+      addConversation(newConversation);
 
       // Navigate to the new group chat
       router.replace({

@@ -85,7 +85,7 @@ export const createChatSlice: StateCreator<any, [], [], ChatSlice> = (
       },
       conversations: state.conversations.map((c: ConversationResponseDto) =>
         c.id === conversationId
-          ? { ...c, lastMessage: message }
+          ? { ...c, lastMessage: message, updatedAt: message.createdAt }
           : c
       ),
     })),

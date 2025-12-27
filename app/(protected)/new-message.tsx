@@ -4,6 +4,7 @@ import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -264,6 +265,13 @@ export default function NewMessageScreen() {
     loadGroups();
     loadContacts();
   }, [loadGroups, loadContacts]);
+
+  // Refresh groups when screen comes into focus (e.g., after creating a group)
+  useFocusEffect(
+    useCallback(() => {
+      loadGroups();
+    }, [loadGroups])
+  );
 
   const handleGroupPress = (group: GroupItem) => {
     router.push({
