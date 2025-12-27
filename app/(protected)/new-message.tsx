@@ -133,7 +133,7 @@ export default function NewMessageScreen() {
       const { groups: groupsList } = await messagingService.getGroups({
         limit: 100,
       });
-      console.log(groupsList);
+      console.log("groupsList", groupsList);
       const mappedGroups: GroupItem[] = groupsList.map((conv) => {
         const name =
           typeof conv.name === "string"
@@ -193,8 +193,8 @@ export default function NewMessageScreen() {
         else if (currentUserRole === "admin") {
           apiParams.role = ["parent", "teacher"];
         }
-        // API خودش ادمین‌ها را فیلتر می‌کند
 
+        // API خودش ادمین‌ها را فیلتر می‌کند
         const response = await userService.getAll(apiParams);
 
         // فیلتر کردن: حذف کاربر فعلی و اطمینان از اینکه هیچ ادمینی نمایش داده نشود

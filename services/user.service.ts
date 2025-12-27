@@ -84,6 +84,8 @@ class UserServiceImpl implements UserService {
 
       const queryString = queryParams.toString();
       const endpoint = `/users${queryString ? `?${queryString}` : ''}`;
+
+      console.log("endpoint", endpoint);
       
       const response = await apiClient.get<GetUsersResponse>(endpoint);
       return response;
