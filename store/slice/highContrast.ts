@@ -26,7 +26,7 @@ export interface ThemeSlice {
 
 export const createThemeSlice: StateCreator<any, [], [], ThemeSlice> = (set, get) => {
   const listener = (preferences: { colorScheme: any }) => {
-    const scheme = preferences.colorScheme ?? "light"; // اگر null بود لایت در نظر بگیر
+    const scheme = preferences.colorScheme ?? "light"; // If null, consider light
     const { isHighContrast } = get();
     set({ colorScheme: scheme, theme: buildTheme(scheme, isHighContrast) });
   };

@@ -31,7 +31,7 @@ export default function Header({
       ]}
     >
       <View style={styles.container}>
-        {/* لوگو */}
+        {/* Logo */}
         <View style={styles.logoWrapper}>
           {logo ? (
             <Image source={logo} style={styles.logo} />
@@ -42,7 +42,7 @@ export default function Header({
           )}
         </View>
 
-        {/* تصویر کاربر */}
+        {/* User image */}
         <Link href={link} asChild>
           <TouchableOpacity style={styles.userWrapper}>
             {userImage ? (

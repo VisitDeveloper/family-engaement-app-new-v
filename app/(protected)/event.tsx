@@ -1,4 +1,4 @@
-// app/school-calendar.tsx (یا هر مسیری که می‌خوای)
+// app/school-calendar.tsx (or any path you want)
 import HeaderThreeSections from "@/components/reptitive-component/header-three-sections";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -225,28 +225,28 @@ const kindChip = (k: EventKind) => {
         bg: "#E6F0FF",
         text: "#1D4ED8",
         icon: <Feather name="users" size={15} color="#1D4ED8" />,
-      }; // آبی
+      }; // Blue
     case "Fieldtrip":
       return {
         label: "Fieldtrip",
         bg: "#F3E8FF",
         text: "#7C3AED",
         icon: <FontAwesome6 name="bus" size={15} color="#7C3AED" />,
-      }; // بنفش
+      }; // Purple
     case "Event":
       return {
         label: "Event",
         bg: "#EAFCEF",
         text: "#16A34A",
         icon: <MaterialIcons name="event-note" size={15} color="#16A34A" />,
-      }; // سبز
+      }; // Green
     case "Holiday":
       return {
         label: "Holiday",
         bg: "#FEE2E2",
         text: "#DC2626",
         icon: <AntDesign name="gift" size={15} color="#DC2626" />,
-      }; // قرمز
+      }; // Red
     default:
       return {
         label: "Event",

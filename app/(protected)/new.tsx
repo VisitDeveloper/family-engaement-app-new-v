@@ -63,8 +63,8 @@ export default function NewMessageScreen() {
           alignItems: "center",
           paddingVertical: 8,
           paddingHorizontal: 12,
-          minHeight: 60, // حداقل ارتفاع برای آیتم
-          maxHeight: 80, // حداکثر ارتفاع برای کنترل کشیدگی
+          minHeight: 60, // Minimum height for item
+          maxHeight: 80, // Maximum height to control stretching
         },
         actionIcon: {
           width: 48,

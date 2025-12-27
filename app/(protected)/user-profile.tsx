@@ -132,7 +132,7 @@ export default function ProfileScreen() {
           updatedAt: response.updatedAt,
         };
         setProfile(profileData);
-        // به‌روزرسانی user در store
+        // Update user in store
         const userData = {
           ...profileData,
           name:
@@ -150,7 +150,7 @@ export default function ProfileScreen() {
         apiError.message || "Failed to load profile. Please try again.";
       setError(errorMessage);
 
-      // اگر خطای 401 یا 403 باشد، token باطل شده
+      // If error is 401 or 403, token is invalid
       if (apiError.status === 401 || apiError.status === 403) {
         Alert.alert(
           "Session Expired",
@@ -205,7 +205,7 @@ export default function ProfileScreen() {
       // Upload image
       const response = await authService.updateProfilePicture(imageUri);
 
-      // اگر API کل user را برگرداند، از آن استفاده می‌کنیم
+      // If API returns the entire user, use it
       if (response.user) {
         const profileData: UserProfile = {
           id: response.user.id,
@@ -235,7 +235,7 @@ export default function ProfileScreen() {
         };
         setUser(userData);
       } else if (response.profilePicture) {
-        // اگر فقط profilePicture برگرداند، آن را به‌روزرسانی می‌کنیم
+        // If only profilePicture is returned, update it
         const updatedProfile = {
           ...profile!,
           profilePicture: response.profilePicture,
@@ -255,8 +255,8 @@ export default function ProfileScreen() {
         setUser(userData);
       }
 
-      // برای اطمینان، یک بار دیگر profile را fetch می‌کنیم
-      // این باعث می‌شود همه جا به‌روزرسانی شود
+      // For assurance, fetch profile one more time
+      // This ensures everything is updated everywhere
       await fetchProfile();
 
       Alert.alert("Success", "Profile picture updated successfully!");
@@ -267,7 +267,7 @@ export default function ProfileScreen() {
         "Failed to update profile picture. Please try again.";
       Alert.alert("Error", errorMessage);
 
-      // اگر خطای 401 یا 403 باشد، token باطل شده
+      // If error is 401 or 403, token is invalid
       if (apiError.status === 401 || apiError.status === 403) {
         Alert.alert(
           "Session Expired",

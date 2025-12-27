@@ -5,8 +5,8 @@ type Option<T> = {
 
 export function enumToOptions<T extends Record<string, string>>(enumObj: T): Option<T[keyof T]>[] {
     return Object.values(enumObj).map((value) => ({
-        label: value as T[keyof T],  // 👈 cast کردن
-        value: value as T[keyof T],  // 👈 cast کردن
+        label: value as T[keyof T],  // 👈 casting
+        value: value as T[keyof T],  // 👈 casting
     }));
 }
 

@@ -1,14 +1,14 @@
 import { StateCreator } from "zustand";
 
 export interface LanguageSlice {
-  appLanguage: string; // زبان اپلیکیشن: 'en' یا 'fa'
+  appLanguage: string; // Application language: 'en' or 'fa'
   setAppLanguage: (language: string) => void;
-  getAcceptLanguage: () => string; // تبدیل به فرمت Accept-Language (مثلاً en-US یا fa-IR)
+  getAcceptLanguage: () => string; // Convert to Accept-Language format (e.g., en-US or fa-IR)
 }
 
 export const createLanguageSlice: StateCreator<any, [], [], LanguageSlice> = (set, get) => {
   return {
-    appLanguage: "en", // پیش‌فرض: انگلیسی
+    appLanguage: "en", // Default: English
 
     setAppLanguage: (language: string) => {
       set({ appLanguage: language });
@@ -16,7 +16,7 @@ export const createLanguageSlice: StateCreator<any, [], [], LanguageSlice> = (se
 
     getAcceptLanguage: () => {
       const { appLanguage } = get();
-      // تبدیل کد زبان به فرمت Accept-Language
+      // Convert language code to Accept-Language format
       // en -> en-US, fr -> fr-FR
       const languageMap: Record<string, string> = {
         en: "en",

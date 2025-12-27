@@ -22,15 +22,15 @@ export default function DatePicker(props: DatePickerProps) {
             return;
         }
 
-        const newDate = new Date(date); // مقدار فعلی state
+        const newDate = new Date(date); // Current state value
 
         if (mode === 'date') {
-            // فقط سال، ماه، روز
+            // Only year, month, day
             newDate.setFullYear(selectedDate.getFullYear());
             newDate.setMonth(selectedDate.getMonth());
             newDate.setDate(selectedDate.getDate());
         } else if (mode === 'time') {
-            // فقط ساعت و دقیقه
+            // Only hour and minute
             newDate.setHours(selectedDate.getHours());
             newDate.setMinutes(selectedDate.getMinutes());
         }
@@ -69,7 +69,7 @@ export default function DatePicker(props: DatePickerProps) {
 
 // //     const onChangeIOS = (event: DateTimePickerEvent, selectedDate?: Date) => {
 // //         if (selectedDate) {
-// //             // روی iOS مقدار کامل datetime (هم تاریخ هم ساعت) میاد
+// //             // On iOS, full datetime value (both date and time) comes
 // //             setDate(selectedDate);
 // //         }
 // //         setShowDate(false);
@@ -80,7 +80,7 @@ export default function DatePicker(props: DatePickerProps) {
 // //             const newDate = new Date(selectedDate);
 // //             setDate(newDate);
 // //             setShowDate(false);
-// //             setShowTime(true); // بعد از انتخاب تاریخ → تایم‌پیکر
+// //             setShowTime(true); // After selecting date → time picker
 // //         } else {
 // //             setShowDate(false);
 // //         }
@@ -100,7 +100,7 @@ export default function DatePicker(props: DatePickerProps) {
 // //         if (Platform.OS === "ios") {
 // //             setShowDate(true);
 // //         } else {
-// //             setShowDate(true); // Android اول تاریخ
+// //             setShowDate(true); // Android first date
 // //         }
 // //     };
 
@@ -109,10 +109,10 @@ export default function DatePicker(props: DatePickerProps) {
 // //             <Button title="Pick Date & Time" onPress={showPicker} />
 
 // //             <Text style={{ marginTop: 20, fontSize: 16 }}>
-// //                 Selected: {date.toLocaleString()} {/* نمایش تاریخ و ساعت انتخابی */}
+// //                 Selected: {date.toLocaleString()} {/* Display selected date and time */}
 // //             </Text>
 
-// //             {/* iOS حالت datetime */}
+// //             {/* iOS datetime mode */}
 // //             {Platform.OS === "ios" && showDate && (
 // //                 <DateTimePicker
 // //                     value={date}
@@ -122,7 +122,7 @@ export default function DatePicker(props: DatePickerProps) {
 // //                 />
 // //             )}
 
-// //             {/* Android حالت جدا */}
+// //             {/* Android separate mode */}
 // //             {Platform.OS === "android" && showDate && (
 // //                 <DateTimePicker
 // //                     value={date}

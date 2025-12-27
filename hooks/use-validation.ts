@@ -7,7 +7,7 @@ export interface ValidationRule {
     minLength?: number;
     pattern?: RegExp;
     equalTo?: any;
-    custom?: (value: any) => string | null; // تابع ولیدیشن دلخواه
+    custom?: (value: any) => string | null; // Custom validation function
 }
 
 export type ValidationSchema<T> = {

@@ -53,7 +53,7 @@ export default function TabLayout() {
             // borderColor: theme.tint 
           },
           tabBarLabelStyle: {
-            fontSize: 12,        // 🔹 سایز نوشته زیر آیکن
+            fontSize: 12,        // 🔹 Size of text under icon
             fontWeight: '600',
             paddingBottom: 2
           },
@@ -61,16 +61,16 @@ export default function TabLayout() {
             ios: {
               // Use a transparent background on iOS to show the blur effect
               position: 'absolute',
-              height: 90,          // 🔹 ارتفاع کل tab bar
-              paddingBottom: 10,   // 🔹 فاصله از پایین
+              height: 90,          // 🔹 Total tab bar height
+              paddingBottom: 10,   // 🔹 Spacing from bottom
               paddingTop: 5,
               borderTopWidth: 1,
               paddingHorizontal: 8,
               borderTopColor: theme.border,
             },
             default: {
-              height: 90,          // 🔹 ارتفاع کل tab bar
-              paddingBottom: 10,   // 🔹 فاصله از پایین
+              height: 90,          // 🔹 Total tab bar height
+              paddingBottom: 10,   // 🔹 Spacing from bottom
               paddingTop: 5,
               borderTopWidth: 1,
               paddingHorizontal: 8,

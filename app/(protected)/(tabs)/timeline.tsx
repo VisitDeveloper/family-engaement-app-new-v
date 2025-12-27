@@ -61,11 +61,11 @@ const TimelineScreen = () => {
         // },
         // tab: {
         //   paddingHorizontal: 12,
-        //   // paddingVertical را حذف کنید
+        //   // Remove paddingVertical
         //   borderRadius: 10,
         //   backgroundColor: theme.bg,
-        //   height: 30, // ارتفاع ثابت برای هر تب
-        //   justifyContent: 'center', // متن را در مرکز عمودی تب قرار دهید
+        //   height: 30, // Fixed height for each tab
+        //   justifyContent: 'center', // Center text vertically in tab
         //   marginHorizontal: 4,
         // },
         tabs: {
@@ -187,7 +187,7 @@ const TimelineScreen = () => {
         avatarcreate: {
           width: 40,
           height: 40,
-          borderRadius: 20, // دایره‌ای کردن تصویر
+          borderRadius: 20, // Make image circular
           marginRight: 12,
           borderColor: theme.border,
           borderWidth: 1,
@@ -205,7 +205,7 @@ const TimelineScreen = () => {
         textInput: {
           fontSize: 15,
           color: "#1c1e21",
-          padding: 0, // حذف پدینگ پیش‌فرض در برخی پلتفرم‌ها
+          padding: 0, // Remove default padding on some platforms
         },
         icon: {
           marginLeft: 4,
@@ -347,7 +347,7 @@ const TimelineScreen = () => {
                 style={styles.avatarcreate}
               />
 
-              {/* ناحیه ورودی متن */}
+              {/* Text input area */}
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.textInput}
@@ -359,7 +359,7 @@ const TimelineScreen = () => {
                 />
               </View>
 
-              {/* آیکون گالری */}
+              {/* Gallery icon */}
               <TouchableOpacity onPress={() => router.push("/create-or-edit-post")}>
                 <Ionicons
                   name="image-outline"
@@ -369,7 +369,7 @@ const TimelineScreen = () => {
                 />
               </TouchableOpacity>
             </View>
-            {/* آواتار کاربر */}
+            {/* User avatar */}
           </TouchableOpacity>
         </RoleGuard>
 

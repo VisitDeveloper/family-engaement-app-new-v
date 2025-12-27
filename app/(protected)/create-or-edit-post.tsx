@@ -445,7 +445,7 @@ const CreateOrEditPost = () => {
 
     try {
       setLoading(true);
-      // تبدیل داده‌ها به فرمت API
+      // Convert data to API format
       const tagsArray = tags
         .split(",")
         .map((tag) => tag.trim())
@@ -453,7 +453,7 @@ const CreateOrEditPost = () => {
 
       const visibilityValue = visibility[0]?.value;
 
-      // آماده‌سازی داده‌های پست
+      // Prepare post data
       const postData: {
         description: string;
         tags: string[];
@@ -835,7 +835,7 @@ const CreateOrEditPost = () => {
               { label: "Followers", value: "followers" },
               { label: "Private", value: "private" },
             ]}
-            value={visibility[0].label} // فقط label برای نمایش در SelectBox
+            value={visibility[0].label} // Only label for display in SelectBox
             onChange={(val) => {
               const selectedOption = [
                 { label: "Everyone", value: "everyone" },
@@ -844,7 +844,7 @@ const CreateOrEditPost = () => {
               ].find((opt) => opt.value === val);
 
               if (selectedOption) {
-                setVisibility([selectedOption]); // کل گزینه رو ذخیره کن
+                setVisibility([selectedOption]); // Save the entire option
               }
             }}
             title="List of Post Visibility"

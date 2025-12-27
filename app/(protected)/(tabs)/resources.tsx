@@ -139,7 +139,7 @@ const ResourceLibrary = () => {
     [selectedCategory, fetchResources]
   );
 
-  // تغییر category هم منابع رو فیلتر می‌کنه
+  // Changing category also filters resources
   const handleCategoryChange = (cat: string) => {
     setSelectedCategory(cat);
     fetchResources(query, cat);

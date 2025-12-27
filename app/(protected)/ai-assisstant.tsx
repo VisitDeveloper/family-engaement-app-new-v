@@ -99,7 +99,7 @@ const TeachingAssistantScreen = () => {
                     data={messages}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}
-                    contentContainerStyle={{ padding: 15, paddingBottom: 120 }} // فاصله پایین برای input
+                    contentContainerStyle={{ padding: 15, paddingBottom: 120 }} // Bottom spacing for input
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                     showsHorizontalScrollIndicator={false}

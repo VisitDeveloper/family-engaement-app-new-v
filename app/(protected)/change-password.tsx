@@ -38,10 +38,10 @@ export default function ChangePassword() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // بررسی requirements برای password
-  // null = خاکستری (هنوز تایپ نشده), true = سبز (درست), false = قرمز (نادرست)
+  // Check password requirements
+  // null = gray (not typed yet), true = green (correct), false = red (incorrect)
   const passwordRequirements = (() => {
-    // اگر فیلد خالی است، همه requirements را null (خاکستری) برمی‌گردانیم
+    // If field is empty, return all requirements as null (gray)
     if (!newPassword || newPassword.trim().length === 0) {
       return {
         minLength: null,
@@ -51,7 +51,7 @@ export default function ChangePassword() {
       };
     }
 
-    // اگر فیلد پر است، هر requirement را بررسی می‌کنیم
+    // If field is filled, check each requirement
     return {
       minLength: newPassword.length >= 8,
       hasUpperLower: /[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword),
@@ -60,7 +60,7 @@ export default function ChangePassword() {
     };
   })();
 
-  // بررسی match بودن passwords
+  // Check if passwords match
   const passwordsMismatch =
     newPassword && confirmPassword && newPassword !== confirmPassword;
 
@@ -129,7 +129,7 @@ export default function ChangePassword() {
   const handleChangePassword = async () => {
     setError(null);
 
-    // بررسی تطابق رمز عبور جدید
+    // Check new password match
     if (newPassword !== confirmPassword) {
       setError("New password and confirm password do not match");
       return;
@@ -164,12 +164,12 @@ export default function ChangePassword() {
       let errorMessage =
         apiError.message || "Failed to change password. Please try again.";
 
-      // اگر خطای 401 یا 403 باشد، token باطل شده و باید دوباره لاگین کنیم
+      // If error is 401 or 403, token is invalid and we need to login again
       if (apiError.status === 401 || apiError.status === 403) {
         errorMessage =
           "Your session has expired. Please login again with your new password.";
 
-        // پاک کردن state و هدایت به صفحه login
+        // Clear state and redirect to login page
         setLoggedIn(false);
         setUser(null);
         setRole(null);

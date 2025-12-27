@@ -22,7 +22,7 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
-  // متد برای تنظیم function که زبان را برمی‌گرداند
+  // Method to set a function that returns the language
   setLanguageGetter(getter: () => string): void {
     this.getLanguage = getter;
   }
@@ -100,7 +100,7 @@ class ApiClient {
 
   private async refreshAccessToken(): Promise<string | null> {
     if (this.isRefreshing) {
-      // اگر در حال refresh هستیم، در صف منتظر بمان
+      // If we're currently refreshing, wait in the queue
       return new Promise((resolve, reject) => {
         this.failedQueue.push({ resolve, reject });
       });
@@ -131,7 +131,7 @@ class ApiClient {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        // اگر refresh token نامعتبر بود
+        // If refresh token was invalid
         this.processQueue(
           {
             message: data.message || 'Failed to refresh token',
@@ -146,7 +146,7 @@ class ApiClient {
 
       const { access_token, refresh_token: newRefreshToken } = data;
 
-      // ذخیره token های جدید
+      // Save new tokens
       if (access_token) {
         await this.setToken(access_token);
       }
@@ -154,13 +154,13 @@ class ApiClient {
         await this.setRefreshTokenInternal(newRefreshToken);
       }
 
-      // پردازش صف
+      // Process queue
       this.processQueue(null, access_token);
       this.isRefreshing = false;
 
       return access_token;
     } catch (error) {
-      // اگر refresh token نامعتبر بود
+      // If refresh token was invalid
       this.processQueue(error, null);
       this.isRefreshing = false;
       return null;
@@ -202,8 +202,8 @@ class ApiClient {
       headers.set('Authorization', `Bearer ${token}`);
     }
 
-    // اضافه کردن Accept-Language header
-    // پیش‌فرض: en-US، اما اگر language getter تنظیم شده باشد، از آن استفاده می‌کند
+    // Add Accept-Language header
+    // Default: en, but if language getter is set, it uses that
     const acceptLanguage = this.getLanguage ? this.getLanguage() : 'en';
     headers.set('Accept-Language', acceptLanguage);
 
@@ -218,21 +218,21 @@ class ApiClient {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        // اگر خطای 401 (Unauthorized) باشد و قبلاً retry نکرده‌ایم
+        // If error is 401 (Unauthorized) and we haven't retried yet
         if (response.status === 401 && retryCount === 0) {
-          // سعی می‌کنیم token را refresh کنیم
+          // Try to refresh the token
           const newAccessToken = await this.refreshAccessToken();
           
           if (newAccessToken) {
-            // retry درخواست با token جدید
+            // Retry request with new token
             return this.request<T>(endpoint, options, retryCount + 1);
           } else {
-            // اگر refresh موفق نبود، logout می‌کنیم
+            // If refresh was unsuccessful, logout
             performAutoLogout().catch((logoutError) => {
               console.error('Error during auto logout:', logoutError);
             });
             
-            // throw error برای اینکه درخواست اصلی fail شود
+            // Throw error so the original request fails
             const error: ApiError = {
               message: data.message || 'Session expired. Please login again.',
               status: response.status,

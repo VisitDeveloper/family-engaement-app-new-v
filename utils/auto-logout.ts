@@ -2,16 +2,16 @@ import { useStore } from "@/store";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
- * تابع برای logout خودکار در صورت خطای 401
- * این تابع token را پاک می‌کند و state را به‌روزرسانی می‌کند
+ * Function for automatic logout in case of 401 error
+ * This function clears tokens and updates the state
  */
 export async function performAutoLogout(): Promise<void> {
   try {
-    // پاک کردن token ها از storage (استفاده مستقیم از AsyncStorage برای جلوگیری از circular dependency)
+    // Clear tokens from storage (using AsyncStorage directly to avoid circular dependency)
     await AsyncStorage.removeItem('auth_token');
     await AsyncStorage.removeItem('refresh_token');
 
-    // به‌روزرسانی state - استفاده از getState برای دسترسی مستقیم
+    // Update state - using getState for direct access
     const store = useStore.getState();
     store.setLoggedIn(false);
     store.setRole(null);
@@ -20,7 +20,7 @@ export async function performAutoLogout(): Promise<void> {
     console.log("Auto logout performed due to unauthorized error");
   } catch (error) {
     console.error("Error during auto logout:", error);
-    // حتی اگر خطا رخ دهد، سعی می‌کنیم state را پاک کنیم
+    // Even if an error occurs, we try to clear the state
     try {
       const store = useStore.getState();
       store.setLoggedIn(false);

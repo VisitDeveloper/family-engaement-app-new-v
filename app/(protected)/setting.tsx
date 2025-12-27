@@ -62,12 +62,12 @@ export default function SettingsScreen() {
     },
   ]);
 
-  // همگام‌سازی lang با appLanguage از store
+  // Sync lang with appLanguage from store
   useEffect(() => {
     if (appLanguage) {
       const languageOptions = [
         { label: "English", value: "en" },
-        { label: "فارسی", value: "fa" },
+        { label: "Persian", value: "fa" },
       ];
       const selectedOption = languageOptions.find(
         (opt) => opt.value === appLanguage
@@ -90,19 +90,19 @@ export default function SettingsScreen() {
         onPress: async () => {
           setLogoutLoading(true);
           try {
-            // فراخوانی سرویس logout برای پاک کردن token
+            // Call logout service to clear token
             await authService.logout();
 
-            // پاک کردن state
+            // Clear state
             setLoggedIn(false);
             setRole(null);
             setUser(null);
 
-            // هدایت به صفحه login
+            // Redirect to login page
             router.replace("/(auth)/login");
           } catch (error) {
             console.error("Logout error:", error);
-            // حتی اگر خطا رخ دهد، state را پاک می‌کنیم
+            // Even if an error occurs, clear the state
             setLoggedIn(false);
             setRole(null);
             setUser(null);
@@ -347,7 +347,7 @@ export default function SettingsScreen() {
                 { label: "French", value: "fr" },
                 { label: "Spanish", value: "es" },
               ]}
-              value={appLanguage || lang[0].value} // استفاده از زبان از store
+              value={appLanguage || lang[0].value} // Use language from store
               onChange={(val) => {
                 const selectedOption = [
                   { label: "English", value: "en" },
@@ -356,8 +356,8 @@ export default function SettingsScreen() {
                 ].find((opt) => opt.value === val);
 
                 if (selectedOption) {
-                  setLang([selectedOption]); // برای نمایش محلی
-                  setAppLanguage(selectedOption.value); // ذخیره در store
+                  setLang([selectedOption]); // For local display
+                  setAppLanguage(selectedOption.value); // Save to store
                 }
               }}
               title="List of Language"

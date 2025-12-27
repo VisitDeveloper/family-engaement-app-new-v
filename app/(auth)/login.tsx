@@ -72,7 +72,7 @@ export default function LoginScreen() {
       if (activeTab === "login") {
         const response = await authService.login({ email, password });
 
-        // تعیین نقش از پاسخ API یا از ایمیل (fallback)
+        // Determine role from API response or from email (fallback)
         let detectedRole: "admin" | "teacher" | "parent" | null = null;
 
         if (response.user?.role) {
@@ -81,7 +81,7 @@ export default function LoginScreen() {
           detectedRole = "parent";
         }
 
-        // ذخیره user و role - ذخیره تمام اطلاعات user از API
+        // Save user and role - save all user information from API
         if (response.user) {
           useStore.getState().setUser({
             // @ts-ignore
@@ -98,10 +98,10 @@ export default function LoginScreen() {
             // role: response.user.role || detectedRole || null,
             profilePicture: response.user.profilePicture,
             childName: response.user.childName,
-            ...response.user, // ذخیره تمام فیلدهای اضافی
+            ...response.user, // Save all additional fields
           });
         } else {
-          // اگر API user برنگرداند، حداقل اطلاعات اولیه را ذخیره می‌کنیم
+          // If API doesn't return user, save at least initial information
           useStore.getState().setUser({
             id: email,
             name: email.split("@")[0],
@@ -124,7 +124,7 @@ export default function LoginScreen() {
           confirmPassword,
         });
 
-        // بعد از ثبت‌نام موفق، کاربر را لاگین می‌کنیم
+        // After successful registration, log the user in
         let detectedRole: "admin" | "teacher" | "parent" | undefined =
           undefined;
 
@@ -132,7 +132,7 @@ export default function LoginScreen() {
           detectedRole = response.user.role;
         }
 
-        // ذخیره user و role - ذخیره تمام اطلاعات user از API
+        // Save user and role - save all user information from API
         if (response.user) {
           useStore.getState().setUser({
             // @ts-ignore
@@ -148,10 +148,10 @@ export default function LoginScreen() {
             email: response.user.email || email,
             // role: response.user.role || detectedRole || undefined,
             profilePicture: response.user.profilePicture,
-            ...response.user, // ذخیره تمام فیلدهای اضافی
+            ...response.user, // Save all additional fields
           });
         } else {
-          // اگر API user برنگرداند، حداقل اطلاعات اولیه را ذخیره می‌کنیم
+          // If API doesn't return user, save at least initial information
           useStore.getState().setUser({
             id: email,
             name: email.split("@")[0],

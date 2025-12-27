@@ -4,7 +4,7 @@ import StatCardParent from "@/components/reptitive-component/state-card-parent";
 import UpcomingEventsCard, { EventsProps } from "@/components/reptitive-component/upcominf-events-parent";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { eventService } from "@/services/event.service";
-import { useStore } from "@/store"; // همون Zustand store که theme رو برمی‌گردونه
+import { useStore } from "@/store"; // The same Zustand store that returns theme
 import { AntDesign, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";

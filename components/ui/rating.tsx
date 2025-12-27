@@ -1,5 +1,5 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
-import { Ionicons } from "@expo/vector-icons"; // اگر Expo استفاده نمی‌کنی باید react-native-vector-icons نصب کنی
+import { Ionicons } from "@expo/vector-icons"; // If you're not using Expo, you need to install react-native-vector-icons
 import React, { useState, useEffect } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { ThemedText } from "../themed-text";

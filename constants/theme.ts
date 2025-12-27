@@ -6,7 +6,7 @@
 import { Platform } from 'react-native';
 
 const tintColorLight = '#a846c2';
-const tintColorDark = '#d17fe0'; // کمی روشن‌تر از بنفش تیره برای دارک مود
+const tintColorDark = '#d17fe0'; // Slightly lighter than dark purple for dark mode
 
 const emergencyColor = '#f87171';
 const emergencyBackgroundColor = '#fdf1f1'
@@ -54,7 +54,7 @@ export const Colors = {
     emergencyColor: emergencyColor,
     emergencyBackground: emergencyBackgroundColor,
 
-    text: '#E5E5E5', // سفید ملایم به جای #ECEDEE برای بهتر دیده شدن
+    text: '#E5E5E5', // Soft white instead of #ECEDEE for better visibility
     textSecondary: '#ECEDEE',
     background: '#1C1C1E',
     backgroundElement: '#2C2C2E',
@@ -66,15 +66,15 @@ export const Colors = {
     star: star,
 
     //check
-    icon: '#A0A0A5', // کمی روشن‌تر برای آیکون‌ها
-    tabIconDefault: '#7E7E82', // خاکستری مناسب با پس‌زمینه
+    icon: '#A0A0A5', // Slightly lighter for icons
+    tabIconDefault: '#7E7E82', // Gray suitable with background
     tabIconSelected: tintColorDark,
-    tabActivationBackground: '#2C2C2E', // پس‌زمینه فعال تب کمی روشن‌تر
-    tabBarBorderColor: '#444', // مرز ملایم
+    tabActivationBackground: '#2C2C2E', // Active tab background slightly lighter
+    tabBarBorderColor: '#444', // Soft border
     iconSecondColor: '#fff',
-    messageTimeColor: '#AAA', // متن زمان کمی روشن‌تر
-    messageTextColor: '#CCC', // پیام‌ها کمی روشن‌تر
-    textMessageMe: '#000', // اگر پیام خودم روی پس‌زمینه روشنه
+    messageTimeColor: '#AAA', // Time text slightly lighter
+    messageTextColor: '#CCC', // Messages slightly lighter
+    textMessageMe: '#000', // If my message is on light background
   },
 };
 

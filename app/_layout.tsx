@@ -24,9 +24,9 @@ export default function RootLayout() {
     if (isLoggedIn && inAuthGroup) {
       router.replace("/(protected)/(tabs)");
     } else if (!isLoggedIn && !inAuthGroup) {
-      // اضافه کردن شرط segments.length > 0 برای جلوگیری از هدایت در رندر اولیه که segments خالی است.
-      // همچنین ممکن است بخواهید مسیرهای عمومی که نیاز به احراز هویت ندارند را در اینجا استثنا کنید.
-      // مثلا: if (!isLoggedIn && !inAuthGroup && segments[0] !== 'public-page')
+      // Add condition segments.length > 0 to prevent redirect on initial render when segments is empty.
+      // You may also want to exclude public routes that don't require authentication here.
+      // For example: if (!isLoggedIn && !inAuthGroup && segments[0] !== 'public-page')
       router.replace("/(auth)/login");
     }
 

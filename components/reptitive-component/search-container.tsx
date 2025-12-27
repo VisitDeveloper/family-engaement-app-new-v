@@ -37,7 +37,7 @@ export default function SearchContainer({
     searchInput: { flex: 1, marginLeft: 8, height: 40, color: theme.text },
   }));
 
-  // پاس دادن debouncedQuery به والد
+  // Pass debouncedQuery to parent
   useEffect(() => {
     if (onDebouncedQuery) onDebouncedQuery(debouncedQuery);
   }, [debouncedQuery]);

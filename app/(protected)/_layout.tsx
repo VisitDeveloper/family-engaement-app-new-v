@@ -29,7 +29,7 @@ export default function RootLayout() {
     return () => subscription.remove();
   }, [setColorScheme]);
 
-  // تنظیم language getter برای API client
+  // Set language getter for API client
   useEffect(() => {
     apiClient.setLanguageGetter(() => getAcceptLanguage());
   }, [getAcceptLanguage]);
@@ -69,7 +69,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider
         value={{
-          dark: true, // یا true اگر میخوای dark باشه
+          dark: true, // or true if you want dark mode
           colors: {
             primary: theme.tint,
             background: theme.bg,

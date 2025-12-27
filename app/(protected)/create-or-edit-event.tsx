@@ -48,8 +48,8 @@ type Invitee = {
   id: string;
   name: string;
   subtitle: string;
-  avatar?: string; // تصویر پروفایل
-  initials?: string; // اگر عکس نبود
+  avatar?: string; // Profile picture
+  initials?: string; // If no picture
   isAdmin?: boolean;
   isOnline?: boolean;
 };

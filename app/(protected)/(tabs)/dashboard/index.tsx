@@ -2,7 +2,7 @@ import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import StatCard from "@/components/reptitive-component/stat-card-admin";
 import { ThemedText } from "@/components/themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
-import { useStore } from "@/store"; // همون Zustand store که theme رو برمی‌گردونه
+import { useStore } from "@/store"; // The same Zustand store that returns theme
 import { AntDesign, Feather, FontAwesome5, FontAwesome6 } from "@expo/vector-icons";
 import { Redirect } from "expo-router";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";

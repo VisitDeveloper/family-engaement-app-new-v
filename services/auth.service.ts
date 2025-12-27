@@ -53,7 +53,7 @@ export interface ChangePasswordRequest {
 export interface ChangePasswordResponse {
   message?: string;
   success?: boolean;
-  access_token?: string; // ممکن است API یک token جدید برگرداند
+  access_token?: string; // API may return a new token
   data?: {
     access_token?: string;
   };
@@ -72,7 +72,7 @@ export interface ProfileResponse {
   childName?: string; // Child's name (for parent role)
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
-  [key: string]: any; // برای فیلدهای اضافی که ممکن است از API بیایند
+  [key: string]: any; // For additional fields that may come from the API
 }
 
 // UserProfile interface that maps API fields
@@ -116,7 +116,7 @@ class AuthServiceImpl implements AuthService {
         credentials
       );
 
-      // استفاده از access_token و refresh_token
+      // Use access_token and refresh_token
       const accessToken = response.access_token || response.data?.access_token;
       const refreshToken = response.refresh_token || response.data?.refresh_token;
       
@@ -128,7 +128,7 @@ class AuthServiceImpl implements AuthService {
         await apiClient.setRefreshToken(refreshToken);
       }
 
-      // اگر user در data باشد، آن را به response.user منتقل می‌کنیم
+      // If user is in data, we transfer it to response.user
       if (response.data?.user && !response.user) {
         response.user = response.data.user;
       }
@@ -151,7 +151,7 @@ class AuthServiceImpl implements AuthService {
         password: data.password,
       });
 
-      // استفاده از access_token و refresh_token
+      // Use access_token and refresh_token
       const accessToken = response.access_token || response.data?.access_token;
       const refreshToken = response.refresh_token || response.data?.refresh_token;
       
@@ -163,7 +163,7 @@ class AuthServiceImpl implements AuthService {
         await apiClient.setRefreshToken(refreshToken);
       }
 
-      // اگر user در data باشد، آن را به response.user منتقل می‌کنیم
+      // If user is in data, we transfer it to response.user
       if (response.data?.user && !response.user) {
         response.user = response.data.user;
       }
@@ -181,22 +181,22 @@ class AuthServiceImpl implements AuthService {
 
   async logout(): Promise<void> {
     try {
-      // فراخوانی API logout در صورت وجود endpoint
+      // Call logout API if endpoint exists
       try {
         await apiClient.post("/auth/logout");
       } catch {
-        // اگر endpoint وجود نداشت یا خطا داد، ادامه می‌دهیم
+        // If endpoint doesn't exist or errors, continue
         console.log(
           "Logout API endpoint not available or failed, clearing token locally"
         );
       }
 
-      // پاک کردن token ها از storage
+      // Clear tokens from storage
       await apiClient.clearAuthToken();
       await apiClient.clearRefreshToken();
     } catch (error) {
       console.error("Error during logout:", error);
-      // حتی اگر خطا رخ دهد، token ها را پاک می‌کنیم
+      // Even if an error occurs, we clear the tokens
       await apiClient.clearAuthToken();
       await apiClient.clearRefreshToken();
     }
@@ -209,7 +209,7 @@ class AuthServiceImpl implements AuthService {
         { refresh_token: refreshToken }
       );
 
-      // ذخیره token های جدید
+      // Save new tokens
       if (response.access_token) {
         await apiClient.setAuthToken(response.access_token);
       }
@@ -251,9 +251,9 @@ class AuthServiceImpl implements AuthService {
     } catch (error) {
       const apiError = error as ApiError;
 
-      // اگر خطای 401 یا 403 باشد، token باطل شده و باید دوباره لاگین کنیم
+      // If error is 401 or 403, token is invalid and we need to login again
       if (apiError.status === 401 || apiError.status === 403) {
-        // Token باطل شده، آن را پاک می‌کنیم
+        // Token is invalid, clear it
         await apiClient.clearAuthToken();
       }
 

@@ -25,7 +25,7 @@ interface UserSlice {
     childName?: string; // Child's name (for parent role)
     createdAt?: string;
     updatedAt?: string;
-    [key: string]: any; // برای فیلدهای اضافی که ممکن است از API بیایند
+    [key: string]: any; // For additional fields that may come from the API
   } | null;
   setUser: (user: { 
     id: string; 
@@ -48,11 +48,11 @@ interface UserSlice {
 type StoreState = UserSlice & ChatSlice & ThemeSlice & LargeFontSlice & VoiceNarrationSlice & ResourceSlice & LoginStatusSlice & LanguageSlice;
 
 
-// ترکیب چند slice
+// Combine multiple slices
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
-      // Slice اصلی
+      // Main slice
       user: null,
       setUser: (user) => set({ user }),
 
@@ -74,7 +74,7 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'main-store',
-      storage: createJSONStorage(() => AsyncStorage), // ← اینجا مهمه
+      storage: createJSONStorage(() => AsyncStorage), // ← This is important
     }
   )
 );
