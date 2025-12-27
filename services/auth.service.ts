@@ -27,12 +27,21 @@ export interface UserResponseDto {
 // LoginResponseDto from API
 export interface AuthResponse {
   access_token: string;
+  refresh_token: string;
   user: UserResponseDto;
   message: string;
   data?: {
     user?: any;
     access_token?: string;
+    refresh_token?: string;
   };
+}
+
+// RefreshTokenResponse from API
+export interface RefreshTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  message: string;
 }
 
 export interface ChangePasswordRequest {
@@ -93,6 +102,7 @@ export interface AuthService {
   login(credentials: LoginRequest): Promise<AuthResponse>;
   register(data: RegisterRequest): Promise<AuthResponse>;
   logout(): Promise<void>;
+  refreshToken(refreshToken: string): Promise<RefreshTokenResponse>;
   changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse>;
   getProfile(): Promise<ProfileResponse>;
   updateProfilePicture(imageUri: string): Promise<UpdateProfilePictureResponse>;
@@ -106,10 +116,16 @@ class AuthServiceImpl implements AuthService {
         credentials
       );
 
-      // استفاده از access_token
+      // استفاده از access_token و refresh_token
       const accessToken = response.access_token || response.data?.access_token;
+      const refreshToken = response.refresh_token || response.data?.refresh_token;
+      
       if (accessToken) {
         await apiClient.setAuthToken(accessToken);
+      }
+      
+      if (refreshToken) {
+        await apiClient.setRefreshToken(refreshToken);
       }
 
       // اگر user در data باشد، آن را به response.user منتقل می‌کنیم
@@ -135,10 +151,16 @@ class AuthServiceImpl implements AuthService {
         password: data.password,
       });
 
-      // استفاده از access_token
+      // استفاده از access_token و refresh_token
       const accessToken = response.access_token || response.data?.access_token;
+      const refreshToken = response.refresh_token || response.data?.refresh_token;
+      
       if (accessToken) {
         await apiClient.setAuthToken(accessToken);
+      }
+      
+      if (refreshToken) {
+        await apiClient.setRefreshToken(refreshToken);
       }
 
       // اگر user در data باشد، آن را به response.user منتقل می‌کنیم
@@ -169,12 +191,41 @@ class AuthServiceImpl implements AuthService {
         );
       }
 
-      // پاک کردن token از storage
+      // پاک کردن token ها از storage
       await apiClient.clearAuthToken();
+      await apiClient.clearRefreshToken();
     } catch (error) {
       console.error("Error during logout:", error);
-      // حتی اگر خطا رخ دهد، token را پاک می‌کنیم
+      // حتی اگر خطا رخ دهد، token ها را پاک می‌کنیم
       await apiClient.clearAuthToken();
+      await apiClient.clearRefreshToken();
+    }
+  }
+
+  async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
+    try {
+      const response = await apiClient.post<RefreshTokenResponse>(
+        "/auth/refresh",
+        { refresh_token: refreshToken }
+      );
+
+      // ذخیره token های جدید
+      if (response.access_token) {
+        await apiClient.setAuthToken(response.access_token);
+      }
+      
+      if (response.refresh_token) {
+        await apiClient.setRefreshToken(response.refresh_token);
+      }
+
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message: apiError.message || "Failed to refresh token. Please login again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
     }
   }
 

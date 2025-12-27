@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStore } from "@/store";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * تابع برای logout خودکار در صورت خطای 401
@@ -7,8 +7,9 @@ import { useStore } from "@/store";
  */
 export async function performAutoLogout(): Promise<void> {
   try {
-    // پاک کردن token از storage (استفاده مستقیم از AsyncStorage برای جلوگیری از circular dependency)
+    // پاک کردن token ها از storage (استفاده مستقیم از AsyncStorage برای جلوگیری از circular dependency)
     await AsyncStorage.removeItem('auth_token');
+    await AsyncStorage.removeItem('refresh_token');
 
     // به‌روزرسانی state - استفاده از getState برای دسترسی مستقیم
     const store = useStore.getState();
