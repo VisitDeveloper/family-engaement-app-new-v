@@ -72,7 +72,7 @@ class UserServiceImpl implements UserService {
         queryParams.append('search', params.search);
       }
       if (params?.role) {
-        // اگر role یک array است، هر کدام را جداگانه اضافه کن
+        // If role is an array, add each one separately
         if (Array.isArray(params.role)) {
           params.role.forEach((r) => {
             queryParams.append('role', r);

@@ -167,7 +167,7 @@ export default function NewMessageScreen() {
       try {
         const currentUserRole = currentUser?.role;
 
-        // تعیین پارامترهای فیلتر بر اساس نقش کاربر
+        // Determine filter parameters based on user role
         let apiParams: {
           page: number;
           limit: number;
@@ -181,28 +181,28 @@ export default function NewMessageScreen() {
           limit: 20,
         };
 
-        // اگر معلم است، فقط والدین را بگیر
+        // If teacher, only get parents
         if (currentUserRole === "teacher") {
           apiParams.role = ["parent"];
         }
-        // اگر والد است، فقط معلمان را بگیر
+        // If parent, only get teachers
         else if (currentUserRole === "parent") {
           apiParams.role = ["teacher"];
         }
-        // اگر ادمین است، همه role ها را بگیر (parent, teacher, student)
+        // If admin, get all roles (parent, teacher, student)
         else if (currentUserRole === "admin") {
           apiParams.role = ["parent", "teacher"];
         }
 
-        // API خودش ادمین‌ها را فیلتر می‌کند
+        // API itself filters admins
         const response = await userService.getAll(apiParams);
 
-        // فیلتر کردن: حذف کاربر فعلی و اطمینان از اینکه هیچ ادمینی نمایش داده نشود
+        // Filtering: remove current user and ensure no admins are displayed
         const mappedContacts: ContactItem[] = response.users
           .filter((user) => {
-            // حذف کاربر فعلی
+            // Remove current user
             if (user.id === currentUserId) return false;
-            // حذف ادمین‌ها (به عنوان یک لایه امنیتی اضافی)
+            // Remove admins (as an additional security layer)
             if (user.role === "admin") return false;
             return true;
           })
@@ -369,15 +369,17 @@ export default function NewMessageScreen() {
 
       {/* Groups */}
       <Text style={styles.sectionTitle}>Groups</Text>
-      <TouchableOpacity
-        style={styles.row}
-        onPress={() => router.push("/create-group")}
-      >
-        <View style={styles.actionIcon}>
-          <Ionicons name={"people-outline"} size={24} color={theme.tint} />
-        </View>
-        <Text style={styles.itemName}>Create New Group</Text>
-      </TouchableOpacity>
+      {currentUser?.role !== "parent" && (
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => router.push("/create-group")}
+        >
+          <View style={styles.actionIcon}>
+            <Ionicons name={"people-outline"} size={24} color={theme.tint} />
+          </View>
+          <Text style={styles.itemName}>Create New Group</Text>
+        </TouchableOpacity>
+      )}
 
       {loadingGroups ? (
         <View style={{ padding: 20, alignItems: "center" }}>
