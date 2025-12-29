@@ -3,17 +3,16 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ConversationResponseDto, MessageResponseDto, messagingService } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
-import { usePathname } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function ChatScreen() {
     const [input, setInput] = useState("");
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
-    const param = usePathname();
-    const pathID = param.split('/');
-    const conversationId = pathID.pop();
+    const { chatID } = useLocalSearchParams<{ chatID: string }>();
+    const conversationId = chatID;
     
     // Select data from store instead of calling functions
     const conversations = useStore((state: any) => state.conversations);
@@ -60,41 +59,68 @@ export default function ChatScreen() {
     }) as const);
 
     const loadConversation = useCallback(async () => {
-        if (!conversationId) return;
+        if (!conversationId || typeof conversationId !== 'string') {
+            console.warn('Invalid conversationId:', conversationId);
+            return;
+        }
         
         try {
-            const conv = await messagingService.getConversationById(conversationId);
-            // Update store if needed
-        } catch (error) {
+            await messagingService.getConversationById(conversationId);
+            // Update store if needed - you might want to add this to your store
+            // const conv = await messagingService.getConversationById(conversationId);
+            // updateConversation(conversationId, conv);
+        } catch (error: any) {
             console.error('Error loading conversation:', error);
-            Alert.alert('Error', 'Failed to load conversation');
+            const errorMessage = error?.message || 'Failed to load conversation';
+            // Only show alert if it's not a 404 (conversation might not exist)
+            if (error?.status !== 404) {
+                Alert.alert('Error', errorMessage);
+            }
         }
     }, [conversationId]);
 
     const loadMessages = useCallback(async () => {
-        if (!conversationId) return;
+        if (!conversationId || typeof conversationId !== 'string') {
+            console.warn('Invalid conversationId:', conversationId);
+            setLoading(false);
+            return;
+        }
         
         setLoading(true);
         try {
             const response = await messagingService.getMessages(conversationId, { limit: 50 });
-            setMessages(conversationId, response.messages.reverse()); // Reverse to show oldest first
-        } catch (error) {
+            if (response && response.messages) {
+                setMessages(conversationId, response.messages.reverse()); // Reverse to show oldest first
+            } else {
+                setMessages(conversationId, []);
+            }
+        } catch (error: any) {
             console.error('Error loading messages:', error);
-            Alert.alert('Error', 'Failed to load messages');
+            const errorMessage = error?.message || 'Failed to load messages';
+            // Only show alert if it's not a 404
+            if (error?.status !== 404) {
+                Alert.alert('Error', errorMessage);
+            }
+            // Set empty messages array on error
+            setMessages(conversationId, []);
         } finally {
             setLoading(false);
         }
     }, [conversationId, setMessages]);
 
     useEffect(() => {
+        if (!conversationId || typeof conversationId !== 'string') {
+            return;
+        }
+        
         loadConversation();
         loadMessages();
         
         // Mark conversation as read when component mounts
-        if (conversationId) {
-            messagingService.markConversationAsRead(conversationId).catch(console.error);
-            markConversationAsRead(conversationId, { unreadCount: 0 });
-        }
+        messagingService.markConversationAsRead(conversationId).catch((error) => {
+            console.error('Error marking conversation as read:', error);
+        });
+        markConversationAsRead(conversationId, { unreadCount: 0 });
     }, [conversationId, loadConversation, loadMessages, markConversationAsRead]);
 
     const handleSendMessage = async () => {
@@ -260,7 +286,3 @@ export default function ChatScreen() {
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-
-});
