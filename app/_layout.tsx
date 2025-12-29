@@ -2,6 +2,8 @@ import { useStore } from "@/store";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View, LogBox } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 // Disable LogBox
 LogBox.ignoreAllLogs();
@@ -34,11 +36,21 @@ export default function RootLayout() {
 
   if (!isMounted) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <BottomSheetModalProvider>
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <ActivityIndicator size="large" />
+          </View>
+        </BottomSheetModalProvider>
+      </GestureHandlerRootView>
     );
   }
 
-  return <Slot />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <Slot />
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
+  );
 }

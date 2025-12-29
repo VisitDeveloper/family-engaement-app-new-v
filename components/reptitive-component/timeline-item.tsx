@@ -20,6 +20,7 @@ import {
 } from "react-native";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
+import CommentsBottomSheet from "../ui/comments-bottom-sheet";
 export interface ResourceItemProps {
   postId?: string;
   name: string;
@@ -59,6 +60,18 @@ export default function TimelineItem({
   const user = useStore((state) => state.user);
   const router = useRouter();
 
+  const formatTimeAgoShort = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    return date.toLocaleDateString();
+  };
+
   // Check if current user is the author and is a teacher or admin
   const isAuthor = user?.id === props.author?.id;
   const canEditDelete =
@@ -90,9 +103,10 @@ export default function TimelineItem({
   const [commentReplies, setCommentReplies] = useState<
     Record<string, CommentResponseDto[]>
   >({});
+  const [showCommentsSheet, setShowCommentsSheet] = useState(false);
 
   // Number of comments to show initially
-  const INITIAL_COMMENTS_TO_SHOW = 2;
+  const INITIAL_COMMENTS_TO_SHOW = 3;
 
   // Keep comments open if showAllCommentsByDefault is true
   useEffect(() => {
@@ -142,16 +156,19 @@ export default function TimelineItem({
 
     try {
       setLoadingReplies((prev) => ({ ...prev, [commentId]: true }));
+      debugger;
       const response = await commentService.getCommentReplies(commentId, {
         page: 1,
         limit: 50,
         sort: "newest",
       });
+      debugger;
       setCommentReplies((prev) => ({
         ...prev,
-        [commentId]: response.comments || [],
+        [commentId]: response.replies || [],
       }));
     } catch (err: any) {
+      debugger;
       console.error("Error fetching replies:", err);
     } finally {
       setLoadingReplies((prev) => ({ ...prev, [commentId]: false }));
@@ -160,9 +177,11 @@ export default function TimelineItem({
 
   // Toggle show replies
   const toggleShowReplies = (commentId: string) => {
+    debugger;
     const newState = !showReplies[commentId];
     setShowReplies((prev) => ({ ...prev, [commentId]: newState }));
 
+    debugger;
     // Fetch replies if showing for the first time and we don't have them
     if (newState && !commentReplies[commentId]) {
       // Check if the comment has replies in displayComments
@@ -433,7 +452,7 @@ export default function TimelineItem({
           backgroundColor: theme.panel,
         },
         replyContainer: {
-          marginLeft: 32,
+          marginLeft: 16,
           marginTop: 8,
           paddingLeft: 12,
         },
@@ -451,9 +470,7 @@ export default function TimelineItem({
           paddingHorizontal: 8,
           paddingVertical: 4,
         },
-        generalmargin: {
-          marginLeft: 5,
-        },
+        generalmargin: {},
         dropdownContainer: {
           position: "relative",
         },
@@ -488,15 +505,7 @@ export default function TimelineItem({
   );
 
   return (
-    <Pressable
-      onPress={() => {
-        if (showDropdown) {
-          setShowDropdown(false);
-        } else if (props.postId) {
-          router.push(`/feed/${props.postId}`);
-        }
-      }}
-    >
+    <>
       <ThemedView style={styles.postCard}>
         <View style={styles.postHeader}>
           {props.author && props.author.profilePicture ? (
@@ -611,7 +620,13 @@ export default function TimelineItem({
                     accessibilityLabel="Delete post"
                     accessibilityHint="Double tap to delete this post. This action cannot be undone."
                   >
-                    <Ionicons name="trash-outline" size={18} color="#ff4444" accessibilityElementsHidden={true} importantForAccessibility="no" />
+                    <Ionicons
+                      name="trash-outline"
+                      size={18}
+                      color="#ff4444"
+                      accessibilityElementsHidden={true}
+                      importantForAccessibility="no"
+                    />
                     <ThemedText type="subText" style={{ color: "#ff4444" }}>
                       Delete
                     </ThemedText>
@@ -734,7 +749,17 @@ export default function TimelineItem({
                     importantForAccessibility="no"
                   />
                   <View style={styles.fileInfo}>
-                    <ThemedText type="subText" style={[styles.fileName, { textOverflow: "ellipsis", overflow: "hidden", fontSize: 12 }]}>
+                    <ThemedText
+                      type="subText"
+                      style={[
+                        styles.fileName,
+                        {
+                          textOverflow: "ellipsis",
+                          overflow: "hidden",
+                          fontSize: 12,
+                        },
+                      ]}
+                    >
                       {fileName.length > 30
                         ? fileName.substring(0, 30) + "..."
                         : fileName}
@@ -756,12 +781,14 @@ export default function TimelineItem({
         {/* Actions */}
         <View style={styles.actions}>
           <View style={styles.actionButtons}>
-            <TouchableOpacity 
-              style={styles.ationItem} 
+            <TouchableOpacity
+              style={styles.ationItem}
               onPress={props.onLike}
               accessibilityRole="button"
               accessibilityLabel={props.isLiked ? "Unlike post" : "Like post"}
-              accessibilityHint={`${props.numberOfLike} likes. Double tap to ${props.isLiked ? "unlike" : "like"} this post`}
+              accessibilityHint={`${props.numberOfLike} likes. Double tap to ${
+                props.isLiked ? "unlike" : "like"
+              } this post`}
               accessibilityState={{ selected: props.isLiked }}
             >
               <EvilIcons
@@ -781,8 +808,18 @@ export default function TimelineItem({
                 {props.numberOfLike}
               </ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.ationItem}
+              onPress={(e) => {
+                e.stopPropagation();
+                console.log("Comment button pressed, postId:", props.postId);
+                if (props.postId) {
+                  console.log("Opening comments sheet");
+                  setShowCommentsSheet(true);
+                } else {
+                  console.log("No postId available");
+                }
+              }}
               accessibilityRole="button"
               accessibilityLabel={`${props.numberOfComment} comments`}
               accessibilityHint="Double tap to view comments"
@@ -796,13 +833,13 @@ export default function TimelineItem({
               />
               <ThemedText
                 type="subText"
-                style={[styles.generalmargin, { color: theme.text }]}
+                style={[{marginLeft: 4}, { color: theme.text }]}
               >
                 {props.numberOfComment}
               </ThemedText>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.ationItem}
               accessibilityRole="button"
               accessibilityLabel="Share post"
@@ -818,11 +855,15 @@ export default function TimelineItem({
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={props.onSave}
             accessibilityRole="button"
-            accessibilityLabel={props.isSaved ? "Remove from saved" : "Save post"}
-            accessibilityHint={`Double tap to ${props.isSaved ? "unsave" : "save"} this post`}
+            accessibilityLabel={
+              props.isSaved ? "Remove from saved" : "Save post"
+            }
+            accessibilityHint={`Double tap to ${
+              props.isSaved ? "unsave" : "save"
+            } this post`}
             accessibilityState={{ selected: props.isSaved }}
           >
             <Ionicons
@@ -865,7 +906,10 @@ export default function TimelineItem({
                             marginRight: 0,
                           }}
                           accessibilityRole="image"
-                          accessibilityLabel={`${commentItem.author.firstName || commentItem.author.email}'s profile picture`}
+                          accessibilityLabel={`${
+                            commentItem.author.firstName ||
+                            commentItem.author.email
+                          }'s profile picture`}
                         />
                       ) : (
                         <Ionicons
@@ -879,21 +923,20 @@ export default function TimelineItem({
                           flex: 1,
                           marginLeft: 8,
                           alignItems: "flex-start",
-                          flexWrap: "wrap",
                         }}
                       >
                         <View
                           style={{
                             flexDirection: "row",
-                            alignItems: "center",
-                            flexWrap: "wrap",
+                            justifyContent: "space-between",
                           }}
                         >
                           <View
                             style={{
-                              flex: 1,
                               flexDirection: "row",
                               alignItems: "baseline",
+                              justifyContent: "flex-start",
+                              gap: 4,
                             }}
                           >
                             <ThemedText
@@ -910,23 +953,92 @@ export default function TimelineItem({
                                   commentItem.author.lastName ||
                                   commentItem.author.email ||
                                   "Unknown"}
-                              :
                             </ThemedText>
+                            <ThemedText
+                              type="subLittleText"
+                              style={{ fontSize: 9, color: theme.subText }}
+                            >
+                              {formatTimeAgoShort(commentItem.createdAt)}
+                            </ThemedText>
+                          </View>
+                        </View>
+
+                        <View
+                          style={{
+                            justifyContent: "space-between",
+                            flexDirection: "row",
+                            alignItems: "flex-start",
+                            flex: 1,
+                            width: "100%",
+                          }}
+                        >
+                          <View style={{ flex: 1 }}>
                             <ThemedText
                               type="subText"
                               style={[
                                 styles.generalmargin,
-                                { color: theme.text, flex: 1 },
+                                { color: theme.text },
                               ]}
                             >
                               {commentItem.content}
                             </ThemedText>
                           </View>
+                          <View style={{ paddingTop: 4 }}>
+                            <TouchableOpacity
+                              style={{
+                                paddingTop: 2,
+                                paddingHorizontal: 4,
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                              onPress={() => handleCommentLike(commentItem.id)}
+                            >
+                              <EvilIcons
+                                name={
+                                  commentLikes[commentItem.id]?.isLiked ??
+                                  commentItem.isLiked
+                                    ? "heart"
+                                    : ("heart" as any)
+                                }
+                                size={16}
+                                color={
+                                  commentLikes[commentItem.id]?.isLiked ??
+                                  commentItem.isLiked
+                                    ? theme.tint
+                                    : theme.subText
+                                }
+                              />
+
+                              <ThemedText
+                                type="subLittleText"
+                                style={{
+                                  color: theme.subText,
+                                  fontSize: 10,
+                                  position: "absolute",
+                                  bottom: -18,
+                                  width: 40,
+                                  textAlign: "center",
+                                }}
+                              >
+                                {commentLikes[commentItem.id]?.likesCount ??
+                                commentItem.likesCount
+                                  ? commentItem.likesCount
+                                  : 0}
+                              </ThemedText>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 8,
+                            marginTop: 4,
+                          }}
+                        >
                           <TouchableOpacity
-                            style={{
-                              marginLeft: 8,
-                              paddingHorizontal: 4,
-                            }}
                             onPress={() => {
                               setShowReplyInput((prev) => ({
                                 ...prev,
@@ -940,55 +1052,36 @@ export default function TimelineItem({
                               }
                             }}
                           >
-                            <Ionicons
-                              name="arrow-undo-outline"
-                              size={16}
-                              color={theme.subText}
-                            />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={{
-                              marginLeft: 4,
-                              paddingHorizontal: 4,
-                            }}
-                            onPress={() => handleCommentLike(commentItem.id)}
-                          >
-                            <EvilIcons
-                              name={
-                                commentLikes[commentItem.id]?.isLiked ??
-                                commentItem.isLiked
-                                  ? "heart"
-                                  : ("heart" as any)
-                              }
-                              size={16}
-                              color={
-                                commentLikes[commentItem.id]?.isLiked ??
-                                commentItem.isLiked
-                                  ? theme.tint
-                                  : theme.subText
-                              }
-                            />
-                          </TouchableOpacity>
-                        </View>
-
-                        {/* View replies button */}
-                        {hasReplies && (
-                          <TouchableOpacity
-                            onPress={() => toggleShowReplies(commentItem.id)}
-                            style={{ marginTop: 4 }}
-                          >
                             <ThemedText
                               type="subLittleText"
-                              style={{ color: theme.subText, fontSize: 11 }}
+                              style={{
+                                color: theme.subText,
+                                fontSize: 12,
+                              }}
                             >
-                              {isShowingReplies ? "Hide" : "View"}{" "}
-                              {commentItem.repliesCount || replies.length}{" "}
-                              {commentItem.repliesCount === 1
-                                ? "reply"
-                                : "replies"}
+                              Reply
                             </ThemedText>
                           </TouchableOpacity>
-                        )}
+
+                          {/* View replies button */}
+                          {hasReplies && (
+                            <TouchableOpacity
+                              onPress={() => toggleShowReplies(commentItem.id)}
+                              style={{ paddingHorizontal: 4 }}
+                            >
+                              <ThemedText
+                                type="subLittleText"
+                                style={{ color: theme.subText, fontSize: 12 }}
+                              >
+                                {isShowingReplies ? "Hide" : "View"}{" "}
+                                {commentItem.repliesCount || replies.length}{" "}
+                                {commentItem.repliesCount === 1
+                                  ? "reply"
+                                  : "replies"}
+                              </ThemedText>
+                            </TouchableOpacity>
+                          )}
+                        </View>
                       </View>
                     </View>
 
@@ -1004,84 +1097,144 @@ export default function TimelineItem({
                           </ThemedText>
                         ) : replies.length > 0 ? (
                           replies.map((reply) => (
-                            <View key={reply.id} style={styles.replyItem}>
-                              {reply.author.profilePicture ? (
-                                <Image
-                                  source={{ uri: reply.author.profilePicture }}
-                                  style={{
-                                    ...styles.avatar,
-                                    width: 20,
-                                    height: 20,
-                                    marginRight: 0,
-                                  }}
-                                />
-                              ) : (
-                                <Ionicons
-                                  name="person-circle"
-                                  size={20}
-                                  color={theme.subText}
-                                />
-                              )}
-                              <View style={{ flex: 1, marginLeft: 8 }}>
+                            <View key={reply.id}>
+                              <View style={styles.replyItem}>
+                                {reply.author.profilePicture ? (
+                                  <Image
+                                    source={{
+                                      uri: reply.author.profilePicture,
+                                    }}
+                                    style={{
+                                      ...styles.avatar,
+                                      width: 20,
+                                      height: 20,
+                                      marginRight: 0,
+                                    }}
+                                  />
+                                ) : (
+                                  <Ionicons
+                                    name="person-circle"
+                                    size={20}
+                                    color={theme.subText}
+                                  />
+                                )}
                                 <View
                                   style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    flexWrap: "wrap",
+                                    flex: 1,
+                                    marginLeft: 8,
+                                    alignItems: "flex-start",
                                   }}
                                 >
-                                  <ThemedText
-                                    type="defaultSemiBold"
+                                  <View
                                     style={{
-                                      color: theme.text,
-                                      fontSize: 12,
+                                      flexDirection: "row",
+                                      justifyContent: "space-between",
                                     }}
                                   >
-                                    {reply.author.firstName &&
-                                    reply.author.lastName
-                                      ? `${reply.author.firstName} ${reply.author.lastName}`
-                                      : reply.author.firstName ||
-                                        reply.author.lastName ||
-                                        reply.author.email ||
-                                        "Unknown"}
-                                    :
-                                  </ThemedText>
-                                  <ThemedText
-                                    type="subText"
-                                    style={[
-                                      styles.generalmargin,
-                                      {
-                                        color: theme.text,
-                                        flex: 1,
-                                        fontSize: 12,
-                                      },
-                                    ]}
-                                  >
-                                    {reply.content}
-                                  </ThemedText>
-                                  <TouchableOpacity
+                                    <View
+                                      style={{
+                                        flexDirection: "row",
+                                        alignItems: "baseline",
+                                        justifyContent: "flex-start",
+                                        gap: 4,
+                                      }}
+                                    >
+                                      <ThemedText
+                                        type="defaultSemiBold"
+                                        style={{
+                                          color: theme.text,
+                                          fontSize: 12,
+                                        }}
+                                      >
+                                        {reply.author.firstName &&
+                                        reply.author.lastName
+                                          ? `${reply.author.firstName} ${reply.author.lastName}`
+                                          : reply.author.firstName ||
+                                            reply.author.lastName ||
+                                            reply.author.email ||
+                                            "Unknown"}
+                                      </ThemedText>
+                                      <ThemedText
+                                        type="subLittleText"
+                                        style={{
+                                          fontSize: 9,
+                                          color: theme.subText,
+                                        }}
+                                      >
+                                        {formatTimeAgoShort(reply.createdAt)}
+                                      </ThemedText>
+                                    </View>
+                                  </View>
+
+                                  <View
                                     style={{
-                                      marginLeft: 8,
-                                      paddingHorizontal: 4,
+                                      justifyContent: "space-between",
+                                      flexDirection: "row",
+                                      alignItems: "flex-start",
+                                      flex: 1,
+                                      width: "100%",
                                     }}
-                                    onPress={() => handleCommentLike(reply.id)}
                                   >
-                                    <EvilIcons
-                                      name={
-                                        commentLikes[reply.id]?.isLiked ??
-                                        reply.isLiked
-                                          ? "heart"
-                                          : ("heart" as any)
-                                      }
-                                      size={14}
-                                      color={
-                                        commentLikes[reply.id]?.isLiked ??
-                                        reply.isLiked
-                                          ? theme.tint
-                                          : theme.subText
-                                      }
-                                    />
-                                  </TouchableOpacity>
+                                    <View style={{ flex: 1 }}>
+                                      <ThemedText
+                                        type="subText"
+                                        style={[
+                                          styles.generalmargin,
+                                          {
+                                            color: theme.text,
+                                            flex: 1,
+                                            fontSize: 12,
+                                          },
+                                        ]}
+                                      >
+                                        {reply.content}
+                                      </ThemedText>
+                                    </View>
+
+                                    <View style={{ paddingTop: 4 }}>
+                                      <TouchableOpacity
+                                        style={{
+                                          marginLeft: 8,
+                                          paddingHorizontal: 4,
+                                        }}
+                                        onPress={() =>
+                                          handleCommentLike(reply.id)
+                                        }
+                                      >
+                                        <EvilIcons
+                                          name={
+                                            commentLikes[reply.id]?.isLiked ??
+                                            reply.isLiked
+                                              ? "heart"
+                                              : ("heart" as any)
+                                          }
+                                          size={14}
+                                          color={
+                                            commentLikes[reply.id]?.isLiked ??
+                                            reply.isLiked
+                                              ? theme.tint
+                                              : theme.subText
+                                          }
+                                        />
+                                      </TouchableOpacity>
+                                      <ThemedText
+                                        type="subLittleText"
+                                        style={{
+                                          color: theme.subText,
+                                          fontSize: 10,
+                                          position: "absolute",
+                                          bottom: -18,
+                                          width: 40,
+                                          textAlign: "center",
+                                        }}
+                                      >
+                                        {commentLikes[reply.id]?.likesCount ??
+                                        reply.likesCount
+                                          ? reply.likesCount
+                                          : 0}
+                                      </ThemedText>
+                                    </View>
+                                  </View>
                                 </View>
                               </View>
                             </View>
@@ -1496,6 +1649,36 @@ export default function TimelineItem({
           )}
         </View>
       </ThemedView>
-    </Pressable>
+
+      {props.postId && (
+        <CommentsBottomSheet
+          visible={showCommentsSheet}
+          onClose={() => setShowCommentsSheet(false)}
+          postId={props.postId}
+          initialComments={displayComments}
+          onCommentAdded={async () => {
+            if (props.onCommentAdded) {
+              props.onCommentAdded();
+            }
+            // Refresh comments in the sheet
+            if (props.postId) {
+              try {
+                const response = await commentService.getPostComments(
+                  props.postId,
+                  {
+                    page: 1,
+                    limit: 100,
+                    sort: "newest",
+                  }
+                );
+                setExpandedComments(response || []);
+              } catch (err) {
+                console.error("Error refreshing comments:", err);
+              }
+            }
+          }}
+        />
+      )}
+    </>
   );
 }
