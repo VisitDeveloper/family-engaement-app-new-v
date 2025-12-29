@@ -120,6 +120,15 @@ export default function CommentsBottomSheet({
         isLiked: comment.isLiked || false,
         likesCount: comment.likesCount || 0,
       };
+      // Also initialize likes for replies if they exist
+      if (comment.replies && comment.replies.length > 0) {
+        comment.replies.forEach((reply) => {
+          likesState[reply.id] = {
+            isLiked: reply.isLiked || false,
+            likesCount: reply.likesCount || 0,
+          };
+        });
+      }
     });
     setCommentLikes(likesState);
   }, [comments]);
@@ -135,10 +144,22 @@ export default function CommentsBottomSheet({
         limit: 50,
         sort: "newest",
       });
+      const fetchedReplies = response.replies || [];
       setCommentReplies((prev) => ({
         ...prev,
-        [commentId]: response.replies || [],
+        [commentId]: fetchedReplies,
       }));
+      // Initialize likes state for fetched replies
+      setCommentLikes((prev) => {
+        const updated = { ...prev };
+        fetchedReplies.forEach((reply) => {
+          updated[reply.id] = {
+            isLiked: reply.isLiked || false,
+            likesCount: reply.likesCount || 0,
+          };
+        });
+        return updated;
+      });
     } catch (err: any) {
       console.error("Error fetching replies:", err);
     } finally {
@@ -155,10 +176,22 @@ export default function CommentsBottomSheet({
     if (newState && !commentReplies[commentId]) {
       const comment = comments.find((c) => c.id === commentId);
       if (comment && comment.replies && comment.replies.length > 0) {
+        const existingReplies = comment.replies || [];
         setCommentReplies((prev) => ({
           ...prev,
-          [commentId]: comment.replies || [],
+          [commentId]: existingReplies,
         }));
+        // Initialize likes state for existing replies
+        setCommentLikes((prev) => {
+          const updated = { ...prev };
+          existingReplies.forEach((reply) => {
+            updated[reply.id] = {
+              isLiked: reply.isLiked || false,
+              likesCount: reply.likesCount || 0,
+            };
+          });
+          return updated;
+        });
       } else {
         fetchReplies(commentId);
       }
@@ -229,7 +262,22 @@ export default function CommentsBottomSheet({
 
   // Handle comment like
   const handleCommentLike = async (commentId: string) => {
-    const comment = comments.find((c) => c.id === commentId);
+    // Find the comment or reply to get initial state
+    let comment = comments.find((c) => c.id === commentId);
+
+    // If not found in main comments, check in replies
+    if (!comment) {
+      for (const parentCommentId of Object.keys(commentReplies)) {
+        const reply = commentReplies[parentCommentId].find(
+          (r) => r.id === commentId
+        );
+        if (reply) {
+          comment = reply;
+          break;
+        }
+      }
+    }
+
     const currentState = commentLikes[commentId] || {
       isLiked: comment?.isLiked || false,
       likesCount: comment?.likesCount || 0,
@@ -243,28 +291,85 @@ export default function CommentsBottomSheet({
       [commentId]: {
         isLiked: !isLiked,
         likesCount: isLiked
-          ? (prev[commentId]?.likesCount || 0) - 1
-          : (prev[commentId]?.likesCount || 0) + 1,
+          ? (prev[commentId]?.likesCount || currentState.likesCount) - 1
+          : (prev[commentId]?.likesCount || currentState.likesCount) + 1,
       },
     }));
 
     try {
-      if (isLiked) {
-        await likeService.unlikeComment(commentId);
-      } else {
-        await likeService.likeComment(commentId);
-      }
-      await fetchComments();
-      if (onCommentAdded) {
-        onCommentAdded();
-      }
+      await likeService.likeComment(commentId);
+
+      // Don't refetch comments - optimistic update is already done
+      // Update the comment in the comments array (for main comments)
+      setComments((prevComments) =>
+        prevComments.map((c) =>
+          c.id === commentId
+            ? {
+                ...c,
+                isLiked: !isLiked,
+                likesCount: isLiked
+                  ? (c.likesCount || 0) - 1
+                  : (c.likesCount || 0) + 1,
+              }
+            : c
+        )
+      );
+      // Also update replies if they are loaded (for both main comments and replies)
+      setCommentReplies((prevReplies) => {
+        const updatedReplies = { ...prevReplies };
+        Object.keys(updatedReplies).forEach((parentCommentId) => {
+          updatedReplies[parentCommentId] = updatedReplies[parentCommentId].map(
+            (reply) =>
+              reply.id === commentId
+                ? {
+                    ...reply,
+                    isLiked: !isLiked,
+                    likesCount: isLiked
+                      ? (reply.likesCount || 0) - 1
+                      : (reply.likesCount || 0) + 1,
+                  }
+                : reply
+          );
+        });
+        return updatedReplies;
+      });
     } catch (err: any) {
-      // Revert on error
+      // Revert on error - revert both commentLikes, comments, and commentReplies
       setCommentLikes((prev) => ({
         ...prev,
         [commentId]: currentState,
       }));
+      // Revert comments array
+      setComments((prevComments) =>
+        prevComments.map((c) =>
+          c.id === commentId
+            ? {
+                ...c,
+                isLiked: currentState.isLiked,
+                likesCount: currentState.likesCount,
+              }
+            : c
+        )
+      );
+      // Also revert replies if they were updated
+      setCommentReplies((prevReplies) => {
+        const updatedReplies = { ...prevReplies };
+        Object.keys(updatedReplies).forEach((parentCommentId) => {
+          updatedReplies[parentCommentId] = updatedReplies[parentCommentId].map(
+            (reply) =>
+              reply.id === commentId
+                ? {
+                    ...reply,
+                    isLiked: currentState.isLiked,
+                    likesCount: currentState.likesCount,
+                  }
+                : reply
+          );
+        });
+        return updatedReplies;
+      });
       console.error("Error toggling comment like:", err);
+      Alert.alert("Error", err.message || "Failed to toggle like");
     }
   };
 

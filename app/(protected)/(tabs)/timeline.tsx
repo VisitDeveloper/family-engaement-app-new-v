@@ -9,7 +9,7 @@ import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -212,13 +212,16 @@ const TimelineScreen = () => {
         },
       } as const)
   );
-  const tabsData = [
-    { label: "All Posts", filter: "all" as const },
-    { label: "Media", filter: "media" as const },
-    // { label: "Reports", filter: "reports" as const },
-    { label: "Recommended", filter: "recommended" as const },
-    { label: "Saved", filter: "saved" as const },
-  ];
+  const tabsData = useMemo(
+    () => [
+      { label: "All Posts", filter: "all" as const },
+      { label: "Media", filter: "media" as const },
+      // { label: "Reports", filter: "reports" as const },
+      { label: "Recommended", filter: "recommended" as const },
+      { label: "Saved", filter: "saved" as const },
+    ],
+    []
+  );
   const [activeTab, setActiveTab] = useState(0);
   const [posts, setPosts] = useState<PostResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -273,7 +276,7 @@ const TimelineScreen = () => {
   useFocusEffect(
     useCallback(() => {
       fetchPosts(tabsData[activeTab].filter);
-    }, [fetchPosts, activeTab])
+    }, [fetchPosts, activeTab, tabsData])
   );
 
   // Handle tab change
@@ -468,17 +471,63 @@ const TimelineScreen = () => {
                     showCommentInput={false}
                     onLike={async () => {
                       try {
+                        // Optimistic update - toggle like state locally
+                        setPosts((prevPosts) =>
+                          prevPosts.map((p) =>
+                            p.id === post.id
+                              ? {
+                                  ...p,
+                                  isLiked: !p.isLiked,
+                                  likesCount: p.isLiked
+                                    ? p.likesCount - 1
+                                    : p.likesCount + 1,
+                                }
+                              : p
+                          )
+                        );
                         await likeService.likePost(post.id);
-                        fetchPosts(tabsData[activeTab].filter);
                       } catch (error) {
+                        // Revert on error
+                        setPosts((prevPosts) =>
+                          prevPosts.map((p) =>
+                            p.id === post.id
+                              ? {
+                                  ...p,
+                                  isLiked: post.isLiked,
+                                  likesCount: post.likesCount,
+                                }
+                              : p
+                          )
+                        );
                         console.error("Error toggling like:", error);
                       }
                     }}
                     onSave={async () => {
                       try {
+                        // Optimistic update - toggle save state locally
+                        setPosts((prevPosts) =>
+                          prevPosts.map((p) =>
+                            p.id === post.id
+                              ? {
+                                  ...p,
+                                  isSaved: !p.isSaved,
+                                }
+                              : p
+                          )
+                        );
                         await saveService.savePost(post.id);
-                        fetchPosts(tabsData[activeTab].filter);
                       } catch (error) {
+                        // Revert on error
+                        setPosts((prevPosts) =>
+                          prevPosts.map((p) =>
+                            p.id === post.id
+                              ? {
+                                  ...p,
+                                  isSaved: post.isSaved,
+                                }
+                              : p
+                          )
+                        );
                         console.error("Error toggling save:", error);
                       }
                     }}

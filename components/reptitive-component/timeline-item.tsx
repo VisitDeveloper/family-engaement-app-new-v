@@ -146,6 +146,15 @@ export default function TimelineItem({
         isLiked: comment.isLiked || false,
         likesCount: comment.likesCount || 0,
       };
+      // Also initialize likes for replies if they exist
+      if (comment.replies && comment.replies.length > 0) {
+        comment.replies.forEach((reply) => {
+          likesState[reply.id] = {
+            isLiked: reply.isLiked || false,
+            likesCount: reply.likesCount || 0,
+          };
+        });
+      }
     });
     setCommentLikes(likesState);
   }, [displayComments]);
@@ -156,19 +165,28 @@ export default function TimelineItem({
 
     try {
       setLoadingReplies((prev) => ({ ...prev, [commentId]: true }));
-      debugger;
       const response = await commentService.getCommentReplies(commentId, {
         page: 1,
         limit: 50,
         sort: "newest",
       });
-      debugger;
+      const fetchedReplies = response.replies || [];
       setCommentReplies((prev) => ({
         ...prev,
-        [commentId]: response.replies || [],
+        [commentId]: fetchedReplies,
       }));
+      // Initialize likes state for fetched replies
+      setCommentLikes((prev) => {
+        const updated = { ...prev };
+        fetchedReplies.forEach((reply) => {
+          updated[reply.id] = {
+            isLiked: reply.isLiked || false,
+            likesCount: reply.likesCount || 0,
+          };
+        });
+        return updated;
+      });
     } catch (err: any) {
-      debugger;
       console.error("Error fetching replies:", err);
     } finally {
       setLoadingReplies((prev) => ({ ...prev, [commentId]: false }));
@@ -177,21 +195,31 @@ export default function TimelineItem({
 
   // Toggle show replies
   const toggleShowReplies = (commentId: string) => {
-    debugger;
     const newState = !showReplies[commentId];
     setShowReplies((prev) => ({ ...prev, [commentId]: newState }));
 
-    debugger;
     // Fetch replies if showing for the first time and we don't have them
     if (newState && !commentReplies[commentId]) {
       // Check if the comment has replies in displayComments
       const comment = displayComments.find((c) => c.id === commentId);
       if (comment && comment.replies && comment.replies.length > 0) {
         // Use existing replies
+        const existingReplies = comment.replies || [];
         setCommentReplies((prev) => ({
           ...prev,
-          [commentId]: comment.replies || [],
+          [commentId]: existingReplies,
         }));
+        // Initialize likes state for existing replies
+        setCommentLikes((prev) => {
+          const updated = { ...prev };
+          existingReplies.forEach((reply) => {
+            updated[reply.id] = {
+              isLiked: reply.isLiked || false,
+              likesCount: reply.likesCount || 0,
+            };
+          });
+          return updated;
+        });
       } else {
         // Fetch from server
         fetchReplies(commentId);
@@ -240,10 +268,24 @@ export default function TimelineItem({
 
   // Handle comment like
   const handleCommentLike = async (commentId: string) => {
-    // Find the comment to get initial state if not in commentLikes
-    const comment =
+    // Find the comment or reply to get initial state
+    let comment =
       displayComments.find((c) => c.id === commentId) ||
       expandedComments.find((c) => c.id === commentId);
+
+    // If not found in main comments, check in replies
+    if (!comment) {
+      for (const parentCommentId of Object.keys(commentReplies)) {
+        const reply = commentReplies[parentCommentId].find(
+          (r) => r.id === commentId
+        );
+        if (reply) {
+          comment = reply;
+          break;
+        }
+      }
+    }
+
     const currentState = commentLikes[commentId] || {
       isLiked: comment?.isLiked || false,
       likesCount: comment?.likesCount || 0,
@@ -257,28 +299,60 @@ export default function TimelineItem({
       [commentId]: {
         isLiked: !isLiked,
         likesCount: isLiked
-          ? prev[commentId].likesCount - 1
-          : prev[commentId].likesCount + 1,
+          ? (prev[commentId]?.likesCount || currentState.likesCount) - 1
+          : (prev[commentId]?.likesCount || currentState.likesCount) + 1,
       },
     }));
 
     try {
-      if (isLiked) {
-        await likeService.unlikeComment(commentId);
-      } else {
-        await likeService.likeComment(commentId);
-      }
-      // Refresh comments to get updated state
-      if (props.onCommentAdded) {
-        props.onCommentAdded();
-      }
+      await likeService.likeComment(commentId);
+
+      // Update replies if they are loaded (for both main comments and replies)
+      setCommentReplies((prevReplies) => {
+        const updatedReplies = { ...prevReplies };
+        Object.keys(updatedReplies).forEach((parentCommentId) => {
+          updatedReplies[parentCommentId] = updatedReplies[parentCommentId].map(
+            (reply) =>
+              reply.id === commentId
+                ? {
+                    ...reply,
+                    isLiked: !isLiked,
+                    likesCount: isLiked
+                      ? (reply.likesCount || 0) - 1
+                      : (reply.likesCount || 0) + 1,
+                  }
+                : reply
+          );
+        });
+        return updatedReplies;
+      });
+      // Don't call onCommentAdded - we only update local state
+      // Optimistic update is already done via setCommentLikes
     } catch (err: any) {
-      // Revert on error
+      // Revert on error - revert both commentLikes and commentReplies
       setCommentLikes((prev) => ({
         ...prev,
         [commentId]: currentState,
       }));
+      // Also revert replies if they were updated
+      setCommentReplies((prevReplies) => {
+        const updatedReplies = { ...prevReplies };
+        Object.keys(updatedReplies).forEach((parentCommentId) => {
+          updatedReplies[parentCommentId] = updatedReplies[parentCommentId].map(
+            (reply) =>
+              reply.id === commentId
+                ? {
+                    ...reply,
+                    isLiked: currentState.isLiked,
+                    likesCount: currentState.likesCount,
+                  }
+                : reply
+          );
+        });
+        return updatedReplies;
+      });
       console.error("Error toggling comment like:", err);
+      Alert.alert("Error", err.message || "Failed to toggle like");
     }
   };
 
@@ -833,7 +907,7 @@ export default function TimelineItem({
               />
               <ThemedText
                 type="subText"
-                style={[{marginLeft: 4}, { color: theme.text }]}
+                style={[{ marginLeft: 4 }, { color: theme.text }]}
               >
                 {props.numberOfComment}
               </ThemedText>

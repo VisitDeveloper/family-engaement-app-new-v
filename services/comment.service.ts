@@ -139,7 +139,7 @@ class CommentServiceImpl implements CommentService {
       });
       return response;
     } catch (error) {
-      debugger
+      
       const apiError = error as ApiError;
       throw {
         message: apiError.message || 'Failed to reply to comment. Please try again.',
@@ -163,14 +163,14 @@ class CommentServiceImpl implements CommentService {
         queryParams.append('sort', params.sort);
       }
 
-      debugger
+      
       const queryString = queryParams.toString();
       const endpoint = `/posts/comments/${commentId}/replies${queryString ? `?${queryString}` : ''}`;
       
       const response = await apiClient.get<{ replies: CommentResponseDto[], limit: number, page: number, total: number }>(endpoint);
       return response;
     } catch (error) {
-      debugger
+      
 
       const apiError = error as ApiError;
       throw {

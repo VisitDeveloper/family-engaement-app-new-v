@@ -220,7 +220,7 @@ class ApiClient {
       if (!response.ok) {
 
         console.log("response", response);
-        console.log("data", response.text());
+        console.log("data", data);
 
         // If error is 401 (Unauthorized) and we haven't retried yet
         if (response.status === 401 && retryCount === 0) {
