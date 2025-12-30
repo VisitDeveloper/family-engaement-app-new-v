@@ -43,7 +43,7 @@ export interface CommentService {
   updateComment(commentId: string, data: UpdateCommentDto): Promise<CommentResponseDto>;
   deleteComment(commentId: string): Promise<void>;
   replyToComment(commentId: string, data: CreateCommentDto): Promise<CommentResponseDto>;
-  getCommentReplies(commentId: string, params?: GetCommentsParams): Promise<{ comments: CommentResponseDto[], limit: number, page: number, total: number }>;
+  getCommentReplies(commentId: string, params?: GetCommentsParams): Promise<{ replies: CommentResponseDto[], limit: number, page: number, total: number }>;
 }
 
 class CommentServiceImpl implements CommentService {
@@ -139,6 +139,7 @@ class CommentServiceImpl implements CommentService {
       });
       return response;
     } catch (error) {
+      
       const apiError = error as ApiError;
       throw {
         message: apiError.message || 'Failed to reply to comment. Please try again.',
@@ -148,7 +149,7 @@ class CommentServiceImpl implements CommentService {
     }
   }
 
-  async getCommentReplies(commentId: string, params?: GetCommentsParams): Promise<{ comments: CommentResponseDto[], limit: number, page: number, total: number }> {
+  async getCommentReplies(commentId: string, params?: GetCommentsParams): Promise<{ replies: CommentResponseDto[], limit: number, page: number, total: number }> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -162,12 +163,15 @@ class CommentServiceImpl implements CommentService {
         queryParams.append('sort', params.sort);
       }
 
+      
       const queryString = queryParams.toString();
       const endpoint = `/posts/comments/${commentId}/replies${queryString ? `?${queryString}` : ''}`;
       
-      const response = await apiClient.get<{ comments: CommentResponseDto[], limit: number, page: number, total: number }>(endpoint);
+      const response = await apiClient.get<{ replies: CommentResponseDto[], limit: number, page: number, total: number }>(endpoint);
       return response;
     } catch (error) {
+      
+
       const apiError = error as ApiError;
       throw {
         message: apiError.message || 'Failed to fetch comment replies. Please try again.',
