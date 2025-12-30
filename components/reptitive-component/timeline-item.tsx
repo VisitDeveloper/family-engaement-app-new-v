@@ -125,8 +125,15 @@ export default function TimelineItem({
     }
   }, [showDropdown]);
 
+  // Local state for comments to sync with bottom sheet
+  const [localComments, setLocalComments] = useState<CommentResponseDto[]>([]);
+
   // Handle backward compatibility: convert lastComment to comments array if needed
   const displayComments = useMemo(() => {
+    // Use local comments if available (synced from bottom sheet), otherwise use props
+    if (localComments.length > 0) {
+      return localComments;
+    }
     if (props.comments && props.comments.length > 0) {
       return props.comments;
     }
@@ -135,6 +142,27 @@ export default function TimelineItem({
       return [props.lastComment];
     }
     return [];
+  }, [localComments, props.comments, props.lastComment]);
+
+  // Initialize local comments from props when they change
+  // Use ref to prevent infinite loops
+  const prevCommentsRef = React.useRef<string>('');
+  useEffect(() => {
+    const commentsKey = props.comments?.map(c => `${c.id}-${c.likesCount}-${c.isLiked}`).join(',') || '';
+    const lastCommentKey = props.lastComment ? `${props.lastComment.id}-${props.lastComment.likesCount}-${props.lastComment.isLiked}` : '';
+    const currentKey = commentsKey || lastCommentKey;
+    
+    // Only update if props actually changed
+    if (prevCommentsRef.current !== currentKey) {
+      prevCommentsRef.current = currentKey;
+      if (props.comments && props.comments.length > 0) {
+        setLocalComments(props.comments);
+      } else if (props.lastComment) {
+        setLocalComments([props.lastComment]);
+      } else {
+        setLocalComments([]);
+      }
+    }
   }, [props.comments, props.lastComment]);
 
   // Initialize comment likes state from props
@@ -234,7 +262,7 @@ export default function TimelineItem({
 
     try {
       setIsSubmittingReply((prev) => ({ ...prev, [commentId]: true }));
-      await commentService.replyToComment(commentId, {
+      const newReply = await commentService.replyToComment(commentId, {
         content: replyText,
       });
 
@@ -249,9 +277,33 @@ export default function TimelineItem({
         [commentId]: false,
       }));
 
-      // Refresh replies if they are shown
-      if (showReplies[commentId]) {
-        await fetchReplies(commentId);
+      // Add reply to state
+      setCommentReplies((prev) => ({
+        ...prev,
+        [commentId]: [newReply, ...(prev[commentId] || [])],
+      }));
+      
+      // Initialize likes state for new reply
+      setCommentLikes((prev) => ({
+        ...prev,
+        [newReply.id]: {
+          isLiked: newReply.isLiked || false,
+          likesCount: newReply.likesCount || 0,
+        },
+      }));
+
+      // Update local comments to sync repliesCount
+      setLocalComments((prevComments) =>
+        prevComments.map((c) =>
+          c.id === commentId
+            ? { ...c, repliesCount: (c.repliesCount || 0) + 1 }
+            : c
+        )
+      );
+
+      // Show replies if not already shown
+      if (!showReplies[commentId]) {
+        setShowReplies((prev) => ({ ...prev, [commentId]: true }));
       }
 
       // Refresh comments
@@ -326,6 +378,20 @@ export default function TimelineItem({
         });
         return updatedReplies;
       });
+      // Update local comments state to sync with bottom sheet
+      setLocalComments((prevComments) =>
+        prevComments.map((c) =>
+          c.id === commentId
+            ? {
+                ...c,
+                isLiked: !isLiked,
+                likesCount: isLiked
+                  ? (c.likesCount || 0) - 1
+                  : (c.likesCount || 0) + 1,
+              }
+            : c
+        )
+      );
       // Don't call onCommentAdded - we only update local state
       // Optimistic update is already done via setCommentLikes
     } catch (err: any) {
@@ -970,9 +1036,9 @@ export default function TimelineItem({
                 return (
                   <View key={commentItem.id}>
                     <View style={{ ...styles.commentRow, flexWrap: "wrap" }}>
-                      {commentItem.author.profilePicture ? (
+                      {commentItem?.author?.profilePicture ? (
                         <Image
-                          source={{ uri: commentItem.author.profilePicture }}
+                          source={{ uri: commentItem?.author?.profilePicture }}
                           style={{
                             ...styles.avatar,
                             width: 24,
@@ -1095,10 +1161,7 @@ export default function TimelineItem({
                                   textAlign: "center",
                                 }}
                               >
-                                {commentLikes[commentItem.id]?.likesCount ??
-                                commentItem.likesCount
-                                  ? commentItem.likesCount
-                                  : 0}
+                                {commentLikes[commentItem.id]?.likesCount ?? commentItem.likesCount ?? 0}
                               </ThemedText>
                             </TouchableOpacity>
                           </View>
@@ -1302,10 +1365,7 @@ export default function TimelineItem({
                                           textAlign: "center",
                                         }}
                                       >
-                                        {commentLikes[reply.id]?.likesCount ??
-                                        reply.likesCount
-                                          ? reply.likesCount
-                                          : 0}
+                                        {commentLikes[reply.id]?.likesCount ?? reply.likesCount ?? 0}
                                       </ThemedText>
                                     </View>
                                   </View>
@@ -1648,11 +1708,28 @@ export default function TimelineItem({
                     if (comment.trim() && props.postId) {
                       setIsSubmittingComment(true);
                       try {
-                        await commentService.createComment(props.postId, {
-                          content: comment.trim(),
-                        });
+                        const newComment = await commentService.createComment(
+                          props.postId,
+                          {
+                            content: comment.trim(),
+                          }
+                        );
                         setComment("");
-                        // Refresh comments after adding
+                        // Add new comment to local comments state
+                        setLocalComments((prev) => [newComment, ...prev]);
+                        // Add new comment to expandedComments if it exists, otherwise it will be shown via props
+                        if (expandedComments.length > 0) {
+                          setExpandedComments((prev) => [newComment, ...prev]);
+                        }
+                        // Initialize likes state for new comment
+                        setCommentLikes((prev) => ({
+                          ...prev,
+                          [newComment.id]: {
+                            isLiked: newComment.isLiked || false,
+                            likesCount: newComment.likesCount || 0,
+                          },
+                        }));
+                        // Only notify parent to update comment count, not refetch
                         if (props.onCommentAdded) {
                           props.onCommentAdded();
                         }
@@ -1674,11 +1751,28 @@ export default function TimelineItem({
                     if (comment.trim() && props.postId) {
                       setIsSubmittingComment(true);
                       try {
-                        await commentService.createComment(props.postId, {
-                          content: comment.trim(),
-                        });
+                        const newComment = await commentService.createComment(
+                          props.postId,
+                          {
+                            content: comment.trim(),
+                          }
+                        );
                         setComment("");
-                        // Refresh comments after adding
+                        // Add new comment to local comments state
+                        setLocalComments((prev) => [newComment, ...prev]);
+                        // Add new comment to expandedComments if it exists, otherwise it will be shown via props
+                        if (expandedComments.length > 0) {
+                          setExpandedComments((prev) => [newComment, ...prev]);
+                        }
+                        // Initialize likes state for new comment
+                        setCommentLikes((prev) => ({
+                          ...prev,
+                          [newComment.id]: {
+                            isLiked: newComment.isLiked || false,
+                            likesCount: newComment.likesCount || 0,
+                          },
+                        }));
+                        // Only notify parent to update comment count, not refetch
                         if (props.onCommentAdded) {
                           props.onCommentAdded();
                         }
@@ -1731,24 +1825,38 @@ export default function TimelineItem({
           postId={props.postId}
           initialComments={displayComments}
           onCommentAdded={async () => {
+            // Only notify parent to update comment count, not refetch
             if (props.onCommentAdded) {
               props.onCommentAdded();
             }
-            // Refresh comments in the sheet
-            if (props.postId) {
-              try {
-                const response = await commentService.getPostComments(
-                  props.postId,
-                  {
-                    page: 1,
-                    limit: 100,
-                    sort: "newest",
-                  }
-                );
-                setExpandedComments(response || []);
-              } catch (err) {
-                console.error("Error refreshing comments:", err);
-              }
+            // Comments are already updated in the bottom sheet, no need to refetch
+          }}
+          onCommentsChange={(updatedComments) => {
+            // Sync comments from bottom sheet to local state
+            setLocalComments(updatedComments);
+          }}
+          onReplyAdded={(commentId, newReply) => {
+            // Add reply to commentReplies in timeline-item
+            setCommentReplies((prev) => ({
+              ...prev,
+              [commentId]: [newReply, ...(prev[commentId] || [])],
+            }));
+            
+            // Initialize likes state for new reply
+            setCommentLikes((prev) => ({
+              ...prev,
+              [newReply.id]: {
+                isLiked: newReply.isLiked || false,
+                likesCount: newReply.likesCount || 0,
+              },
+            }));
+
+            // Don't update repliesCount here - it's already updated via onCommentsChange
+            // This prevents double increment
+
+            // Show replies if not already shown
+            if (!showReplies[commentId]) {
+              setShowReplies((prev) => ({ ...prev, [commentId]: true }));
             }
           }}
         />

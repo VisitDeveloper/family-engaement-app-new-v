@@ -19,6 +19,8 @@ interface CommentsBottomSheetProps {
   postId: string;
   initialComments?: CommentResponseDto[];
   onCommentAdded?: () => void;
+  onCommentsChange?: (comments: CommentResponseDto[]) => void;
+  onReplyAdded?: (commentId: string, reply: CommentResponseDto) => void;
 }
 
 export default function CommentsBottomSheet({
@@ -27,6 +29,8 @@ export default function CommentsBottomSheet({
   postId,
   initialComments = [],
   onCommentAdded,
+  onCommentsChange,
+  onReplyAdded,
 }: CommentsBottomSheetProps) {
   const theme = useStore((state) => state.theme);
   const user = useStore((state) => state.user);
@@ -47,6 +51,38 @@ export default function CommentsBottomSheet({
 
   const [comments, setComments] =
     useState<CommentResponseDto[]>(initialComments);
+
+  // Update comments when initialComments change (from timeline-item)
+  // Sync likes and other updates from timeline-item
+  // Use ref to prevent infinite loops
+  const prevInitialCommentsRef = useRef<string>('');
+  useEffect(() => {
+    if (initialComments && initialComments.length > 0) {
+      const initialCommentsKey = initialComments.map(c => `${c.id}-${c.likesCount}-${c.isLiked}`).join(',');
+      // Only update if initialComments actually changed
+      if (prevInitialCommentsRef.current !== initialCommentsKey) {
+        prevInitialCommentsRef.current = initialCommentsKey;
+        setComments((prevComments) => {
+          // If we don't have comments yet, use initialComments
+          if (prevComments.length === 0) {
+            return initialComments;
+          }
+          // Merge initialComments with current comments to sync likes and updates
+          const merged = prevComments.map((prevComment) => {
+            const updated = initialComments.find((c) => c.id === prevComment.id);
+            return updated || prevComment;
+          });
+          // Add any new comments from initialComments
+          initialComments.forEach((initComment) => {
+            if (!merged.find((c) => c.id === initComment.id)) {
+              merged.push(initComment);
+            }
+          });
+          return merged;
+        });
+      }
+    }
+  }, [initialComments]);
   const [loading, setLoading] = useState(false);
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
@@ -97,7 +133,10 @@ export default function CommentsBottomSheet({
         limit: 100,
         sort: "newest",
       });
-      setComments(response || []);
+      const fetchedComments = response || [];
+      setComments(fetchedComments);
+      // Only notify parent on initial fetch, not on every change
+      // This prevents infinite loops
     } catch (err: any) {
       console.error("Error fetching comments:", err);
     } finally {
@@ -107,9 +146,16 @@ export default function CommentsBottomSheet({
 
   useEffect(() => {
     if (visible && postId) {
+      // If we have initialComments, use them first, then fetch to get latest
+      if (initialComments && initialComments.length > 0) {
+        setComments(initialComments);
+      }
       fetchComments();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, postId, fetchComments]);
+
+  // Don't sync automatically - only sync on specific actions (like, add comment, etc.)
 
   // Initialize comment likes state
   useEffect(() => {
@@ -205,12 +251,27 @@ export default function CommentsBottomSheet({
 
     try {
       setIsSubmittingComment(true);
-      await commentService.createComment(postId, {
+      const newComment = await commentService.createComment(postId, {
         content: commentText,
       });
 
       setComment("");
-      await fetchComments();
+      // Add new comment to state instead of refetching
+      const updatedComments = [newComment, ...comments];
+      setComments(updatedComments);
+      // Initialize likes state for new comment
+      setCommentLikes((prev) => ({
+        ...prev,
+        [newComment.id]: {
+          isLiked: newComment.isLiked || false,
+          likesCount: newComment.likesCount || 0,
+        },
+      }));
+      // Notify parent about comment changes
+      if (onCommentsChange) {
+        onCommentsChange(updatedComments);
+      }
+      // Only notify parent to update comment count, not refetch
       if (onCommentAdded) {
         onCommentAdded();
       }
@@ -230,7 +291,7 @@ export default function CommentsBottomSheet({
 
     try {
       setIsSubmittingReply((prev) => ({ ...prev, [commentId]: true }));
-      await commentService.replyToComment(commentId, {
+      const newReply = await commentService.replyToComment(commentId, {
         content: replyText,
       });
 
@@ -244,11 +305,45 @@ export default function CommentsBottomSheet({
         [commentId]: false,
       }));
 
-      if (showReplies[commentId]) {
-        await fetchReplies(commentId);
+      // Add reply to state - always add, not just when replies are shown
+      setCommentReplies((prev) => ({
+        ...prev,
+        [commentId]: [newReply, ...(prev[commentId] || [])],
+      }));
+      
+      // Initialize likes state for new reply
+      setCommentLikes((prev) => ({
+        ...prev,
+        [newReply.id]: {
+          isLiked: newReply.isLiked || false,
+          likesCount: newReply.likesCount || 0,
+        },
+      }));
+      
+      // Update parent comment's repliesCount
+      const updatedComments = comments.map((c) =>
+        c.id === commentId
+          ? { ...c, repliesCount: (c.repliesCount || 0) + 1 }
+          : c
+      );
+      setComments(updatedComments);
+      
+      // Show replies if not already shown
+      if (!showReplies[commentId]) {
+        setShowReplies((prev) => ({ ...prev, [commentId]: true }));
+      }
+      
+      // Notify parent about comment changes
+      if (onCommentsChange) {
+        onCommentsChange(updatedComments);
       }
 
-      await fetchComments();
+      // Notify parent about new reply
+      if (onReplyAdded) {
+        onReplyAdded(commentId, newReply);
+      }
+
+      // Only notify parent to update comment count, not refetch
       if (onCommentAdded) {
         onCommentAdded();
       }
@@ -301,19 +396,22 @@ export default function CommentsBottomSheet({
 
       // Don't refetch comments - optimistic update is already done
       // Update the comment in the comments array (for main comments)
-      setComments((prevComments) =>
-        prevComments.map((c) =>
-          c.id === commentId
-            ? {
-                ...c,
-                isLiked: !isLiked,
-                likesCount: isLiked
-                  ? (c.likesCount || 0) - 1
-                  : (c.likesCount || 0) + 1,
-              }
-            : c
-        )
+      const updatedComments = comments.map((c) =>
+        c.id === commentId
+          ? {
+              ...c,
+              isLiked: !isLiked,
+              likesCount: isLiked
+                ? (c.likesCount || 0) - 1
+                : (c.likesCount || 0) + 1,
+            }
+          : c
       );
+      setComments(updatedComments);
+      // Notify parent about comment changes
+      if (onCommentsChange) {
+        onCommentsChange(updatedComments);
+      }
       // Also update replies if they are loaded (for both main comments and replies)
       setCommentReplies((prevReplies) => {
         const updatedReplies = { ...prevReplies };
@@ -520,9 +618,9 @@ export default function CommentsBottomSheet({
               return (
                 <View key={commentItem.id}>
                   <View style={styles.commentRow}>
-                    {commentItem.author.profilePicture ? (
+                    {commentItem?.author?.profilePicture ? (
                       <Image
-                        source={{ uri: commentItem.author.profilePicture }}
+                        source={{ uri: commentItem?.author?.profilePicture }}
                         style={{
                           width: 32,
                           height: 32,

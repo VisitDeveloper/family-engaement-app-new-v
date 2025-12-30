@@ -532,7 +532,17 @@ const TimelineScreen = () => {
                       }
                     }}
                     onCommentAdded={async () => {
-                      fetchPosts(tabsData[activeTab].filter);
+                      // Only update comment count, don't refetch entire list
+                      setPosts((prevPosts) =>
+                        prevPosts.map((p) =>
+                          p.id === post.id
+                            ? {
+                                ...p,
+                                commentsCount: (p.commentsCount || 0) + 1,
+                              }
+                            : p
+                        )
+                      );
                     }}
                     onEdit={() => {
                       router.push({
