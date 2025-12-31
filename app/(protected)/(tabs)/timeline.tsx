@@ -175,7 +175,7 @@ const TimelineScreen = () => {
           alignItems: "center",
           width: "100%",
           justifyContent: "space-between",
-          backgroundColor: "#ffffff",
+          backgroundColor: theme.bg,
           paddingVertical: 10,
           paddingHorizontal: 10,
           borderRadius: 10,
