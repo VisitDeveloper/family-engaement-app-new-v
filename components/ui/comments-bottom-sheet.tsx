@@ -1,17 +1,18 @@
-import { useThemedStyles } from "@/hooks/use-theme-style";
 import { CommentResponseDto, commentService } from "@/services/comment.service";
 import { likeService } from "@/services/like.service";
 import { useStore } from "@/store";
-import { EvilIcons, Ionicons } from "@expo/vector-icons";
 import {
   BottomSheetModal,
   BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { Image } from "expo-image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, View } from "react-native";
 import { ThemedText } from "../themed-text";
+import { CommentInput } from "./comments/comment-input";
+import { CommentItem } from "./comments/comment-item";
+import { RepliesList } from "./comments/replies-list";
+import { ReplyInput } from "./comments/reply-input";
 
 interface CommentsBottomSheetProps {
   visible: boolean;
@@ -33,21 +34,7 @@ export default function CommentsBottomSheet({
   onReplyAdded,
 }: CommentsBottomSheetProps) {
   const theme = useStore((state) => state.theme);
-  const user = useStore((state) => state.user);
   const bottomSheetRef = useRef<BottomSheetModal>(null);
-
-  // Helper function to format time ago
-  const formatTimeAgoShort = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return "now";
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
-    return date.toLocaleDateString();
-  };
 
   const [comments, setComments] =
     useState<CommentResponseDto[]>(initialComments);
@@ -471,63 +458,6 @@ export default function CommentsBottomSheet({
     }
   };
 
-  const styles = useThemedStyles(
-    (t) =>
-      ({
-        header: {
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: 16,
-          // borderBottomWidth: 1,
-          // borderBottomColor: t.border,
-        },
-        commentRow: {
-          flexDirection: "row",
-          alignItems: "flex-start",
-          padding: 12,
-          //   borderBottomWidth: 1,
-          //   borderBottomColor: t.border,
-        },
-        replyContainer: {
-          marginLeft: 32,
-          marginTop: 8,
-        },
-        replyItem: {
-          flexDirection: "row",
-          alignItems: "flex-start",
-          marginBottom: 8,
-        },
-        replyInputContainer: {
-          marginLeft: 32,
-          marginTop: 8,
-          padding: 8,
-          paddingRight: 16,
-          //   backgroundColor: t.panel,
-          borderRadius: 8,
-        },
-        commentInput: {
-          flex: 1,
-          borderWidth: 1,
-          borderColor: t.border,
-          borderRadius: 10,
-          paddingHorizontal: 16,
-          paddingVertical: 10,
-          color: t.text,
-          backgroundColor: t.panel,
-        },
-        inputContainer: {
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: 16,
-          paddingTop: 16,
-          gap: 8,
-          borderTopWidth: 1,
-          borderTopColor: t.border,
-          backgroundColor: t.bg,
-        },
-      } as const)
-  );
 
   const handleSheetChanges = useCallback(
     (index: number) => {
@@ -582,13 +512,17 @@ export default function CommentsBottomSheet({
       android_keyboardInputMode="adjustResize"
     >
       <BottomSheetView style={{ flex: 1, height: "100%" }}>
-        <View style={styles.header}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: 16,
+          }}
+        >
           <ThemedText type="defaultSemiBold" style={{ fontSize: 18 }}>
             Comments
           </ThemedText>
-          {/* <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={24} color={theme.text} />
-          </TouchableOpacity> */}
         </View>
 
         <BottomSheetScrollView
@@ -614,405 +548,56 @@ export default function CommentsBottomSheet({
                 commentItem.repliesCount > 0 ||
                 (commentItem.replies && commentItem.replies.length > 0) ||
                 replies.length > 0;
+              const repliesCount =
+                commentItem.repliesCount || replies.length || 0;
 
               return (
                 <View key={commentItem.id}>
-                  <View style={styles.commentRow}>
-                    {commentItem?.author?.profilePicture ? (
-                      <Image
-                        source={{ uri: commentItem?.author?.profilePicture }}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 16,
-                          marginRight: 8,
-                        }}
-                      />
-                    ) : (
-                      <Ionicons
-                        name="person-circle"
-                        size={20}
-                        style={{ marginRight: 8 }}
-                        color={theme.subText}
-                      />
-                    )}
-                    <View style={{ flex: 1 }}>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "baseline",
-                        }}
-                      >
-                        <View
-                          style={{
-                            flex: 1,
-                            flexDirection: "row",
-                            alignItems: "center",
-                          }}
-                        >
-                          <ThemedText
-                            type="defaultSemiBold"
-                            style={{ fontSize: 11, marginRight: 4 }}
-                          >
-                            {commentItem.author.firstName &&
-                            commentItem.author.lastName
-                              ? `${commentItem.author.firstName} ${commentItem.author.lastName}`
-                              : commentItem.author.firstName ||
-                                commentItem.author.lastName ||
-                                commentItem.author.email ||
-                                "Unknown"}
-                          </ThemedText>
-                          <ThemedText
-                            type="subLittleText"
-                            style={{
-                              fontSize: 9,
-                              color: theme.subText,
-                              marginRight: 4,
-                            }}
-                          >
-                            {formatTimeAgoShort(commentItem.createdAt)}
-                          </ThemedText>
-                        </View>
-                      </View>
-
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "baseline",
-                          justifyContent: "space-between",
-                          marginTop: 0,
-                        }}
-                      >
-                        <ThemedText type="subText" style={{ fontSize: 12 }}>
-                          {commentItem.content}
-                        </ThemedText>
-
-                        <TouchableOpacity
-                          onPress={() => handleCommentLike(commentItem.id)}
-                          style={{
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <EvilIcons
-                            name={
-                              commentLikes[commentItem.id]?.isLiked ??
-                              commentItem.isLiked
-                                ? "heart"
-                                : ("heart" as any)
-                            }
-                            size={18}
-                            color={
-                              commentLikes[commentItem.id]?.isLiked ??
-                              commentItem.isLiked
-                                ? theme.tint
-                                : theme.subText
-                            }
-                          />
-                          <ThemedText
-                            type="subLittleText"
-                            style={{ fontSize: 10, color: theme.subText }}
-                          >
-                            {commentLikes[commentItem.id]?.likesCount ??
-                              commentItem.likesCount ??
-                              0}
-                          </ThemedText>
-                        </TouchableOpacity>
-                      </View>
-
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          marginTop: 0,
-                          gap: 16,
-                        }}
-                      >
-                        <TouchableOpacity
-                          onPress={() => {
-                            setShowReplyInput((prev) => ({
-                              ...prev,
-                              [commentItem.id]: !prev[commentItem.id],
-                            }));
-                            if (!showReplyInput[commentItem.id]) {
-                              setReplyInputs((prev) => ({
-                                ...prev,
-                                [commentItem.id]: "",
-                              }));
-                            }
-                          }}
-                          style={{ flexDirection: "row", alignItems: "center" }}
-                        >
-                          <ThemedText
-                            type="subLittleText"
-                            style={{
-                              // marginLeft: 4,
-                              fontSize: 12,
-                              color: theme.subText,
-                            }}
-                          >
-                            Reply
-                          </ThemedText>
-                        </TouchableOpacity>
-
-                        {hasReplies && (
-                          <TouchableOpacity
-                            onPress={() => toggleShowReplies(commentItem.id)}
-                          >
-                            <ThemedText
-                              type="subLittleText"
-                              style={{ fontSize: 12, color: theme.subText }}
-                            >
-                              {isShowingReplies ? "Hide" : "View"}{" "}
-                              {commentItem.repliesCount || replies.length}{" "}
-                              {commentItem.repliesCount === 1
-                                ? "reply"
-                                : "replies"}
-                            </ThemedText>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    </View>
-                  </View>
+                  <CommentItem
+                    comment={commentItem}
+                    commentLikes={commentLikes}
+                    onLike={handleCommentLike}
+                    onReply={() => {
+                      setShowReplyInput((prev) => ({
+                        ...prev,
+                        [commentItem.id]: !prev[commentItem.id],
+                      }));
+                      if (!showReplyInput[commentItem.id]) {
+                        setReplyInputs((prev) => ({
+                          ...prev,
+                          [commentItem.id]: "",
+                        }));
+                      }
+                    }}
+                    onToggleReplies={toggleShowReplies}
+                    showReplies={isShowingReplies}
+                    hasReplies={hasReplies}
+                    repliesCount={repliesCount}
+                  />
 
                   {/* Replies */}
                   {isShowingReplies && (
-                    <View style={styles.replyContainer}>
-                      {loadingReplies[commentItem.id] ? (
-                        <ThemedText type="subLittleText" style={{ padding: 8 }}>
-                          Loading replies...
-                        </ThemedText>
-                      ) : replies.length > 0 ? (
-                        replies.map((reply) => (
-                          <View key={reply.id}>
-                            <View
-                              style={{ ...styles.replyItem, paddingRight: 16 }}
-                            >
-                              {reply.author.profilePicture ? (
-                                <Image
-                                  source={{ uri: reply.author.profilePicture }}
-                                  style={{
-                                    width: 24,
-                                    height: 24,
-                                    borderRadius: 12,
-                                    marginRight: 8,
-                                  }}
-                                />
-                              ) : (
-                                <Ionicons
-                                  name="person-circle"
-                                  size={20}
-                                  style={{
-                                    marginRight: 8,
-                                    //   width: 24,
-                                    //   height: 24,
-                                  }}
-                                  color={theme.subText}
-                                />
-                              )}
-                              <View style={{ flex: 1 }}>
-                                <View
-                                  style={{
-                                    flexDirection: "row",
-                                    alignItems: "baseline",
-                                  }}
-                                >
-                                  <View
-                                    style={{
-                                      flex: 1,
-                                      flexDirection: "row",
-                                      alignItems: "center",
-                                    }}
-                                  >
-                                    <ThemedText
-                                      type="defaultSemiBold"
-                                      style={{ fontSize: 12, marginRight: 4 }}
-                                    >
-                                      {reply.author.firstName &&
-                                      reply.author.lastName
-                                        ? `${reply.author.firstName} ${reply.author.lastName}`
-                                        : reply.author.firstName ||
-                                          reply.author.lastName ||
-                                          reply.author.email ||
-                                          "Unknown"}
-                                    </ThemedText>
-                                    <ThemedText
-                                      type="subLittleText"
-                                      style={{
-                                        fontSize: 9,
-                                        color: theme.subText,
-                                        marginRight: 4,
-                                      }}
-                                    >
-                                      {formatTimeAgoShort(reply.createdAt)}
-                                    </ThemedText>
-                                  </View>
-                                </View>
-
-                                <View
-                                  style={{
-                                    flexDirection: "row",
-                                    alignItems: "baseline",
-                                    justifyContent: "space-between",
-                                    marginTop: 0,
-                                  }}
-                                >
-                                  <ThemedText
-                                    type="subText"
-                                    style={{ flex: 1 }}
-                                  >
-                                    {reply.content}
-                                  </ThemedText>
-
-                                  <TouchableOpacity
-                                    onPress={() => handleCommentLike(reply.id)}
-                                    style={{
-                                      flexDirection: "column",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      marginTop: 4,
-                                      paddingTop: 2,
-                                    }}
-                                  >
-                                    <EvilIcons
-                                      name={
-                                        commentLikes[reply.id]?.isLiked ??
-                                        reply.isLiked
-                                          ? "heart"
-                                          : ("heart" as any)
-                                      }
-                                      size={14}
-                                      color={
-                                        commentLikes[reply.id]?.isLiked ??
-                                        reply.isLiked
-                                          ? theme.tint
-                                          : theme.subText
-                                      }
-                                    />
-                                    <ThemedText
-                                      type="subLittleText"
-                                      style={{
-                                        fontSize: 11,
-                                        position: "absolute",
-                                        bottom: -18,
-                                        width: 40,
-                                        textAlign: "center",
-                                        color: theme.subText,
-                                      }}
-                                    >
-                                      {commentLikes[reply.id]?.likesCount ??
-                                        reply.likesCount ??
-                                        0}
-                                    </ThemedText>
-                                  </TouchableOpacity>
-                                </View>
-                              </View>
-                            </View>
-                          </View>
-                        ))
-                      ) : (
-                        <ThemedText
-                          type="subLittleText"
-                          style={{ padding: 8, fontSize: 11 }}
-                        >
-                          No replies yet
-                        </ThemedText>
-                      )}
-                    </View>
+                    <RepliesList
+                      replies={replies}
+                      commentLikes={commentLikes}
+                      onLike={handleCommentLike}
+                      isLoading={loadingReplies[commentItem.id] || false}
+                    />
                   )}
 
                   {/* Reply input */}
                   {showReplyInput[commentItem.id] && (
-                    <View
-                      style={{ ...styles.replyInputContainer, paddingLeft: 0 }}
-                    >
-                      <View
-                        style={{
-                          flexDirection: "column",
-                          alignItems: "flex-end",
-                          gap: 8,
-                        }}
-                      >
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 8,
-                          }}
-                        >
-                          {user?.profilePicture ? (
-                            <Image
-                              source={{ uri: user?.profilePicture || "" }}
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: 12,
-                              }}
-                            />
-                          ) : (
-                            <Ionicons
-                              name="person-circle"
-                              size={24}
-                              color={theme.subText}
-                            />
-                          )}
-                          <TextInput
-                            style={[
-                              styles.commentInput,
-                              { height: 36, fontSize: 13, flex: 1 },
-                            ]}
-                            value={replyInputs[commentItem.id] || ""}
-                            onChangeText={(text) =>
-                              setReplyInputs((prev) => ({
-                                ...prev,
-                                [commentItem.id]: text,
-                              }))
-                            }
-                            placeholder="Add a reply..."
-                            placeholderTextColor={theme.subText}
-                            editable={!isSubmittingReply[commentItem.id]}
-                            onSubmitEditing={() => handleReply(commentItem.id)}
-                          />
-                        </View>
-
-                        <TouchableOpacity
-                          onPress={() => handleReply(commentItem.id)}
-                          disabled={
-                            !replyInputs[commentItem.id]?.trim() ||
-                            isSubmittingReply[commentItem.id]
-                          }
-                          style={{
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 8,
-                            borderWidth: 1,
-                            borderColor:
-                              replyInputs[commentItem.id]?.trim() &&
-                              !isSubmittingReply[commentItem.id]
-                                ? theme.tint
-                                : theme.subText,
-                            backgroundColor: "transparent",
-                          }}
-                        >
-                          <ThemedText
-                            style={{
-                              color:
-                                replyInputs[commentItem.id]?.trim() &&
-                                !isSubmittingReply[commentItem.id]
-                                  ? theme.tint
-                                  : theme.subText,
-                              fontSize: 13,
-                              fontWeight: "600",
-                            }}
-                          >
-                            {isSubmittingReply[commentItem.id]
-                              ? "Sending..."
-                              : "Add Reply"}
-                          </ThemedText>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
+                    <ReplyInput
+                      replyText={replyInputs[commentItem.id] || ""}
+                      setReplyText={(text) =>
+                        setReplyInputs((prev) => ({
+                          ...prev,
+                          [commentItem.id]: text,
+                        }))
+                      }
+                      onSubmit={() => handleReply(commentItem.id)}
+                      isSubmitting={isSubmittingReply[commentItem.id] || false}
+                    />
                   )}
                 </View>
               );
@@ -1021,73 +606,12 @@ export default function CommentsBottomSheet({
         </BottomSheetScrollView>
 
         {/* Comment input */}
-        <View
-          style={{
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: 8,
-            paddingBottom: 16,
-          }}
-        >
-          <View style={styles.inputContainer}>
-            {user?.profilePicture ? (
-              <Image
-                source={{ uri: user?.profilePicture || "" }}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                }}
-              />
-            ) : (
-              <Ionicons name="person-circle" size={32} color={theme.subText} />
-            )}
-            <TextInput
-              style={styles.commentInput}
-              value={comment}
-              onChangeText={setComment}
-              placeholder="Add a comment..."
-              placeholderTextColor={theme.subText}
-              editable={!isSubmittingComment}
-              onSubmitEditing={() => {
-                // Don't submit on enter for multiline, use button instead
-                // handleSubmitComment();
-              }}
-              blurOnSubmit={false}
-              multiline
-            />
-          </View>
-          <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-            <TouchableOpacity
-              onPress={handleSubmitComment}
-              disabled={!comment.trim() || isSubmittingComment}
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 4,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor:
-                  comment.trim() && !isSubmittingComment
-                    ? theme.tint
-                    : theme.subText,
-                backgroundColor: "transparent",
-              }}
-            >
-              <ThemedText
-                style={{
-                  color:
-                    comment.trim() && !isSubmittingComment
-                      ? theme.tint
-                      : theme.subText,
-                  fontSize: 13,
-                  fontWeight: "600",
-                }}
-              >
-                {isSubmittingComment ? "Sending..." : "Add Comment"}
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <CommentInput
+          comment={comment}
+          setComment={setComment}
+          onSubmit={handleSubmitComment}
+          isSubmitting={isSubmittingComment}
+        />
       </BottomSheetView>
     </BottomSheetModal>
   );

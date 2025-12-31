@@ -21,6 +21,7 @@ import {
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 import CommentsBottomSheet from "../ui/comments-bottom-sheet";
+import { formatTimeAgoShort } from "@/utils/format-time-ago";
 export interface ResourceItemProps {
   postId?: string;
   name: string;
@@ -59,18 +60,6 @@ export default function TimelineItem({
   const theme = useStore((state) => state.theme);
   const user = useStore((state) => state.user);
   const router = useRouter();
-
-  const formatTimeAgoShort = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return "now";
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
-    return date.toLocaleDateString();
-  };
 
   // Check if current user is the author and is a teacher or admin
   const isAuthor = user?.id === props.author?.id;
