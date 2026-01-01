@@ -2,8 +2,8 @@ import { CommentResponseDto, commentService } from "@/services/comment.service";
 import { likeService } from "@/services/like.service";
 import { useStore } from "@/store";
 import {
+  BottomSheetFlatList,
   BottomSheetModal,
-  BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -520,27 +520,28 @@ export default function CommentsBottomSheet({
             padding: 16,
           }}
         >
-          <ThemedText type="defaultSemiBold" style={{ fontSize: 18 }}>
+          <ThemedText type="defaultSemiBold" style={{ fontSize: 18, color: theme.text }}>
             Comments
           </ThemedText>
         </View>
 
-        <BottomSheetScrollView
-          showsVerticalScrollIndicator={true}
-          keyboardShouldPersistTaps="handled"
-          style={{ flex: 1 }}
-          contentContainerStyle={{ flex: 1 }}
-        >
-          {loading ? (
-            <View style={{ padding: 20, alignItems: "center" }}>
-              <ThemedText type="subText">Loading comments...</ThemedText>
-            </View>
-          ) : comments.length === 0 ? (
-            <View style={{ padding: 20, alignItems: "center" }}>
-              <ThemedText type="subText">No comments yet</ThemedText>
-            </View>
-          ) : (
-            comments.map((commentItem) => {
+        {loading ? (
+          <View style={{ padding: 20, alignItems: "center", flex: 1 }}>
+            <ThemedText type="subText" style={{ color: theme.text }}>Loading comments...</ThemedText>
+          </View>
+        ) : comments.length === 0 ? (
+          <View style={{ padding: 20, alignItems: "center", flex: 1 }}>
+            <ThemedText type="subText" style={{ color: theme.text }}>No comments yet</ThemedText>
+          </View>
+        ) : (
+          <BottomSheetFlatList<CommentResponseDto>
+            data={comments}
+            keyExtractor={(item: CommentResponseDto) => item.id}
+            showsVerticalScrollIndicator={true}
+            keyboardShouldPersistTaps="handled"
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            renderItem={({ item: commentItem }: { item: CommentResponseDto }) => {
               const replies =
                 commentReplies[commentItem.id] || commentItem.replies || [];
               const isShowingReplies = showReplies[commentItem.id] || false;
@@ -552,7 +553,7 @@ export default function CommentsBottomSheet({
                 commentItem.repliesCount || replies.length || 0;
 
               return (
-                <View key={commentItem.id}>
+                <View>
                   <CommentItem
                     comment={commentItem}
                     commentLikes={commentLikes}
@@ -601,9 +602,9 @@ export default function CommentsBottomSheet({
                   )}
                 </View>
               );
-            })
-          )}
-        </BottomSheetScrollView>
+            }}
+          />
+        )}
 
         {/* Comment input */}
         <CommentInput

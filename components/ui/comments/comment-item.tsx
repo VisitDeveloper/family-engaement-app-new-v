@@ -1,10 +1,10 @@
 import { CommentResponseDto } from "@/services/comment.service";
 import { useStore } from "@/store";
+import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { TouchableOpacity, View } from "react-native";
 import { ThemedText } from "../../themed-text";
-import { formatTimeAgoShort } from "@/utils/format-time-ago";
 
 interface CommentItemProps {
   comment: CommentResponseDto;
@@ -84,7 +84,7 @@ export function CommentItem({
           >
             <ThemedText
               type="defaultSemiBold"
-              style={{ fontSize: 11, marginRight: 4 }}
+              style={{ fontSize: 11, marginRight: 4, color: theme.text }}
             >
               {authorName}
             </ThemedText>
@@ -109,7 +109,7 @@ export function CommentItem({
             marginTop: 0,
           }}
         >
-          <ThemedText type="subText" style={{ fontSize: 12 }}>
+          <ThemedText type="subText" style={{ fontSize: 12, color: theme.text }}>
             {comment.content}
           </ThemedText>
 
