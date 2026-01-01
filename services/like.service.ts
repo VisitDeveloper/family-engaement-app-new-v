@@ -3,7 +3,6 @@ import { apiClient, ApiError } from "./api";
 export interface LikeService {
   likePost(postId: string): Promise<void>;
   likeComment(commentId: string): Promise<void>;
-  unlikeComment(commentId: string): Promise<void>;
   isPostLiked(postId: string): Promise<boolean>;
   isCommentLiked(commentId: string): Promise<boolean>;
 }
@@ -30,20 +29,6 @@ class LikeServiceImpl implements LikeService {
       throw {
         message:
           apiError.message || "Failed to like comment. Please try again.",
-        status: apiError.status,
-        data: apiError.data,
-      } as ApiError;
-    }
-  }
-
-  async unlikeComment(commentId: string): Promise<void> {
-    try {
-      await apiClient.delete(`/posts/comments/${commentId}/like`);
-    } catch (error) {
-      const apiError = error as ApiError;
-      throw {
-        message:
-          apiError.message || "Failed to unlike comment. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

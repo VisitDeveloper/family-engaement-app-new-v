@@ -13,10 +13,10 @@ class ApiClient {
   private baseURL: string;
   private getLanguage: (() => string) | null = null;
   private isRefreshing = false;
-  private failedQueue: Array<{
+  private failedQueue: {
     resolve: (value?: any) => void;
     reject: (reason?: any) => void;
-  }> = [];
+  }[] = [];
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
@@ -218,6 +218,10 @@ class ApiClient {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
+
+        console.log("response", response);
+        console.log("data", data);
+
         // If error is 401 (Unauthorized) and we haven't retried yet
         if (response.status === 401 && retryCount === 0) {
           // Try to refresh the token
