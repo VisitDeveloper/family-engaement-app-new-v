@@ -30,6 +30,7 @@
     "expo-image-picker": "~16.0.4",
     "expo-linking": "~8.0.8",
     "expo-location": "~19.0.8",
+    "expo-network": "^8.0.8",
     "expo-notifications": "^0.32.15",
     "expo-router": "~6.0.4",
     "expo-speech": "~14.0.7",

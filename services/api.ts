@@ -1,7 +1,8 @@
 import { performAutoLogout } from '@/utils/auto-logout';
+import { getApiBaseUrl } from '@/utils/network';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3006';
+const DEFAULT_API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3006';
 
 export interface ApiError {
   message: string;
@@ -10,7 +11,8 @@ export interface ApiError {
 }
 
 class ApiClient {
-  private baseURL: string;
+  private baseURL: string | null = null;
+  private baseURLPromise: Promise<string> | null = null;
   private getLanguage: (() => string) | null = null;
   private isRefreshing = false;
   private failedQueue: {
@@ -19,7 +21,28 @@ class ApiClient {
   }[] = [];
 
   constructor(baseURL: string) {
-    this.baseURL = baseURL;
+    // Initialize base URL asynchronously
+    this.baseURLPromise = getApiBaseUrl(baseURL).then((url) => {
+      console.log("url", url);
+      this.baseURL = url;
+      return url;
+    }).catch((error) => {
+      console.error("Error getting base URL:", error);
+      return baseURL;
+    });
+  }
+
+  // Ensure base URL is initialized before making requests
+  private async ensureBaseURL(): Promise<string> {
+    if (this.baseURL) {
+      return this.baseURL;
+    }
+    if (this.baseURLPromise) {
+      return await this.baseURLPromise;
+    }
+    // Fallback if initialization failed
+    this.baseURL = await getApiBaseUrl(DEFAULT_API_BASE_URL);
+    return this.baseURL;
   }
 
   // Method to set a function that returns the language
@@ -116,8 +139,9 @@ class ApiClient {
     }
 
     try {
+      const baseURL = await this.ensureBaseURL();
       const acceptLanguage = this.getLanguage ? this.getLanguage() : 'en';
-      const response = await fetch(`${this.baseURL}/auth/refresh`, {
+      const response = await fetch(`${baseURL}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -207,7 +231,8 @@ class ApiClient {
     const acceptLanguage = this.getLanguage ? this.getLanguage() : 'en';
     headers.set('Accept-Language', acceptLanguage);
 
-    const url = `${this.baseURL}${endpoint}`;
+    const baseURL = await this.ensureBaseURL();
+    const url = `${baseURL}${endpoint}`;
 
     try {
       const response = await fetch(url, {
@@ -316,5 +341,5 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient(API_BASE_URL);
+export const apiClient = new ApiClient(DEFAULT_API_BASE_URL);
 

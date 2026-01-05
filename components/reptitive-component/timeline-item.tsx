@@ -6,6 +6,8 @@ import {
 } from "@/services/comment.service";
 import { likeService } from "@/services/like.service";
 import { useStore } from "@/store";
+import { formatTimeAgoShort } from "@/utils/format-time-ago";
+import { getApiBaseUrl } from "@/utils/network";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -21,7 +23,6 @@ import {
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 import CommentsBottomSheet from "../ui/comments-bottom-sheet";
-import { formatTimeAgoShort } from "@/utils/format-time-ago";
 export interface ResourceItemProps {
   postId?: string;
   name: string;
@@ -93,9 +94,19 @@ export default function TimelineItem({
     Record<string, CommentResponseDto[]>
   >({});
   const [showCommentsSheet, setShowCommentsSheet] = useState(false);
+  const [baseUrl, setBaseUrl] = useState<string>(
+    process.env.EXPO_PUBLIC_API_URL || "http://localhost:3006"
+  );
 
   // Number of comments to show initially
   const INITIAL_COMMENTS_TO_SHOW = 3;
+
+  // Initialize base URL with IP address replacement
+  useEffect(() => {
+    getApiBaseUrl().then((url) => {
+      setBaseUrl(url);
+    });
+  }, []);
 
   // Keep comments open if showAllCommentsByDefault is true
   useEffect(() => {
@@ -422,7 +433,6 @@ export default function TimelineItem({
 
     // If URL is relative, prepend base URL
     // Note: Adjust this based on your API base URL
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3006";
     return url.startsWith("/") ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
   };
 
@@ -436,7 +446,6 @@ export default function TimelineItem({
     }
 
     // If URL is relative, prepend base URL
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3006";
     return url.startsWith("/") ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
   };
 
