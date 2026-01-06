@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
-import * as Network from 'expo-network';
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
 
 let cachedIpAddress: string | null = null;
 
@@ -20,6 +21,8 @@ export async function getLocalIpAddress(): Promise<string | null> {
     // In development, Expo provides the dev server IP in Constants
     try {
       const expoConfig = Constants.expoConfig;
+      
+      // Check hostUri (works on both iOS and Android)
       if (expoConfig?.hostUri) {
         // hostUri format: "192.168.1.100:8081"
         const hostUri = expoConfig.hostUri;
@@ -29,7 +32,7 @@ export async function getLocalIpAddress(): Promise<string | null> {
         }
       }
       
-      // Also check debuggerHostName which might contain the IP
+      // Also check debuggerHost (alternative property)
       if (!ipAddress && (expoConfig as any)?.debuggerHost) {
         const debuggerHost = (expoConfig as any).debuggerHost;
         const ipMatch = debuggerHost.match(/^(\d+\.\d+\.\d+\.\d+)/);
@@ -37,20 +40,57 @@ export async function getLocalIpAddress(): Promise<string | null> {
           ipAddress = ipMatch[1];
         }
       }
+
+      // For Android, also check manifest2 properties and legacy manifest
+      if (!ipAddress && Platform.OS === 'android') {
+        // Check manifest2
+        const manifest2 = Constants.manifest2 as any;
+        if (manifest2?.extra?.expoGo?.debuggerHost) {
+          const debuggerHost = manifest2.extra.expoGo.debuggerHost;
+          const ipMatch = debuggerHost.match(/^(\d+\.\d+\.\d+\.\d+)/);
+          if (ipMatch && ipMatch[1]) {
+            ipAddress = ipMatch[1];
+          }
+        }
+        
+        // Check legacy manifest hostUri
+        if (!ipAddress && Constants.manifest?.hostUri) {
+          const hostUri = Constants.manifest.hostUri;
+          const ipMatch = hostUri.match(/^(\d+\.\d+\.\d+\.\d+)/);
+          if (ipMatch && ipMatch[1]) {
+            ipAddress = ipMatch[1];
+          }
+        }
+        
+        // Check legacy manifest debuggerHost
+        if (!ipAddress && (Constants.manifest as any)?.debuggerHost) {
+          const debuggerHost = (Constants.manifest as any).debuggerHost;
+          const ipMatch = debuggerHost.match(/^(\d+\.\d+\.\d+\.\d+)/);
+          if (ipMatch && ipMatch[1]) {
+            ipAddress = ipMatch[1];
+          }
+        }
+      }
     } catch (constantsError) {
       console.warn('Could not get IP from Expo Constants:', constantsError);
     }
 
-    // Method 2: Try expo-network if Constants didn't work
+    // Method 2: Try expo-network if Constants didn't work (less reliable on Android)
     if (!ipAddress) {
       try {
+        // Dynamic import to avoid issues if expo-network is not available
+        const Network = await import('expo-network');
+        
         // Check if the method exists (for different versions of expo-network)
         if (typeof (Network as any).getIpAddressAsync === 'function') {
           ipAddress = await (Network as any).getIpAddressAsync();
         } else if (typeof (Network as any).getIpAddress === 'function') {
           ipAddress = await (Network as any).getIpAddress();
+        } else if (Network.default && typeof Network.default.getIpAddressAsync === 'function') {
+          ipAddress = await Network.default.getIpAddressAsync();
         }
       } catch (networkError) {
+        // Silently fail - expo-network might not be available or might not work on Android
         console.warn('Could not get IP from expo-network:', networkError);
       }
     }
@@ -59,6 +99,13 @@ export async function getLocalIpAddress(): Promise<string | null> {
     if (ipAddress) {
       cachedIpAddress = ipAddress;
       return ipAddress;
+    }
+
+    // Fallback for Android emulator: use 10.0.2.2 which maps to host machine's localhost
+    if (Platform.OS === 'android' && Device.isDevice === false) {
+      console.log('Android emulator detected, using 10.0.2.2 as fallback');
+      cachedIpAddress = '10.0.2.2';
+      return '10.0.2.2';
     }
 
     // If we still don't have an IP, log a warning
