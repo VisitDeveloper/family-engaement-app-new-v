@@ -241,7 +241,8 @@ export default function LoginScreen() {
     messageInput: {
       backgroundColor: t.panel,
       borderRadius: 10,
-      padding: 5,
+      paddingHorizontal: 15,
+      paddingVertical: 5,
       borderWidth: 1,
       borderColor: t.border,
       height: 40,
@@ -265,14 +266,15 @@ export default function LoginScreen() {
                   : require("./../../assets/images/LOGO-primary.png")
               }
               style={{
-                width: 100,
-                height: 50,
+                width: "90%",
+                maxWidth: 250,
+                height: 60,
                 alignSelf: "center",
                 marginBottom: 5,
               }}
+              resizeMode="contain"
               accessibilityRole="image"
               accessibilityLabel="Family App Logo"
-              // resizeMode="contain"
             />
           </View>
           <View style={[styles.switchContainer, { borderColor: theme.border }]}>

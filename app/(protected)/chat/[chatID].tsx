@@ -2,10 +2,11 @@ import HeaderThreeSections from "@/components/reptitive-component/header-three-s
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ConversationResponseDto, MessageResponseDto, messagingService } from "@/services/messaging.service";
 import { useStore } from "@/store";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChatScreen() {
     const [input, setInput] = useState("");
@@ -13,6 +14,7 @@ export default function ChatScreen() {
     const [loading, setLoading] = useState(true);
     const { chatID } = useLocalSearchParams<{ chatID: string }>();
     const conversationId = chatID;
+    const insets = useSafeAreaInsets();
     
     // Select data from store instead of calling functions
     const conversations = useStore((state: any) => state.conversations);
@@ -49,11 +51,13 @@ export default function ChatScreen() {
             color: t.text
         },
         timeText: { fontSize: 10, marginTop: 5, alignSelf: "flex-end" },
+        messageFooter: { flexDirection: "row", alignItems: "flex-end", justifyContent: "flex-end", marginTop: 4, gap: 4 },
+        readStatusContainer: { flexDirection: "row", alignItems: "center" },
         audioPlayer: { height: 50, backgroundColor: "#ddd", justifyContent: "center", padding: 5, borderRadius: 8 },
         videoThumbnail: { width: 150, height: 100, borderRadius: 8, marginTop: 5 },
         imageThumbnail: { width: 200, height: 150, borderRadius: 8, marginTop: 5 },
-        inputContainer: { flexDirection: "row", paddingVertical: 10, borderTopWidth: 1, borderColor: t.border, alignItems: "center", paddingHorizontal: 25, marginBottom: 10 },
-        input: { flex: 1, borderWidth: 1, borderColor: t.border, borderRadius: 10, paddingHorizontal: 10, height: 40, color: t.text },
+        inputContainer: { flexDirection: "row", paddingVertical: 10, borderTopWidth: 1, borderColor: t.border, alignItems: "flex-end", paddingHorizontal: 25, paddingBottom: 10, backgroundColor: t.bg },
+        input: { flex: 1, borderWidth: 1, borderColor: t.border, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, minHeight: 40, maxHeight: 100, color: t.text, backgroundColor: t.panel || t.bg, fontSize: 16 },
         sendButton: { backgroundColor: t.tint, padding: 10, borderRadius: 25, marginLeft: 10 },
         loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     }) as const);
@@ -153,9 +157,10 @@ export default function ChatScreen() {
         return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
     };
 
-    const renderMessage = ({ item }: { item: MessageResponseDto }) => {
+    const renderMessage = ({ item, index }: { item: MessageResponseDto; index: number }) => {
         const isMe = item.senderId === currentUserId;
         const messageTime = formatTime(item.createdAt);
+        const isLastReadMessage = index === lastReadMessageIndex;
         
         return (
             <View style={[styles.messageContainer, isMe ? styles.myMessage : styles.otherMessage]}>
@@ -199,9 +204,25 @@ export default function ChatScreen() {
                         </Text>
                     </View>
                 )}
-                <Text style={[styles.timeText, isMe ? { color: '#fff' } : { color: '#666' }]}>
-                    {messageTime}
-                </Text>
+                <View style={styles.messageFooter}>
+                    <Text style={[styles.timeText, isMe ? { color: '#fff' } : { color: '#666' }]}>
+                        {messageTime}
+                    </Text>
+                    {isMe && (
+                        <View style={styles.readStatusContainer}>
+                            {item.isRead ? (
+                                <Ionicons name="checkmark-done" size={14} color="#fff" />
+                            ) : (
+                                <Ionicons name="checkmark" size={14} color="#fff" style={{ opacity: 0.7 }} />
+                            )}
+                        </View>
+                    )}
+                </View>
+                {isMe && isLastReadMessage && item.isRead && (
+                    <Text style={[styles.timeText, { color: '#fff', fontSize: 9, marginTop: 2, fontStyle: 'italic' }]}>
+                        Read
+                    </Text>
+                )}
             </View>
         );
     };
@@ -220,6 +241,35 @@ export default function ChatScreen() {
         return 'Chat';
     };
 
+    // Get online/offline status for direct conversations
+    // TODO: Replace with actual online status from API when available
+    const getOnlineStatus = useMemo(() => {
+        if (!conversation || conversation.type !== 'direct') return null;
+        
+        const otherParticipant = conversation.participants?.find((p: any) => p.user.id !== currentUserId);
+        if (!otherParticipant) return null;
+        
+        // For now, default to offline. Update this when API provides online status
+        // You can check lastSeen timestamp or isOnline field if available
+        const isOnline = false; // Replace with: otherParticipant.user.isOnline or check lastSeen timestamp
+        
+        return isOnline ? 'Online' : 'Offline';
+    }, [conversation, currentUserId]);
+
+    // Find the last read message index to show read status indicator
+    const lastReadMessageIndex = useMemo(() => {
+        if (!messages || messages.length === 0) return -1;
+        
+        // Find the last message sent by current user that has been read
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const msg = messages[i];
+            if (msg.senderId === currentUserId && msg.isRead) {
+                return i;
+            }
+        }
+        return -1;
+    }, [messages, currentUserId]);
+
     if (loading && messages.length === 0) {
         return (
             <View style={[styles.container, styles.loadingContainer]}>
@@ -233,38 +283,42 @@ export default function ChatScreen() {
             <KeyboardAvoidingView
                 style={{ flex: 1, }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <HeaderThreeSections
                     title={getConversationName()}
-                    desc={conversation?.unreadCount ? `${conversation.unreadCount} unread` : 'All read'}
+                    desc={getOnlineStatus || undefined}
                     icon={<MaterialIcons name="translate" size={24} color={theme.text} />}
-                    colorDesc={conversation?.unreadCount ? 'blue' : 'green'}
+                    colorDesc={getOnlineStatus === 'Online' ? theme.passDesc : theme.subText}
                 />
 
                 {/* Messages */}
                 <FlatList
                     data={messages}
                     keyExtractor={(item) => item.id}
-                    renderItem={renderMessage}
-                    contentContainerStyle={{ padding: 15 }}
+                    renderItem={({ item, index }) => renderMessage({ item, index })}
+                    contentContainerStyle={{ padding: 15, paddingBottom: 20 }}
                     showsVerticalScrollIndicator={false}
                     showsHorizontalScrollIndicator={false}
                     inverted={true}
+                    keyboardShouldPersistTaps="handled"
                 />
 
                 {/* Input */}
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
                     <TextInput
                         style={styles.input}
                         placeholder="Type a message..."
+                        placeholderTextColor={theme.subText || theme.text + '80'}
                         value={input}
                         onChangeText={setInput}
-                        onSubmitEditing={handleSendMessage}
+                        multiline={true}
+                        blurOnSubmit={false}
                         editable={!sending}
                         accessibilityLabel="Message input"
-                        accessibilityHint="Type your message here"
+                        accessibilityHint="Type your message here. Press Enter for a new line, use the send button to send."
                         accessibilityState={{ disabled: sending }}
+                        textAlignVertical="top"
                     />
                     <TouchableOpacity 
                         style={[styles.sendButton, sending && { opacity: 0.5 }]}

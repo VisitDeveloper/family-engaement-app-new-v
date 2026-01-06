@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import Divider from "@/components/ui/divider";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
@@ -56,6 +57,14 @@ export default function NewMessageScreen() {
         sectionTitle: {
           paddingHorizontal: 16,
           paddingTop: 16,
+          paddingBottom: 8,
+          fontSize: 14,
+          fontWeight: "600",
+          color: t.text,
+        },
+        sectionTitleContacts: {
+          paddingHorizontal: 16,
+          paddingTop: 8,
           paddingBottom: 8,
           fontSize: 14,
           fontWeight: "600",
@@ -409,8 +418,11 @@ export default function NewMessageScreen() {
         />
       )}
 
+      {/* Divider */}
+      <Divider marginVertical={8} />
+
       {/* Contacts */}
-      <Text style={styles.sectionTitle}>Contacts</Text>
+      <Text style={styles.sectionTitleContacts}>Contacts</Text>
       {loadingContacts ? (
         <View style={{ padding: 20, alignItems: "center" }}>
           <ActivityIndicator size="small" color={theme.tint} />

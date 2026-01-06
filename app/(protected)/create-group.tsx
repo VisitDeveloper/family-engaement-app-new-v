@@ -7,6 +7,7 @@ import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
 import { AntDesign, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -49,6 +50,7 @@ export default function CreateGroupScreen() {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [loadingClassrooms, setLoadingClassrooms] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const styles = useThemedStyles((theme) => ({
     container: { flex: 1, paddingHorizontal: 12, backgroundColor: theme.bg },
@@ -255,6 +257,36 @@ export default function CreateGroupScreen() {
     useState<boolean>(false);
   const [groupName, setGroupName] = useState<string>("");
 
+  const pickImage = async () => {
+    try {
+      // Request permissions
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Sorry, we need camera roll permissions to select images!"
+        );
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image. Please try again.");
+    }
+  };
+
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
       Alert.alert("Error", "Please enter a group name");
@@ -312,25 +344,32 @@ export default function CreateGroupScreen() {
       >
         {/* Group Image + Name */}
         <View style={styles.imageWrapper}>
-          <TouchableOpacity>
-            {/* <Image
-                            source={{ uri: "https://via.placeholder.com/80" }}
-                            style={{ width: 80, height: 80, borderRadius: 40 }}
-                        /> */}
-            <View
-              style={{
-                margin: "auto",
-                width: 100,
-                height: 100,
-                borderRadius: 50,
-                backgroundColor: theme.panel,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Feather name="users" size={28} color={theme.text} />
-            </View>
+          <TouchableOpacity onPress={pickImage}>
+            {selectedImage ? (
+              <Image
+                source={{ uri: selectedImage }}
+                style={{
+                  width: 100,
+                  height: 100,
+                  borderRadius: 50,
+                }}
+              />
+            ) : (
+              <View
+                style={{
+                  margin: "auto",
+                  width: 100,
+                  height: 100,
+                  borderRadius: 50,
+                  backgroundColor: theme.panel,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Feather name="users" size={28} color={theme.text} />
+              </View>
+            )}
             <View
               style={{
                 position: "absolute",
@@ -340,13 +379,14 @@ export default function CreateGroupScreen() {
                 borderRadius: 40,
                 width: 20,
                 height: 20,
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               <Feather
                 name="camera"
                 size={15}
                 color={theme.tint}
-                style={{ margin: "auto" }}
               />
             </View>
           </TouchableOpacity>
@@ -724,10 +764,20 @@ export default function CreateGroupScreen() {
 
         {/* Footer Button */}
         <TouchableOpacity
-          style={[styles.footerButton, creating && { opacity: 0.5 }]}
+          style={[
+            styles.footerButton,
+            (creating ||
+              !groupName.trim() ||
+              (selectedGroup.length < 1 && selected.length < 3)) && {
+              opacity: 0.5,
+            },
+          ]}
           onPress={handleCreateGroup}
-          // disabled={creating || !groupName.trim() || selected.length < 3}
-          disabled={creating || !groupName.trim()}
+          disabled={
+            creating ||
+            !groupName.trim() ||
+            (selectedGroup.length < 1 && selected.length < 3)
+          }
         >
           {creating ? (
             <ActivityIndicator size="small" color="#fff" />
