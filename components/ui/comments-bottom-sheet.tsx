@@ -22,6 +22,7 @@ interface CommentsBottomSheetProps {
   onCommentAdded?: () => void;
   onCommentsChange?: (comments: CommentResponseDto[]) => void;
   onReplyAdded?: (commentId: string, reply: CommentResponseDto) => void;
+  initialCommentIdToReply?: string | null;
 }
 
 export default function CommentsBottomSheet({
@@ -32,6 +33,7 @@ export default function CommentsBottomSheet({
   onCommentAdded,
   onCommentsChange,
   onReplyAdded,
+  initialCommentIdToReply,
 }: CommentsBottomSheetProps) {
   const theme = useStore((state) => state.theme);
   const bottomSheetRef = useRef<BottomSheetModal>(null);
@@ -141,6 +143,53 @@ export default function CommentsBottomSheet({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, postId, fetchComments]);
+
+  // Handle opening reply input when initialCommentIdToReply is set
+  useEffect(() => {
+    if (visible && initialCommentIdToReply && comments.length > 0) {
+      // Use setTimeout to ensure comments are loaded and rendered
+      const timer = setTimeout(() => {
+        setShowReplyInput((prev) => ({
+          ...prev,
+          [initialCommentIdToReply]: true,
+        }));
+        setReplyInputs((prev) => ({
+          ...prev,
+          [initialCommentIdToReply]: "",
+        }));
+        // Also show replies if not already shown
+        setShowReplies((prev) => ({
+          ...prev,
+          [initialCommentIdToReply]: true,
+        }));
+        // Fetch replies if needed
+        const comment = comments.find((c) => c.id === initialCommentIdToReply);
+        if (comment && !commentReplies[initialCommentIdToReply]) {
+          if (comment.replies && comment.replies.length > 0) {
+            setCommentReplies((prev) => ({
+              ...prev,
+              [initialCommentIdToReply]: comment.replies || [],
+            }));
+            // Initialize likes state for existing replies
+            setCommentLikes((prev) => {
+              const updated = { ...prev };
+              comment.replies?.forEach((reply) => {
+                updated[reply.id] = {
+                  isLiked: reply.isLiked || false,
+                  likesCount: reply.likesCount || 0,
+                };
+              });
+              return updated;
+            });
+          } else {
+            fetchReplies(initialCommentIdToReply);
+          }
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, initialCommentIdToReply, comments]);
 
   // Don't sync automatically - only sync on specific actions (like, add comment, etc.)
 

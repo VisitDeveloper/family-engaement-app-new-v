@@ -6,6 +6,7 @@ import {
 } from "@/services/comment.service";
 import { likeService } from "@/services/like.service";
 import { useStore } from "@/store";
+import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -14,6 +15,7 @@ import {
   Alert,
   Linking,
   Pressable,
+  Share,
   TextInput,
   TouchableOpacity,
   View,
@@ -21,7 +23,6 @@ import {
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 import CommentsBottomSheet from "../ui/comments-bottom-sheet";
-import { formatTimeAgoShort } from "@/utils/format-time-ago";
 export interface ResourceItemProps {
   postId?: string;
   name: string;
@@ -93,9 +94,10 @@ export default function TimelineItem({
     Record<string, CommentResponseDto[]>
   >({});
   const [showCommentsSheet, setShowCommentsSheet] = useState(false);
+  const [commentIdToReply, setCommentIdToReply] = useState<string | null>(null);
 
   // Number of comments to show initially
-  const INITIAL_COMMENTS_TO_SHOW = 3;
+  const INITIAL_COMMENTS_TO_SHOW = 2;
 
   // Keep comments open if showAllCommentsByDefault is true
   useEffect(() => {
@@ -135,12 +137,17 @@ export default function TimelineItem({
 
   // Initialize local comments from props when they change
   // Use ref to prevent infinite loops
-  const prevCommentsRef = React.useRef<string>('');
+  const prevCommentsRef = React.useRef<string>("");
   useEffect(() => {
-    const commentsKey = props.comments?.map(c => `${c.id}-${c.likesCount}-${c.isLiked}`).join(',') || '';
-    const lastCommentKey = props.lastComment ? `${props.lastComment.id}-${props.lastComment.likesCount}-${props.lastComment.isLiked}` : '';
+    const commentsKey =
+      props.comments
+        ?.map((c) => `${c.id}-${c.likesCount}-${c.isLiked}`)
+        .join(",") || "";
+    const lastCommentKey = props.lastComment
+      ? `${props.lastComment.id}-${props.lastComment.likesCount}-${props.lastComment.isLiked}`
+      : "";
     const currentKey = commentsKey || lastCommentKey;
-    
+
     // Only update if props actually changed
     if (prevCommentsRef.current !== currentKey) {
       prevCommentsRef.current = currentKey;
@@ -271,7 +278,7 @@ export default function TimelineItem({
         ...prev,
         [commentId]: [newReply, ...(prev[commentId] || [])],
       }));
-      
+
       // Initialize likes state for new reply
       setCommentLikes((prev) => ({
         ...prev,
@@ -470,6 +477,34 @@ export default function TimelineItem({
         console.error("Error opening file:", error);
         Alert.alert("Error", "Failed to open file");
       }
+    }
+  };
+
+  // Handle share
+  const handleShare = async () => {
+    try {
+      const shareMessage = `${props.name} shared:\n\n${props.desc}\n\n${props.tags && props.tags.length > 0 ? `Tags: ${props.tags.join(", ")}\n` : ""}${props.postId ? `\nView post in app` : ""}`;
+      
+      const result = await Share.share({
+        message: shareMessage,
+        title: `Post by ${props.name}`,
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          // Shared with activity type of result.activityType
+          console.log("Shared with activity type:", result.activityType);
+        } else {
+          // Shared
+          console.log("Post shared successfully");
+        }
+      } else if (result.action === Share.dismissedAction) {
+        // Dismissed
+        console.log("Share dismissed");
+      }
+    } catch (error: any) {
+      console.error("Error sharing post:", error);
+      Alert.alert("Error", error.message || "Failed to share post");
     }
   };
 
@@ -970,6 +1005,7 @@ export default function TimelineItem({
 
             <TouchableOpacity
               style={styles.ationItem}
+              onPress={handleShare}
               accessibilityRole="button"
               accessibilityLabel="Share post"
               accessibilityHint="Double tap to share this post"
@@ -1006,7 +1042,10 @@ export default function TimelineItem({
         </View>
 
         {/* Comments */}
-        <View style={styles.comments}>
+        <TouchableOpacity
+          onPress={() => setShowCommentsSheet(true)}
+          style={styles.comments}
+        >
           {displayComments.length > 0 && (
             <>
               {(showAllComments
@@ -1150,7 +1189,9 @@ export default function TimelineItem({
                                   textAlign: "center",
                                 }}
                               >
-                                {commentLikes[commentItem.id]?.likesCount ?? commentItem.likesCount ?? 0}
+                                {commentLikes[commentItem.id]?.likesCount ??
+                                  commentItem.likesCount ??
+                                  0}
                               </ThemedText>
                             </TouchableOpacity>
                           </View>
@@ -1166,15 +1207,9 @@ export default function TimelineItem({
                         >
                           <TouchableOpacity
                             onPress={() => {
-                              setShowReplyInput((prev) => ({
-                                ...prev,
-                                [commentItem.id]: !prev[commentItem.id],
-                              }));
-                              if (!showReplyInput[commentItem.id]) {
-                                setReplyInputs((prev) => ({
-                                  ...prev,
-                                  [commentItem.id]: "",
-                                }));
+                              if (props.postId) {
+                                setCommentIdToReply(commentItem.id);
+                                setShowCommentsSheet(true);
                               }
                             }}
                           >
@@ -1354,7 +1389,9 @@ export default function TimelineItem({
                                           textAlign: "center",
                                         }}
                                       >
-                                        {commentLikes[reply.id]?.likesCount ?? reply.likesCount ?? 0}
+                                        {commentLikes[reply.id]?.likesCount ??
+                                          reply.likesCount ??
+                                          0}
                                       </ThemedText>
                                     </View>
                                   </View>
@@ -1648,171 +1685,30 @@ export default function TimelineItem({
               </ThemedText>
             </View>
           )}
-          {props.postId && (
-            <View
-              style={{
-                flexDirection: "column",
-                alignItems: "flex-end",
-                gap: 8,
-                marginTop: 8,
-              }}
-            >
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+          {/* Show message when there are no comments */}
+          {displayComments.length === 0 && !props.commenter && !props.comment && (
+            <View style={{ paddingVertical: 8 }}>
+              <ThemedText
+                type="subText"
+                style={{ color: theme.subText, fontSize: 12, textAlign: "center" }}
               >
-                {user?.profilePicture ? (
-                  <Image
-                    source={{ uri: user?.profilePicture || "" }}
-                    style={{
-                      borderRadius: 12,
-                      backgroundColor: theme.panel,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      borderColor: theme.border,
-                      borderWidth: 1,
-                      width: 24,
-                      height: 24,
-                    }}
-                  />
-                ) : (
-                  <Ionicons
-                    name="person-circle"
-                    size={24}
-                    color={theme.subText}
-                  />
-                )}
-
-                <TextInput
-                  style={[
-                    styles.commentInput,
-                    { flex: 1, height: 36, fontSize: 13 },
-                    { color: theme.text },
-                  ]}
-                  value={comment}
-                  onChangeText={setComment}
-                  placeholder="Add a comment..."
-                  placeholderTextColor={theme.subText}
-                  editable={!isSubmittingComment}
-                  onSubmitEditing={async () => {
-                    if (comment.trim() && props.postId) {
-                      setIsSubmittingComment(true);
-                      try {
-                        const newComment = await commentService.createComment(
-                          props.postId,
-                          {
-                            content: comment.trim(),
-                          }
-                        );
-                        setComment("");
-                        // Add new comment to local comments state
-                        setLocalComments((prev) => [newComment, ...prev]);
-                        // Add new comment to expandedComments if it exists, otherwise it will be shown via props
-                        if (expandedComments.length > 0) {
-                          setExpandedComments((prev) => [newComment, ...prev]);
-                        }
-                        // Initialize likes state for new comment
-                        setCommentLikes((prev) => ({
-                          ...prev,
-                          [newComment.id]: {
-                            isLiked: newComment.isLiked || false,
-                            likesCount: newComment.likesCount || 0,
-                          },
-                        }));
-                        // Only notify parent to update comment count, not refetch
-                        if (props.onCommentAdded) {
-                          props.onCommentAdded();
-                        }
-                      } catch (err: any) {
-                        Alert.alert(
-                          "Error",
-                          err.message || "Failed to post comment"
-                        );
-                      } finally {
-                        setIsSubmittingComment(false);
-                      }
-                    }
-                  }}
-                />
-              </View>
-              {showCommentInput && (
-                <TouchableOpacity
-                  onPress={async () => {
-                    if (comment.trim() && props.postId) {
-                      setIsSubmittingComment(true);
-                      try {
-                        const newComment = await commentService.createComment(
-                          props.postId,
-                          {
-                            content: comment.trim(),
-                          }
-                        );
-                        setComment("");
-                        // Add new comment to local comments state
-                        setLocalComments((prev) => [newComment, ...prev]);
-                        // Add new comment to expandedComments if it exists, otherwise it will be shown via props
-                        if (expandedComments.length > 0) {
-                          setExpandedComments((prev) => [newComment, ...prev]);
-                        }
-                        // Initialize likes state for new comment
-                        setCommentLikes((prev) => ({
-                          ...prev,
-                          [newComment.id]: {
-                            isLiked: newComment.isLiked || false,
-                            likesCount: newComment.likesCount || 0,
-                          },
-                        }));
-                        // Only notify parent to update comment count, not refetch
-                        if (props.onCommentAdded) {
-                          props.onCommentAdded();
-                        }
-                      } catch (err: any) {
-                        Alert.alert(
-                          "Error",
-                          err.message || "Failed to post comment"
-                        );
-                      } finally {
-                        setIsSubmittingComment(false);
-                      }
-                    }
-                  }}
-                  disabled={!comment.trim() || isSubmittingComment}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 4,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor:
-                      comment.trim() && !isSubmittingComment
-                        ? theme.tint
-                        : theme.subText,
-                    backgroundColor: "transparent",
-                  }}
-                >
-                  <ThemedText
-                    style={{
-                      color:
-                        comment.trim() && !isSubmittingComment
-                          ? theme.tint
-                          : theme.subText,
-                      fontSize: 13,
-                      fontWeight: "600",
-                    }}
-                  >
-                    {isSubmittingComment ? "Sending..." : "Add Comment"}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
+                No comments yet. Tap to add a comment.
+              </ThemedText>
             </View>
           )}
-        </View>
+        </TouchableOpacity>
       </ThemedView>
 
       {props.postId && (
         <CommentsBottomSheet
           visible={showCommentsSheet}
-          onClose={() => setShowCommentsSheet(false)}
+          onClose={() => {
+            setShowCommentsSheet(false);
+            setCommentIdToReply(null);
+          }}
           postId={props.postId}
           initialComments={displayComments}
+          initialCommentIdToReply={commentIdToReply}
           onCommentAdded={async () => {
             // Only notify parent to update comment count, not refetch
             if (props.onCommentAdded) {
@@ -1830,7 +1726,7 @@ export default function TimelineItem({
               ...prev,
               [commentId]: [newReply, ...(prev[commentId] || [])],
             }));
-            
+
             // Initialize likes state for new reply
             setCommentLikes((prev) => ({
               ...prev,

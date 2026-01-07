@@ -24,13 +24,13 @@ export function RepliesList({
     );
   }
 
-  if (replies.length === 0) {
-    return (
-      <ThemedText type="subLittleText" style={{ padding: 8, fontSize: 11 }}>
-        No replies yet
-      </ThemedText>
-    );
-  }
+  // if (replies.length === 0) {
+  //   return (
+  //     <ThemedText type="subLittleText" style={{ padding: 8, paddingHorizontal: 16, fontSize: 11 }}>
+  //       No replies yet
+  //     </ThemedText>
+  //   );
+  // }
 
   return (
     <View style={{ marginLeft: 32, marginTop: 8 }}>
