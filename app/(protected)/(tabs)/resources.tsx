@@ -53,7 +53,7 @@ const convertToResourceItemProps = (
     imageUrl: resource.imageUrl,
     image: resource.imageUrl
       ? { uri: resource.imageUrl }
-      : require("./../../../assets/images/timeline-1.jpg"),
+      : undefined,
     icon: getResourceIcon(resource.type),
     isSaved: resource.isSaved,
   };
@@ -196,13 +196,12 @@ const ResourceLibrary = () => {
     },
     categoryTitle: {
       color: theme.subText,
-      marginTop: 10,
       backgroundColor: theme.panel,
       paddingHorizontal: 3,
       paddingVertical: 2,
       borderRadius: 8,
     },
-    categoryIcon: { marginTop: 5, color: theme.subText },
+    categoryIcon: { marginTop: 0, color: theme.subText },
     rating: { fontSize: 12, color: theme.subText },
   }));
 

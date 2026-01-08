@@ -49,16 +49,19 @@ const ResourceItem = (props: ResourceItemProps) => {
 
   return (
     <View style={props.styles.item}>
-      <TouchableOpacity 
-        onPress={props.onPress} 
+      <TouchableOpacity
+        onPress={props.onPress}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={`${props.title}, ${displayType}, Rating: ${rating.toFixed(1)}`}
+        accessibilityLabel={`${
+          props.title
+        }, ${displayType}, Rating: ${rating.toFixed(1)}`}
         accessibilityHint={`Double tap to view details of ${props.title}`}
+        style={{ flex: 1 }}
       >
         <View>
-          <Image 
-            source={imageSource} 
+          <Image
+            source={imageSource}
             style={props.styles.image}
             accessibilityRole="image"
             accessibilityLabel={`Cover image for ${props.title}`}
@@ -71,47 +74,75 @@ const ResourceItem = (props: ResourceItemProps) => {
               <Text style={props.styles.type}>{displayType}</Text>
             </View>
 
-            <Text style={props.styles.rating}>
-              <FontAwesome name="star" size={16} color="#FACC15" />
-              {rating.toFixed(1)}
-            </Text>
+            <View
+              style={[
+                props.styles.rating,
+                { flexDirection: "row", alignItems: "center" },
+              ]}
+            >
+              <FontAwesome
+                name="star"
+                size={16}
+                color="#FACC15"
+                style={{ marginHorizontal: 2 }}
+              />
+              <Text>{rating.toFixed(1)}</Text>
+            </View>
           </View>
           <Text style={props.styles.title}>{props.title}</Text>
           {age && <Text style={props.styles.age}>{age}</Text>}
-          <View style={props.styles.categoryContainer}>
-            <View style={props.styles.categoryTitle}>
-              <ThemedText type="subText" style={{ color: theme.subText }}>
-                {props.category}
-              </ThemedText>
-            </View>
-          </View>
         </View>
       </TouchableOpacity>
-      <TouchableOpacity
-        onPress={handleSavePress}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel={props.isSaved ? `Remove ${props.title} from saved` : `Save ${props.title}`}
-        accessibilityHint={props.isSaved ? "Double tap to unsave this resource" : "Double tap to save this resource"}
-        accessibilityState={{ selected: props.isSaved }}
+
+      <View
         style={{
-          position: "absolute",
-          bottom: 5,
-          right: 5,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: 10,
         }}
       >
-        <MaterialIcons
-          name={props.isSaved ? "bookmark" : "bookmark-border"}
-          style={[
-            props.styles.categoryIcon,
-            props.isSaved && { color: theme.tint },
-          ]}
-          size={20}
-          accessibilityElementsHidden={true}
-          importantForAccessibility="no"
-        />
-      </TouchableOpacity>
+        <View style={props.styles.categoryContainer}>
+          <View
+            style={[
+              props.styles.categoryTitle,
+              { paddingHorizontal: 8, paddingVertical: 1 },
+            ]}
+          >
+            <ThemedText type="subText" style={{ color: theme.subText }}>
+              {props.category}
+            </ThemedText>
+          </View>
+        </View>
+        <TouchableOpacity
+          onPress={handleSavePress}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={
+            props.isSaved
+              ? `Remove ${props.title} from saved`
+              : `Save ${props.title}`
+          }
+          accessibilityHint={
+            props.isSaved
+              ? "Double tap to unsave this resource"
+              : "Double tap to save this resource"
+          }
+          accessibilityState={{ selected: props.isSaved }}
+        >
+          <MaterialIcons
+            name={props.isSaved ? "bookmark" : "bookmark-border"}
+            style={[
+              props.styles.categoryIcon,
+              props.isSaved && { color: theme.tint },
+            ]}
+            size={20}
+            accessibilityElementsHidden={true}
+            importantForAccessibility="no"
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

@@ -40,8 +40,8 @@ const BookDetailScreen = () => {
   useFocusEffect(
     useCallback(() => {
       const refreshResource = async () => {
-        if (!id || typeof id !== 'string') return;
-        
+        if (!id || typeof id !== "string") return;
+
         try {
           const updatedResource = await resourceService.getById(id);
           addResource({
@@ -63,7 +63,7 @@ const BookDetailScreen = () => {
           });
           setIsSaved(updatedResource.isSaved);
         } catch (error) {
-          console.error('Error refreshing resource:', error);
+          console.error("Error refreshing resource:", error);
         }
       };
 
@@ -243,11 +243,17 @@ const BookDetailScreen = () => {
       >
         {/* Cover */}
         <Image
-          source={{ uri: resourceItem?.imageUrl ? resourceItem.imageUrl : "" }}
+          source={{
+            uri: resourceItem?.imageUrl
+              ? resourceItem.imageUrl
+              : resourceItem?.image || "",
+          }}
           style={styles.cover}
           resizeMode="cover"
           accessibilityRole="image"
-          accessibilityLabel={`Cover image for ${resourceItem?.title || "resource"}`}
+          accessibilityLabel={`Cover image for ${
+            resourceItem?.title || "resource"
+          }`}
         />
 
         {/* Chips */}
@@ -267,7 +273,13 @@ const BookDetailScreen = () => {
             ).toFixed(1)} stars`}
             accessibilityHint="Double tap to view and rate this resource"
           >
-            <FontAwesome name="star" size={16} color="#FACC15" accessibilityElementsHidden={true} importantForAccessibility="no" />
+            <FontAwesome
+              name="star"
+              size={16}
+              color="#FACC15"
+              accessibilityElementsHidden={true}
+              importantForAccessibility="no"
+            />
             <ThemedText type="subText">
               {(
                 resourceItem?.averageRating ||
