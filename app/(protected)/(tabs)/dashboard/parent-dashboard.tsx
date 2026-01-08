@@ -204,7 +204,7 @@ export default function ParentDashboard() {
 
                     <StatCardParent
                         labelIcon={<Ionicons name="arrow-up-right-box-outline" size={18} color={theme.iconDash} />}
-                        label="Active Families"
+                        label="New Posts"
                         value="3"
                         sub="15 posts viewed"
                         icon={<AntDesign name="picture" size={30} color={theme.iconDash} />}

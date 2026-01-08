@@ -1,7 +1,8 @@
+import { ThemedText } from '@/components/themed-text';
 import { useStore } from '@/store';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Modal, Platform, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
 
 interface DatePickerProps {
@@ -17,8 +18,12 @@ export default function DatePicker(props: DatePickerProps) {
     const [show, setShow] = useState(false);
 
     const onChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        // On Android, dismiss the picker when user cancels or selects
+        if (Platform.OS === 'android') {
+            setShow(false);
+        }
+
         if (!selectedDate) {
-            setShow(Platform.OS === 'ios');
             return;
         }
 
@@ -36,23 +41,115 @@ export default function DatePicker(props: DatePickerProps) {
         }
 
         setDate(newDate);
-        setShow(Platform.OS === 'ios');
+        // On iOS, we keep the modal open so user can continue adjusting
+        // The modal closes only when "Done" or "Cancel" is pressed
     };
 
+    const formatDisplayValue = () => {
+        if (mode === 'date') {
+            return date.toLocaleDateString();
+        } else if (mode === 'time') {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        return date.toLocaleString();
+    };
 
+    // On iOS, show a button that opens the picker in a modal for better UX
+    if (Platform.OS === 'ios') {
+        return (
+            <View style={{ marginLeft: -10 }}>
+                <TouchableOpacity
+                    onPress={() => !disabled && setShow(true)}
+                    disabled={disabled}
+                    style={{ 
+                        opacity: disabled ? 0.5 : 1,
+                        paddingVertical: 4,
+                        paddingHorizontal: 8,
+                    }}
+                >
+                    <ThemedText style={{ color: theme.text, fontSize: 16 }}>
+                        {formatDisplayValue()}
+                    </ThemedText>
+                </TouchableOpacity>
+                <Modal
+                    visible={show}
+                    transparent={true}
+                    animationType="slide"
+                    onRequestClose={() => setShow(false)}
+                >
+                    <TouchableWithoutFeedback onPress={() => setShow(false)}>
+                        <View style={{
+                            flex: 1,
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            justifyContent: 'flex-end',
+                        }}>
+                            <TouchableWithoutFeedback>
+                                <View style={{
+                                    backgroundColor: theme.bg,
+                                    borderTopLeftRadius: 20,
+                                    borderTopRightRadius: 20,
+                                    padding: 20,
+                                    paddingBottom: 40,
+                                }}>
+                                    <View style={{
+                                        flexDirection: 'row',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        marginBottom: 20,
+                                    }}>
+                                        <TouchableOpacity onPress={() => setShow(false)}>
+                                            <ThemedText style={{ color: theme.tint, fontSize: 16 }}>
+                                                Cancel
+                                            </ThemedText>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => {
+                                            // Save the current selection and close
+                                            setShow(false);
+                                        }}>
+                                            <ThemedText style={{ color: theme.tint, fontSize: 16, fontWeight: '600' }}>
+                                                Done
+                                            </ThemedText>
+                                        </TouchableOpacity>
+                                    </View>
+                                    <DateTimePicker
+                                        value={date}
+                                        mode={mode}
+                                        display="spinner"
+                                        onChange={onChange}
+                                        disabled={disabled}
+                                        textColor={theme.text}
+                                        style={{ backgroundColor: theme.bg }}
+                                    />
+                                </View>
+                            </TouchableWithoutFeedback>
+                        </View>
+                    </TouchableWithoutFeedback>
+                </Modal>
+            </View>
+        );
+    }
+
+    // On Android, show a button that opens the picker modal
     return (
         <View style={{ marginLeft: -10 }}>
-
-            <DateTimePicker
-                value={date}
-                mode={mode}
-                display="default"
-                onChange={onChange}
+            <TouchableOpacity
+                onPress={() => !disabled && setShow(true)}
                 disabled={disabled}
-            />
-
-
-
+                style={{ opacity: disabled ? 0.5 : 1 }}
+            >
+                <ThemedText style={{ color: theme.text, fontSize: 16 }}>
+                    {formatDisplayValue()}
+                </ThemedText>
+            </TouchableOpacity>
+            {show && (
+                <DateTimePicker
+                    value={date}
+                    mode={mode}
+                    display="default"
+                    onChange={onChange}
+                    disabled={disabled}
+                />
+            )}
         </View>
     );
 }

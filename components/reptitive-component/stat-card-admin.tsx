@@ -53,7 +53,7 @@ function StatCard({ label, value, sub, positive, negative, rate, icon }: StatCar
                 {icon}
             </View>
             <ThemedText type="text" style={styles.statLabel}>{label}</ThemedText>
-            <ThemedText type="subText">
+            <ThemedText type="subText" style={styles.statSubText}>
                 {sub}
             </ThemedText>
         </View >
