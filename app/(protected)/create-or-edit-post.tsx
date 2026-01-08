@@ -62,6 +62,7 @@ const CreateOrEditPost = () => {
   const [selectedClassroom, setSelectedClassroom] =
     useState<OptionsList | null>(null);
   const [loadingClassrooms, setLoadingClassrooms] = useState<boolean>(false);
+  const [selectAllClassrooms, setSelectAllClassrooms] = useState<boolean>(false);
   const isTeacher = user?.role === "teacher" || user?.role === "admin";
 
   const styles = useThemedStyles((t) => ({
@@ -338,6 +339,7 @@ const CreateOrEditPost = () => {
         const classroom = classrooms.find((c) => c.value === post.classroom?.id);
         if (classroom) {
           setSelectedClassroom(classroom);
+          setSelectAllClassrooms(false);
         } else {
           // If not found in list, load it directly
           const classroomsData = await messagingService.getClassrooms();
@@ -357,6 +359,7 @@ const CreateOrEditPost = () => {
               value: classroomData.id,
             };
             setSelectedClassroom(classroomOption);
+            setSelectAllClassrooms(false);
             // Also add it to classrooms list if not already there
             setClassrooms((prev) => {
               if (!prev.find((c) => c.value === classroomData.id)) {
@@ -366,6 +369,10 @@ const CreateOrEditPost = () => {
             });
           }
         }
+      } else {
+        // If no classroomId, default to "No Classroom"
+        setSelectAllClassrooms(false);
+        setSelectedClassroom(null);
       }
     } catch (error: any) {
       console.error("Error loading post:", error);
@@ -467,7 +474,9 @@ const CreateOrEditPost = () => {
         tags: tagsArray,
         recommended: textMessages,
         visibility: visibilityValue as "everyone" | "followers" | "private",
-        classroomId: selectedClassroom?.value || null,
+        classroomId: selectAllClassrooms
+          ? null
+          : selectedClassroom?.value || null,
       };
 
       // Handle images
@@ -789,12 +798,25 @@ const CreateOrEditPost = () => {
               <ActivityIndicator size="small" color={theme.tint} />
             ) : (
               <SelectBox
-                options={[{ label: "No Classroom", value: "" }, ...classrooms]}
-                value={selectedClassroom?.label || "No Classroom"}
+                options={[
+                  { label: "All Classrooms", value: "all" },
+                  { label: "No Classroom", value: "" },
+                  ...classrooms,
+                ]}
+                value={
+                  selectAllClassrooms
+                    ? "all"
+                    : selectedClassroom?.value || ""
+                }
                 onChange={(val) => {
-                  if (val === "") {
+                  if (val === "all") {
+                    setSelectAllClassrooms(true);
+                    setSelectedClassroom(null);
+                  } else if (val === "") {
+                    setSelectAllClassrooms(false);
                     setSelectedClassroom(null);
                   } else {
+                    setSelectAllClassrooms(false);
                     const selectedOption = classrooms.find(
                       (opt) => opt.value === val
                     );

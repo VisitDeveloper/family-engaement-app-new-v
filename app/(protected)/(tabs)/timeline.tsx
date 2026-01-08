@@ -335,7 +335,7 @@ const TimelineScreen = () => {
           flex: 1,
         }}
       >
-        <RoleGuard roles={["teacher"]}>
+        <RoleGuard roles={["teacher", "admin"]}>
           <TouchableOpacity
             onPress={() => router.push("/create-or-edit-post")}
             style={{ marginTop: -5 }}

@@ -1,9 +1,9 @@
+import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { TextInput, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "../../themed-text";
-import { useThemedStyles } from "@/hooks/use-theme-style";
 
 interface ReplyInputProps {
   replyText: string;
@@ -98,6 +98,7 @@ export function ReplyInput({
             paddingVertical: 4,
             borderRadius: 8,
             borderWidth: 1,
+            minWidth: 80,
             borderColor:
               replyText.trim() && !isSubmitting ? theme.tint : theme.subText,
             backgroundColor: "transparent",
@@ -109,6 +110,7 @@ export function ReplyInput({
                 replyText.trim() && !isSubmitting ? theme.tint : theme.subText,
               fontSize: 13,
               fontWeight: "600",
+              // backgroundColor: "red",
             }}
           >
             {isSubmitting ? "Sending..." : "Add Reply"}
