@@ -1,7 +1,7 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
     FlatList,
     Modal,
@@ -67,6 +67,10 @@ export default function SelectBox({ options, value, onChange, title = '', disabl
 
     }) as const);
 
+    // Find the label for the current value
+    const selectedOption = options.find(opt => opt.value === value);
+    const displayLabel = selectedOption ? selectedOption.label : value;
+
     return (
         <View>
 
@@ -75,7 +79,7 @@ export default function SelectBox({ options, value, onChange, title = '', disabl
                 style={[styles.selectBox, { backgroundColor: theme.panel, borderColor: "transparent" }]}
                 onPress={() => setVisible(true)}
             >
-                <Text style={{ color: disabled ? theme.subText : theme.text }}>{value}</Text>
+                <Text style={{ color: disabled ? theme.subText : theme.text }}>{displayLabel}</Text>
                 <Feather name="chevron-down" size={16} color={theme.subText} />
             </TouchableOpacity>
 
