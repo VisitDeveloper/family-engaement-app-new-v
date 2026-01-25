@@ -2,6 +2,7 @@ import RoleGuard from "@/components/check-permisions";
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
+import { Colors } from "@/constants/theme";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
 import {
@@ -20,7 +21,7 @@ import {
   StyleSheet,
   Switch,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 // const { width: screenWidth } = Dimensions.get("window");
@@ -125,7 +126,11 @@ export default function SettingsScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 10, paddingTop: 20 }}
+        contentContainerStyle={{
+          paddingBottom: 100,
+          paddingHorizontal: 10,
+          paddingTop: 20,
+        }}
       >
         {/* Profile Card */}
         <View
@@ -476,12 +481,20 @@ export default function SettingsScreen() {
           <View
             style={[styles.dataSecuritySection, { borderColor: theme.border }]}
           >
-            <AntDesign name="lock" size={16} color={theme.text} />
+            <AntDesign
+              name="lock"
+              size={16}
+              color={theme.text}
+              style={{ paddingTop: 2 }}
+            />
             <ThemedText
               type="subText"
-              style={[styles.dataSecurityDescription, { color: theme.text }]}
+              style={[
+                styles.dataSecurityDescription,
+                { color: theme.text, flex: 1, paddingVertical: 0 },
+              ]}
             >
-              his app does not intend to collect PII or securing sensitive
+              This app does not intend to collect PII or securing sensitive
               personal data. All communications are for educational purposes
               only.
             </ThemedText>
@@ -683,17 +696,19 @@ export default function SettingsScreen() {
         <View>
           <TouchableOpacity
             style={{
+              gap: 10,
+              borderColor: Colors.light.tint,
               marginTop: 20,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               paddingVertical: 10,
               borderWidth: 1,
-              borderColor: theme.emergencyColor,
+              // borderColor: theme.emergencyColor,
               borderRadius: 10,
               backgroundColor: logoutLoading
                 ? theme.subText
-                : theme.emergencyColor,
+                : Colors.light.tint,
               opacity: logoutLoading ? 0.6 : 1,
             }}
             onPress={handleLogout}
@@ -802,17 +817,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     marginVertical: 10,
-    padding: 5,
+    padding: 8,
+    paddingHorizontal: 10,
     flexDirection: "row",
-    gap: 5,
+    gap: 8,
     alignItems: "baseline",
     justifyContent: "space-between",
   },
   dataSecurityDescription: {
     lineHeight: 15,
-    paddingHorizontal: 5,
+    // paddingHorizontal: 5,
     textAlign: "justify",
-    marginHorizontal: 20,
+    // marginHorizontal: 20,
   },
   dataSecurityLink: {
     paddingVertical: 10,
