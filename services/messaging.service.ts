@@ -52,28 +52,32 @@ export interface MessageResponseDto {
   senderId: string;
   sender?: UserDto | null;
   content?: string | null;
-  type: "text" | "image" | "video" | "audio" | "file" | "poll";
+  type: "text" | "image" | "video" | "audio" | "file" | "poll" | "announcement";
   mediaUrl?: string | null;
   fileName?: string | null;
-  fileSize?: number | null;
+  fileSize?: number | string | null;
   mimeType?: string | null;
-  pollId?: string | null;
+  duration?: string | null;
+  thumbnailUrl?: string | null;
   replyToId?: string | null;
   replyTo?: MessageResponseDto | null;
   isRead: boolean;
   readAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  polls?: PollResponseDto[] | null
 }
 
 export interface CreateMessageDto {
   conversationId: string;
   content?: string;
-  type: "text" | "image" | "video" | "audio" | "file" | "poll";
+  type: "text" | "image" | "video" | "audio" | "file" | "poll" | "announcement";
   mediaUrl?: string;
   fileName?: string;
-  fileSize?: number;
+  fileSize?: number | string;
   mimeType?: string;
+  duration?: string;
+  thumbnailUrl?: string;
   pollId?: string;
   replyToId?: string;
 }
@@ -93,10 +97,9 @@ export interface PollOptionResponseDto {
 
 export interface PollResponseDto {
   id: string;
-  conversationId: string;
+  messageId: string;
   question: string;
   options: PollOptionResponseDto[];
-  isMultipleChoice: boolean;
   isClosed: boolean;
   createdById: string;
   createdAt: string;
@@ -108,10 +111,9 @@ export interface CreatePollOptionDto {
 }
 
 export interface CreatePollDto {
-  conversationId: string;
+  messageId: string;
   question: string;
   options: CreatePollOptionDto[];
-  isMultipleChoice?: boolean;
 }
 
 export interface VotePollDto {
@@ -286,9 +288,8 @@ class MessagingServiceImpl implements MessagingService {
       }
 
       const queryString = queryParams.toString();
-      const endpoint = `/messaging/groups${
-        queryString ? `?${queryString}` : ""
-      }`;
+      const endpoint = `/messaging/groups${queryString ? `?${queryString}` : ""
+        }`;
 
       const response = await apiClient.get<{
         groups: ConversationResponseDto[];
@@ -421,9 +422,8 @@ class MessagingServiceImpl implements MessagingService {
       }
 
       const queryString = queryParams.toString();
-      const endpoint = `/messaging/conversations/${conversationId}/messages${
-        queryString ? `?${queryString}` : ""
-      }`;
+      const endpoint = `/messaging/conversations/${conversationId}/messages${queryString ? `?${queryString}` : ""
+        }`;
 
       const response = await apiClient.get<{
         messages: MessageResponseDto[];

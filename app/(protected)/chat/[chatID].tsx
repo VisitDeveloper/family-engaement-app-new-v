@@ -1,8 +1,14 @@
 import HeaderThreeSections from "@/components/reptitive-component/header-three-sections";
+import AttachingMenu from "@/components/ui/attaching-menu";
+import CreatePollBottomSheet from "@/components/ui/create-poll-bottom-sheet";
+import PollMessageCard from "@/components/ui/poll-message-card";
+import PollViewBottomSheet from "@/components/ui/poll-view-bottom-sheet";
 import { useThemedStyles } from "@/hooks/use-theme-style";
-import { ConversationResponseDto, MessageResponseDto, messagingService } from "@/services/messaging.service";
+import { ConversationResponseDto, MessageResponseDto, messagingService, PollResponseDto } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -12,10 +18,17 @@ export default function ChatScreen() {
     const [input, setInput] = useState("");
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [showPollSheet, setShowPollSheet] = useState(false);
+    const [showPollViewSheet, setShowPollViewSheet] = useState(false);
+    const [selectedPollId, setSelectedPollId] = useState<string | null>(null);
+    const [uploadingFile, setUploadingFile] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadingFileName, setUploadingFileName] = useState<string | null>(null);
+    const [showAttachingMenu, setShowAttachingMenu] = useState(false);
     const { chatID } = useLocalSearchParams<{ chatID: string }>();
     const conversationId = chatID;
     const insets = useSafeAreaInsets();
-    
+
     // Select data from store instead of calling functions
     const conversations = useStore((state: any) => state.conversations);
     const messagesStore = useStore((state: any) => state.messages);
@@ -46,6 +59,7 @@ export default function ChatScreen() {
         messageContainer: { marginVertical: 5, padding: 10, borderRadius: 10, maxWidth: "80%" },
         myMessage: { backgroundColor: t.tint, alignSelf: "flex-end", },
         otherMessage: { backgroundColor: t.panel, alignSelf: "flex-start" },
+        messageContainerPoll: { backgroundColor: "transparent", padding: 0, maxWidth: "85%" },
         messageText: { color: '#fff' },
         messageOtherText: {
             color: t.text
@@ -56,10 +70,44 @@ export default function ChatScreen() {
         audioPlayer: { height: 50, backgroundColor: "#ddd", justifyContent: "center", padding: 5, borderRadius: 8 },
         videoThumbnail: { width: 150, height: 100, borderRadius: 8, marginTop: 5 },
         imageThumbnail: { width: 200, height: 150, borderRadius: 8, marginTop: 5 },
-        inputContainer: { flexDirection: "row", paddingVertical: 10, borderTopWidth: 1, borderColor: t.border, alignItems: "flex-end", paddingHorizontal: 25, paddingBottom: 10, backgroundColor: t.bg },
+        inputContainer: { flexDirection: "row", paddingVertical: 10, borderTopWidth: 1, borderColor: t.border, alignItems: "flex-end", paddingHorizontal: 15, paddingBottom: 10, backgroundColor: t.bg },
+        inputWrapper: { flex: 1, flexDirection: "row", alignItems: "flex-end", gap: 8 },
+        attachmentButton: { padding: 8, marginRight: 5, backgroundColor: "rgba(215, 169, 227, 0.25)", borderRadius: 8 },
         input: { flex: 1, borderWidth: 1, borderColor: t.border, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, minHeight: 40, maxHeight: 100, color: t.text, backgroundColor: t.panel || t.bg, fontSize: 16 },
-        sendButton: { backgroundColor: t.tint, padding: 10, borderRadius: 25, marginLeft: 10 },
+        sendButton: { backgroundColor: t.tint, padding: 10, borderRadius: 8, marginLeft: 5 },
+        micButton: { backgroundColor: "transparent", padding: 10, borderRadius: 8, marginLeft: 5 },
         loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+        fileContainer: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 5 },
+        fileName: { color: t.text, fontSize: 14 },
+        uploadProgressContainer: {
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: t.panel,
+            padding: 12,
+            borderTopWidth: 1,
+            borderTopColor: t.border,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+        },
+        uploadProgressBar: {
+            flex: 1,
+            height: 4,
+            backgroundColor: t.border,
+            borderRadius: 2,
+            overflow: "hidden",
+        },
+        uploadProgressFill: {
+            height: "100%",
+            backgroundColor: t.tint,
+        },
+        uploadProgressText: {
+            fontSize: 12,
+            color: t.subText,
+            minWidth: 50,
+        },
     }) as const);
 
     const loadConversation = useCallback(async () => {
@@ -67,7 +115,7 @@ export default function ChatScreen() {
             console.warn('Invalid conversationId:', conversationId);
             return;
         }
-        
+
         try {
             await messagingService.getConversationById(conversationId);
             // Update store if needed - you might want to add this to your store
@@ -89,7 +137,7 @@ export default function ChatScreen() {
             setLoading(false);
             return;
         }
-        
+
         setLoading(true);
         try {
             const response = await messagingService.getMessages(conversationId, { limit: 50 });
@@ -116,10 +164,10 @@ export default function ChatScreen() {
         if (!conversationId || typeof conversationId !== 'string') {
             return;
         }
-        
+
         loadConversation();
         loadMessages();
-        
+
         // Mark conversation as read when component mounts
         messagingService.markConversationAsRead(conversationId).catch((error) => {
             console.error('Error marking conversation as read:', error);
@@ -137,7 +185,7 @@ export default function ChatScreen() {
                 content: input.trim(),
                 type: 'text',
             });
-            
+
             addMessage(conversationId, newMessage);
             setInput("");
         } catch (error: any) {
@@ -146,6 +194,177 @@ export default function ChatScreen() {
         } finally {
             setSending(false);
         }
+    };
+
+    const pickImage = async () => {
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== "granted") {
+                Alert.alert(
+                    "Permission Required",
+                    "Sorry, we need camera roll permissions to select images!"
+                );
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                await uploadAndSendFile(result.assets[0].uri, 'image', result.assets[0].mimeType || 'image/jpeg');
+            }
+        } catch (error: any) {
+            console.error("Error picking image:", error);
+            Alert.alert("Error", "Failed to pick image");
+        }
+    };
+
+    const pickVideo = async () => {
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== "granted") {
+                Alert.alert(
+                    "Permission Required",
+                    "Sorry, we need camera roll permissions to select videos!"
+                );
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+                allowsEditing: false,
+                quality: 1,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                await uploadAndSendFile(result.assets[0].uri, 'video', result.assets[0].mimeType || 'video/mp4');
+            }
+        } catch (error: any) {
+            console.error("Error picking video:", error);
+            Alert.alert("Error", "Failed to pick video");
+        }
+    };
+
+    const pickDocument = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: "*/*",
+                copyToCacheDirectory: true,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                await uploadAndSendFile(
+                    result.assets[0].uri,
+                    'file',
+                    result.assets[0].mimeType || 'application/octet-stream',
+                    result.assets[0].name
+                );
+            }
+        } catch (error: any) {
+            console.error("Error picking document:", error);
+            Alert.alert("Error", "Failed to pick document");
+        }
+    };
+
+    const uploadAndSendFile = async (
+        uri: string,
+        type: 'image' | 'video' | 'file',
+        mimeType: string,
+        fileName?: string
+    ) => {
+        if (!conversationId || uploadingFile) return;
+
+        setUploadingFile(true);
+        setUploadProgress(0);
+
+        // Extract filename from URI if not provided
+        const fileUri = uri;
+        const name = fileName || fileUri.split('/').pop() || 'file';
+        setUploadingFileName(name);
+
+        try {
+            // Create FormData
+            const formData = new FormData();
+
+            // @ts-ignore - FormData in React Native works differently
+            formData.append('file', {
+                uri: fileUri,
+                type: mimeType,
+                name: name,
+            } as any);
+
+            // Simulate progress (since we don't have actual progress from API)
+            const progressInterval = setInterval(() => {
+                setUploadProgress((prev) => {
+                    if (prev >= 90) {
+                        clearInterval(progressInterval);
+                        return 90;
+                    }
+                    return prev + 10;
+                });
+            }, 200);
+
+            let uploadResponse;
+            if (type === 'image') {
+                uploadResponse = await messagingService.uploadImage(formData);
+            } else if (type === 'video') {
+                uploadResponse = await messagingService.uploadVideo(formData);
+            } else {
+                uploadResponse = await messagingService.uploadFile(formData);
+            }
+
+            clearInterval(progressInterval);
+            setUploadProgress(100);
+
+            // Create message with uploaded file
+            const newMessage = await messagingService.createMessage({
+                conversationId,
+                type: type,
+                mediaUrl: uploadResponse.url,
+                fileName: uploadResponse.fileName,
+                fileSize: uploadResponse.fileSize,
+                mimeType: uploadResponse.mimeType,
+            });
+
+            addMessage(conversationId, newMessage);
+
+            // Reset after a short delay
+            setTimeout(() => {
+                setUploadProgress(0);
+                setUploadingFileName(null);
+            }, 500);
+        } catch (error: any) {
+            console.error('Error uploading file:', error);
+            Alert.alert('Error', error.message || 'Failed to upload file');
+            setUploadProgress(0);
+            setUploadingFileName(null);
+        } finally {
+            setUploadingFile(false);
+        }
+    };
+
+    const handlePollCreated = async (poll: PollResponseDto, message: MessageResponseDto) => {
+        addMessage(conversationId, message);
+        setShowPollSheet(false);
+    };
+
+    const handleSelectMedia = () => {
+        Alert.alert(
+            "Select Media",
+            "Choose an option",
+            [
+                { text: "Image", onPress: pickImage },
+                { text: "Video", onPress: pickVideo },
+                { text: "Cancel", style: "cancel" },
+            ]
+        );
+    };
+
+    const handleSelectFiles = () => {
+        pickDocument();
     };
 
     const formatTime = (dateString: string) => {
@@ -161,23 +380,30 @@ export default function ChatScreen() {
         const isMe = item.senderId === currentUserId;
         const messageTime = formatTime(item.createdAt);
         const isLastReadMessage = index === lastReadMessageIndex;
-        
+
+        const isPoll = item.type === "poll" && item.polls?.length;
+
         return (
-            <View style={[styles.messageContainer, isMe ? styles.myMessage : styles.otherMessage]}>
+            <View style={[
+                styles.messageContainer,
+                isPoll
+                    ? [styles.messageContainerPoll, isMe ? { alignSelf: "flex-end" } : { alignSelf: "flex-start" }]
+                    : (isMe ? styles.myMessage : styles.otherMessage),
+            ]}>
                 {item.type === "text" && item.content && (
                     <Text style={isMe ? styles.messageText : styles.messageOtherText}>{item.content}</Text>
                 )}
                 {item.type === "image" && item.mediaUrl && (
-                    <Image 
-                        source={{ uri: item.mediaUrl }} 
+                    <Image
+                        source={{ uri: item.mediaUrl }}
                         style={styles.imageThumbnail}
                         accessibilityRole="image"
                         accessibilityLabel="Image attachment"
                     />
                 )}
                 {item.type === "video" && item.mediaUrl && (
-                    <Image 
-                        source={{ uri: item.mediaUrl }} 
+                    <Image
+                        source={{ uri: item.mediaUrl }}
                         style={styles.videoThumbnail}
                         accessibilityRole="image"
                         accessibilityLabel="Video thumbnail"
@@ -191,35 +417,49 @@ export default function ChatScreen() {
                     </View>
                 )}
                 {item.type === "file" && (
-                    <View>
-                        <Text style={isMe ? styles.messageText : styles.messageOtherText}>
-                            📎 {item.fileName || 'File'}
-                        </Text>
-                    </View>
+                    <TouchableOpacity style={styles.fileContainer}>
+                        <Ionicons name="document-text" size={24} color={isMe ? "#fff" : theme.text} />
+                        <View style={{ flex: 1 }}>
+                            <Text style={isMe ? styles.messageText : styles.messageOtherText}>
+                                {item.fileName || 'File'}
+                            </Text>
+                            {item.fileSize && (
+                                <Text style={[styles.timeText, isMe ? { color: '#fff' } : { color: '#666' }]}>
+                                    {(Number(item.fileSize) / 1024).toFixed(1)} KB
+                                </Text>
+                            )}
+                        </View>
+                    </TouchableOpacity>
                 )}
-                {item.type === "poll" && (
-                    <View>
-                        <Text style={isMe ? styles.messageText : styles.messageOtherText}>
-                            📊 Poll
-                        </Text>
-                    </View>
+                {item.type === "poll" && item.polls?.length && (
+                    <PollMessageCard
+                        pollId={item.polls[0].id}
+                        isMe={isMe}
+                        onVote={() => {}}
+                        onClosePoll={() => {
+                            loadMessages();
+                        }}
+                        onEditPoll={() => {
+                            Alert.alert("Edit Poll", "Edit poll is not available yet.");
+                        }}
+                    />
                 )}
                 <View style={styles.messageFooter}>
-                    <Text style={[styles.timeText, isMe ? { color: '#fff' } : { color: '#666' }]}>
+                    <Text style={[styles.timeText, (isPoll ? { color: theme.subText ?? '#666' } : isMe ? { color: '#fff' } : { color: '#666' })]}>
                         {messageTime}
                     </Text>
                     {isMe && (
                         <View style={styles.readStatusContainer}>
                             {item.isRead ? (
-                                <Ionicons name="checkmark-done" size={14} color="#fff" />
+                                <Ionicons name="checkmark-done" size={14} color={isPoll ? (theme.subText ?? '#666') : '#fff'} />
                             ) : (
-                                <Ionicons name="checkmark" size={14} color="#fff" style={{ opacity: 0.7 }} />
+                                <Ionicons name="checkmark" size={14} color={isPoll ? (theme.subText ?? '#666') : '#fff'} style={{ opacity: 0.7 }} />
                             )}
                         </View>
                     )}
                 </View>
                 {isMe && isLastReadMessage && item.isRead && (
-                    <Text style={[styles.timeText, { color: '#fff', fontSize: 9, marginTop: 2, fontStyle: 'italic' }]}>
+                    <Text style={[styles.timeText, { fontSize: 9, marginTop: 2, fontStyle: 'italic' }, isPoll ? { color: theme.subText ?? '#666' } : { color: '#fff' }]}>
                         Read
                     </Text>
                 )}
@@ -235,7 +475,7 @@ export default function ChatScreen() {
             if (otherParticipant) {
                 return `${otherParticipant.user.firstName || ''} ${otherParticipant.user.lastName || ''}`.trim() || otherParticipant.user.email;
             }
-        }else if (conversation.type === 'group' && conversation.name) {
+        } else if (conversation.type === 'group' && conversation.name) {
             return conversation.name;
         }
         return 'Chat';
@@ -245,21 +485,21 @@ export default function ChatScreen() {
     // TODO: Replace with actual online status from API when available
     const getOnlineStatus = useMemo(() => {
         if (!conversation || conversation.type !== 'direct') return null;
-        
+
         const otherParticipant = conversation.participants?.find((p: any) => p.user.id !== currentUserId);
         if (!otherParticipant) return null;
-        
+
         // For now, default to offline. Update this when API provides online status
         // You can check lastSeen timestamp or isOnline field if available
         const isOnline = false; // Replace with: otherParticipant.user.isOnline or check lastSeen timestamp
-        
+
         return isOnline ? 'Online' : 'Offline';
     }, [conversation, currentUserId]);
 
     // Find the last read message index to show read status indicator
     const lastReadMessageIndex = useMemo(() => {
         if (!messages || messages.length === 0) return -1;
-        
+
         // Find the last message sent by current user that has been read
         for (let i = messages.length - 1; i >= 0; i--) {
             const msg = messages[i];
@@ -306,36 +546,115 @@ export default function ChatScreen() {
 
                 {/* Input */}
                 <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Type a message..."
-                        placeholderTextColor={theme.subText || theme.text + '80'}
-                        value={input}
-                        onChangeText={setInput}
-                        multiline={true}
-                        blurOnSubmit={false}
-                        editable={!sending}
-                        accessibilityLabel="Message input"
-                        accessibilityHint="Type your message here. Press Enter for a new line, use the send button to send."
-                        accessibilityState={{ disabled: sending }}
-                        textAlignVertical="top"
-                    />
-                    <TouchableOpacity 
-                        style={[styles.sendButton, sending && { opacity: 0.5 }]}
+                    <View style={styles.inputWrapper}>
+                        <TouchableOpacity
+                            style={styles.attachmentButton}
+                            onPress={() => setShowAttachingMenu(true)}
+                            disabled={uploadingFile || sending}
+                        >
+                            <Ionicons
+                                name="add"
+                                size={24}
+                                color={uploadingFile || sending ? theme.subText : theme.text}
+                            />
+                        </TouchableOpacity>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Type a message..."
+                            placeholderTextColor={theme.subText || theme.text + '80'}
+                            value={input}
+                            onChangeText={setInput}
+                            multiline={true}
+                            blurOnSubmit={false}
+                            editable={!sending && !uploadingFile}
+                            accessibilityLabel="Message input"
+                            accessibilityHint="Type your message here. Press Enter for a new line, use the send button to send."
+                            accessibilityState={{ disabled: sending || uploadingFile }}
+                            textAlignVertical="top"
+                        />
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.micButton}
+                        onPress={() => { }}
+                        disabled={true}
+                    >
+                        <Ionicons name="mic" size={20} color="rgba(18, 18, 18, 1)" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.sendButton, (sending || uploadingFile || !input.trim()) && { opacity: 0.5 }]}
                         onPress={handleSendMessage}
-                        disabled={sending || !input.trim()}
+                        disabled={sending || uploadingFile || !input.trim()}
                         accessibilityRole="button"
                         accessibilityLabel="Send message"
                         accessibilityHint="Double tap to send your message"
-                        accessibilityState={{ disabled: sending || !input.trim() }}
+                        accessibilityState={{ disabled: sending || uploadingFile || !input.trim() }}
                     >
-                        {sending ? (
+                        {(sending || uploadingFile) ? (
                             <ActivityIndicator size="small" color="#fff" />
                         ) : (
                             <Feather name="send" size={20} color="#fff" />
                         )}
                     </TouchableOpacity>
+
+
+
                 </View>
+
+                {/* Upload Progress Indicator */}
+                {uploadingFile && uploadingFileName && (
+                    <View style={styles.uploadProgressContainer}>
+                        <ActivityIndicator size="small" color={theme.tint} />
+                        <View style={styles.uploadProgressBar}>
+                            <View
+                                style={[
+                                    styles.uploadProgressFill,
+                                    { width: `${uploadProgress}%` },
+                                ]}
+                            />
+                        </View>
+                        <Text style={styles.uploadProgressText} numberOfLines={1}>
+                            {uploadingFileName.length > 15
+                                ? `${uploadingFileName.substring(0, 15)}...`
+                                : uploadingFileName}
+                        </Text>
+                    </View>
+                )}
+
+                {/* Attaching Menu */}
+                <AttachingMenu
+                    visible={showAttachingMenu}
+                    onClose={() => setShowAttachingMenu(false)}
+                    onSelectPoll={() => setShowPollSheet(true)}
+                    onSelectMedia={handleSelectMedia}
+                    onSelectFiles={handleSelectFiles}
+                />
+
+                {/* Poll Creation Bottom Sheet */}
+                {conversationId && (
+                    <CreatePollBottomSheet
+                        visible={showPollSheet}
+                        onClose={() => setShowPollSheet(false)}
+                        conversationId={conversationId}
+                        onPollCreated={handlePollCreated}
+                    />
+                )}
+
+                {/* Poll View Bottom Sheet */}
+                {selectedPollId && (
+                    <PollViewBottomSheet
+                        visible={showPollViewSheet}
+                        onClose={() => {
+                            setShowPollViewSheet(false);
+                            setSelectedPollId(null);
+                        }}
+                        pollId={selectedPollId}
+                        onVote={() => {
+                            loadMessages();
+                        }}
+                    />
+                )}
             </KeyboardAvoidingView>
         </View>
     );
