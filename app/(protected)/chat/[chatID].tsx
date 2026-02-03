@@ -7,10 +7,11 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ConversationResponseDto, MessageResponseDto, messagingService, PollResponseDto } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Audio } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -25,6 +26,13 @@ export default function ChatScreen() {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadingFileName, setUploadingFileName] = useState<string | null>(null);
     const [showAttachingMenu, setShowAttachingMenu] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const recordingRef = useRef<Audio.Recording | null>(null);
+    const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+    const [audioPositions, setAudioPositions] = useState<Record<string, number>>({});
+    const [audioDurations, setAudioDurations] = useState<Record<string, number>>({});
+    const soundRef = useRef<Audio.Sound | null>(null);
+    const positionUpdateInterval = useRef<NodeJS.Timeout | null>(null);
     const { chatID } = useLocalSearchParams<{ chatID: string }>();
     const conversationId = chatID;
     const insets = useSafeAreaInsets();
@@ -67,7 +75,56 @@ export default function ChatScreen() {
         timeText: { fontSize: 10, marginTop: 5, alignSelf: "flex-end" },
         messageFooter: { flexDirection: "row", alignItems: "flex-end", justifyContent: "flex-end", marginTop: 4, gap: 4 },
         readStatusContainer: { flexDirection: "row", alignItems: "center" },
-        audioPlayer: { height: 50, backgroundColor: "#ddd", justifyContent: "center", padding: 5, borderRadius: 8 },
+        audioPlayer: {
+            // minHeight: 60,
+            // padding: 12,
+            borderRadius: 12,
+            minWidth: 200,
+        },
+        audioPlayerContent: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+        },
+        audioPlayButton: {
+            width: 32,
+            height: 32,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        audioProgressContainer: {
+            flex: 1,
+            height: 4,
+            backgroundColor: "rgba(255, 255, 255, 0.3)",
+            borderRadius: 50,
+            overflow: "hidden",
+        },
+        audioProgressContainerViewer: {
+            backgroundColor: "rgba(0, 0, 0, 0.1)", // Light gray for viewer
+        },
+        audioProgressFill: {
+            height: "100%",
+            backgroundColor: "#fff",
+            borderRadius: 2,
+        },
+        audioDuration: {
+            fontSize: 12,
+            color: "#fff",
+            minWidth: 40,
+            textAlign: "right",
+        },
+        audioDurationViewer: {
+            color: "#666", // Dark gray for viewer
+        },
+        audioTimestamp: {
+            fontSize: 10,
+            color: "#fff",
+            marginTop: 8,
+            opacity: 0.9,
+        },
+        audioTimestampViewer: {
+            color: "#666", // Dark gray for viewer
+        },
         videoThumbnail: { width: 150, height: 100, borderRadius: 8, marginTop: 5 },
         imageThumbnail: { width: 200, height: 150, borderRadius: 8, marginTop: 5 },
         inputContainer: { flexDirection: "row", paddingVertical: 10, borderTopWidth: 1, borderColor: t.border, alignItems: "flex-end", paddingHorizontal: 15, paddingBottom: 10, backgroundColor: t.bg },
@@ -269,11 +326,13 @@ export default function ChatScreen() {
         }
     };
 
+
     const uploadAndSendFile = async (
         uri: string,
-        type: 'image' | 'video' | 'file',
+        type: 'image' | 'video' | 'audio' | 'file',
         mimeType: string,
-        fileName?: string
+        fileName?: string,
+        durationSeconds?: number
     ) => {
         if (!conversationId || uploadingFile) return;
 
@@ -312,6 +371,8 @@ export default function ChatScreen() {
                 uploadResponse = await messagingService.uploadImage(formData);
             } else if (type === 'video') {
                 uploadResponse = await messagingService.uploadVideo(formData);
+            } else if (type === 'audio') {
+                uploadResponse = await messagingService.uploadAudio(formData);
             } else {
                 uploadResponse = await messagingService.uploadFile(formData);
             }
@@ -327,6 +388,7 @@ export default function ChatScreen() {
                 fileName: uploadResponse.fileName,
                 fileSize: uploadResponse.fileSize,
                 mimeType: uploadResponse.mimeType,
+                ...(type === 'audio' && durationSeconds != null && { duration: String(durationSeconds) }),
             });
 
             addMessage(conversationId, newMessage);
@@ -363,6 +425,80 @@ export default function ChatScreen() {
         );
     };
 
+    const requestRecordingPermission = useCallback(async (): Promise<boolean> => {
+        const { status } = await Audio.requestPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert(
+                'Microphone access',
+                'Microphone permission is needed to record voice messages.',
+                [{ text: 'OK' }]
+            );
+            return false;
+        }
+        await Audio.setAudioModeAsync({
+            allowsRecordingIOS: true,
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: false,
+            shouldDuckAndroid: true,
+            playThroughEarpieceAndroid: false,
+        });
+        return true;
+    }, []);
+
+    const startRecording = useCallback(async () => {
+        if (!conversationId || uploadingFile || sending) return;
+        const ok = await requestRecordingPermission();
+        if (!ok) return;
+
+        try {
+            const { recording } = await Audio.Recording.createAsync(
+                Audio.RecordingOptionsPresets.HIGH_QUALITY
+            );
+            recordingRef.current = recording;
+            setIsRecording(true);
+        } catch (error: any) {
+            console.error('Failed to start recording:', error);
+            Alert.alert('Error', error?.message || 'Could not start recording');
+        }
+    }, [conversationId, uploadingFile, sending, requestRecordingPermission]);
+
+    const stopRecordingAndSend = useCallback(async () => {
+        const recording = recordingRef.current;
+        if (!recording || !conversationId) return;
+
+        try {
+            setIsRecording(false);
+            recordingRef.current = null;
+            const status = await recording.getStatusAsync();
+            const durationMillis = status.durationMillis ?? 0;
+            if (!status.isDoneRecording) {
+                await recording.stopAndUnloadAsync();
+            }
+            const uri = recording.getURI();
+            if (!uri) {
+                Alert.alert('Error', 'Recording file not available');
+                return;
+            }
+            const durationSeconds = durationMillis > 0 ? Math.round(durationMillis / 1000) : undefined;
+            const ts = Date.now();
+            const fileName = `voice-${ts}.m4a`;
+            const mimeType = 'audio/m4a';
+
+            await uploadAndSendFile(uri, 'audio', mimeType, fileName, durationSeconds);
+        } catch (error: any) {
+            console.error('Failed to stop/send recording:', error);
+            Alert.alert('Error', error?.message || 'Failed to send voice message');
+        }
+    }, [conversationId, uploadAndSendFile]);
+
+    const handleMicPress = useCallback(() => {
+        if (isRecording) {
+            stopRecordingAndSend();
+        } else {
+            startRecording();
+        }
+    }, [isRecording, startRecording, stopRecordingAndSend]);
+
     const handleSelectFiles = () => {
         pickDocument();
     };
@@ -375,6 +511,84 @@ export default function ChatScreen() {
         const displayHours = hours % 12 || 12;
         return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
     };
+
+    const formatAudioDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const handleAudioPlay = async (audioUrl: string, messageId: string, durationSeconds?: number) => {
+        try {
+            // Stop current audio if playing
+            if (soundRef.current) {
+                await soundRef.current.unloadAsync();
+                soundRef.current = null;
+            }
+            if (positionUpdateInterval.current) {
+                clearInterval(positionUpdateInterval.current);
+                positionUpdateInterval.current = null;
+            }
+
+            // If clicking the same audio, toggle pause
+            if (playingAudioId === messageId) {
+                setPlayingAudioId(null);
+                setAudioPositions(prev => ({ ...prev, [messageId]: 0 }));
+                return;
+            }
+
+            // Load and play new audio
+            const { sound } = await Audio.Sound.createAsync(
+                { uri: audioUrl },
+                { shouldPlay: true }
+            );
+            soundRef.current = sound;
+
+            const status = await sound.getStatusAsync();
+            const duration = (status.isLoaded && 'durationMillis' in status && status.durationMillis)
+                ? status.durationMillis / 1000
+                : (durationSeconds || 0);
+
+            setAudioDurations(prev => ({ ...prev, [messageId]: duration }));
+            setPlayingAudioId(messageId);
+            setAudioPositions(prev => ({ ...prev, [messageId]: 0 }));
+
+            // Update position using status callback
+            sound.setOnPlaybackStatusUpdate((status) => {
+                if (status.isLoaded) {
+                    if (status.positionMillis !== undefined) {
+                        const position = status.positionMillis / 1000;
+                        setAudioPositions(prev => ({ ...prev, [messageId]: position }));
+                    }
+                    if (status.didJustFinish) {
+                        setPlayingAudioId(null);
+                        setAudioPositions(prev => ({ ...prev, [messageId]: 0 }));
+                        sound.unloadAsync();
+                        soundRef.current = null;
+                        if (positionUpdateInterval.current) {
+                            clearInterval(positionUpdateInterval.current);
+                            positionUpdateInterval.current = null;
+                        }
+                    }
+                }
+            });
+        } catch (error: any) {
+            console.error('Error playing audio:', error);
+            Alert.alert('Error', 'Failed to play audio');
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            // Cleanup on unmount
+            if (soundRef.current) {
+                soundRef.current.unloadAsync();
+            }
+            if (positionUpdateInterval.current) {
+                clearInterval(positionUpdateInterval.current);
+            }
+        };
+    }, []);
 
     const renderMessage = ({ item, index }: { item: MessageResponseDto; index: number }) => {
         const isMe = item.senderId === currentUserId;
@@ -410,10 +624,53 @@ export default function ChatScreen() {
                     />
                 )}
                 {item.type === "audio" && item.mediaUrl && (
-                    <View style={styles.audioPlayer}>
-                        <Text style={isMe ? styles.messageText : styles.messageOtherText}>
-                            Audio Message
-                        </Text>
+                    <View style={[
+                        styles.audioPlayer,
+                    ]}>
+                        <View style={styles.audioPlayerContent}>
+                            <TouchableOpacity
+                                style={styles.audioPlayButton}
+                                onPress={() => handleAudioPlay(
+                                    item.mediaUrl!,
+                                    item.id,
+                                    item.duration ? Number(item.duration) : undefined
+                                )}
+                            >
+                                <Ionicons
+                                    name={playingAudioId === item.id ? "pause" : "play-outline"}
+                                    size={20}
+                                    color={isMe ? "#fff" : theme.text}
+                                />
+                            </TouchableOpacity>
+                            <View style={[
+                                styles.audioProgressContainer,
+                                !isMe && styles.audioProgressContainerViewer
+                            ]}>
+                                <View
+                                    style={[
+                                        styles.audioProgressFill,
+                                        {
+                                            width: (() => {
+                                                const duration = audioDurations[item.id] || (item.duration ? Number(item.duration) : 0);
+                                                const position = audioPositions[item.id] || 0;
+                                                return duration > 0 ? `${(position / duration) * 100}%` : '0%';
+                                            })(),
+                                            backgroundColor: isMe ? "#fff" : theme.tint,
+                                        }
+                                    ]}
+                                />
+                            </View>
+                            <Text style={[
+                                styles.audioDuration,
+                                !isMe && styles.audioDurationViewer
+                            ]}>
+                                {(() => {
+                                    const duration = audioDurations[item.id] || (item.duration ? Number(item.duration) : 0);
+                                    return duration > 0 ? formatAudioDuration(duration) : (item.duration ? formatAudioDuration(Number(item.duration)) : "0:00");
+                                })()}
+                            </Text>
+                        </View>
+
                     </View>
                 )}
                 {item.type === "file" && (
@@ -435,7 +692,7 @@ export default function ChatScreen() {
                     <PollMessageCard
                         pollId={item.polls[0].id}
                         isMe={isMe}
-                        onVote={() => {}}
+                        onVote={() => { }}
                         onClosePoll={() => {
                             loadMessages();
                         }}
@@ -444,20 +701,38 @@ export default function ChatScreen() {
                         }}
                     />
                 )}
-                <View style={styles.messageFooter}>
-                    <Text style={[styles.timeText, (isPoll ? { color: theme.subText ?? '#666' } : isMe ? { color: '#fff' } : { color: '#666' })]}>
-                        {messageTime}
-                    </Text>
-                    {isMe && (
+                {item.type !== "audio" && (
+                    <View style={styles.messageFooter}>
+                        <Text style={[styles.timeText, (isPoll ? { color: theme.subText ?? '#666' } : isMe ? { color: '#fff' } : { color: '#666' })]}>
+                            {messageTime}
+                        </Text>
+                        {isMe && (
+                            <View style={styles.readStatusContainer}>
+                                {item.isRead ? (
+                                    <Ionicons name="checkmark-done" size={14} color={isPoll ? (theme.subText ?? '#666') : '#fff'} />
+                                ) : (
+                                    <Ionicons name="checkmark" size={14} color={isPoll ? (theme.subText ?? '#666') : '#fff'} style={{ opacity: 0.7 }} />
+                                )}
+                            </View>
+                        )}
+                    </View>
+                )}
+                {item.type === "audio" && isMe && (
+                    <View style={[styles.messageFooter, { marginTop: 4 }]}>
+                        <Text style={[
+                            isMe ? styles.audioTimestamp : styles.audioTimestampViewer
+                        ]}>
+                            {messageTime}
+                        </Text>
                         <View style={styles.readStatusContainer}>
                             {item.isRead ? (
-                                <Ionicons name="checkmark-done" size={14} color={isPoll ? (theme.subText ?? '#666') : '#fff'} />
+                                <Ionicons name="checkmark-done" size={14} color="#fff" />
                             ) : (
-                                <Ionicons name="checkmark" size={14} color={isPoll ? (theme.subText ?? '#666') : '#fff'} style={{ opacity: 0.7 }} />
+                                <Ionicons name="checkmark" size={14} color="#fff" style={{ opacity: 0.7 }} />
                             )}
                         </View>
-                    )}
-                </View>
+                    </View>
+                )}
                 {isMe && isLastReadMessage && item.isRead && (
                     <Text style={[styles.timeText, { fontSize: 9, marginTop: 2, fontStyle: 'italic' }, isPoll ? { color: theme.subText ?? '#666' } : { color: '#fff' }]}>
                         Read
@@ -575,11 +850,16 @@ export default function ChatScreen() {
                     </View>
 
                     <TouchableOpacity
-                        style={styles.micButton}
-                        onPress={() => { }}
-                        disabled={true}
+                        style={[styles.micButton, isRecording && { backgroundColor: theme.tint + '40' }]}
+                        onPress={handleMicPress}
+                        disabled={sending || uploadingFile}
+                        accessibilityLabel={isRecording ? 'Stop and send voice message' : 'Record voice message'}
                     >
-                        <Ionicons name="mic" size={20} color="rgba(18, 18, 18, 1)" />
+                        <Ionicons
+                            name={isRecording ? 'stop' : 'mic'}
+                            size={20}
+                            color={isRecording ? theme.tint : (theme.text || 'rgba(18, 18, 18, 1)')}
+                        />
                     </TouchableOpacity>
 
                     <TouchableOpacity

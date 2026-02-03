@@ -1,15 +1,14 @@
+import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService, PollResponseDto, VotePollDto } from "@/services/messaging.service";
 import { useStore } from "@/store";
+import { Feather } from "@expo/vector-icons";
 import {
-  BottomSheetModal,
-  BottomSheetView,
+    BottomSheetModal,
+    BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "../themed-text";
-import { useThemedStyles } from "@/hooks/use-theme-style";
-import { Feather } from "@expo/vector-icons";
-import { ActivityIndicator } from "react-native";
 
 interface PollViewBottomSheetProps {
   visible: boolean;
