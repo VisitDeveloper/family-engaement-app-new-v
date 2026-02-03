@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.familyapp.engagement",
+      "usesIcloudStorage": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location to help you select event locations on the map.",
@@ -74,7 +75,13 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone to record voice messages."
         }
       ],
-      "expo-build-properties"
+      "expo-build-properties",
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

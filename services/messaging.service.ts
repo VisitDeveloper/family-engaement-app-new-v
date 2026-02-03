@@ -122,9 +122,11 @@ export interface VotePollDto {
 
 export interface UploadFileResponse {
   url: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
+  originalName: string;
+  size: number;
+  mimetype: string;
+  /** URL of video thumbnail (returned after video upload) */
+  thumbnailUrl?: string;
 }
 
 // Classroom types
@@ -431,6 +433,8 @@ class MessagingServiceImpl implements MessagingService {
         page: number;
         total: number;
       }>(endpoint);
+
+      debugger
       return response;
     } catch (error) {
       const apiError = error as ApiError;

@@ -7,12 +7,12 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ConversationResponseDto, MessageResponseDto, messagingService, PollResponseDto } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { Audio } from "expo-av";
+import { Audio, ResizeMode, Video } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChatScreen() {
@@ -26,6 +26,9 @@ export default function ChatScreen() {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadingFileName, setUploadingFileName] = useState<string | null>(null);
     const [showAttachingMenu, setShowAttachingMenu] = useState(false);
+    const [fullScreenImageUri, setFullScreenImageUri] = useState<string | null>(null);
+    const [videoModalUri, setVideoModalUri] = useState<string | null>(null);
+    const videoRef = useRef<Video | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const recordingRef = useRef<Audio.Recording | null>(null);
     const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
@@ -55,6 +58,7 @@ export default function ChatScreen() {
     }, [conversationId, conversations]);
 
     const messages = useMemo(() => {
+        debugger
         if (!conversationId || !messagesStore) return [];
         return messagesStore[conversationId] || [];
     }, [conversationId, messagesStore]);
@@ -134,7 +138,7 @@ export default function ChatScreen() {
         sendButton: { backgroundColor: t.tint, padding: 10, borderRadius: 8, marginLeft: 5 },
         micButton: { backgroundColor: "transparent", padding: 10, borderRadius: 8, marginLeft: 5 },
         loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-        fileContainer: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 5 },
+        fileContainer: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 5, minWidth: 200, backgroundColor: "rgba(255, 255, 255, 0.1)", padding: 10, borderRadius: 8 },
         fileName: { color: t.text, fontSize: 14 },
         uploadProgressContainer: {
             position: "absolute",
@@ -385,10 +389,11 @@ export default function ChatScreen() {
                 conversationId,
                 type: type,
                 mediaUrl: uploadResponse.url,
-                fileName: uploadResponse.fileName,
-                fileSize: uploadResponse.fileSize,
-                mimeType: uploadResponse.mimeType,
+                fileName: uploadResponse.originalName,
+                fileSize: String(uploadResponse.size),
+                mimeType: uploadResponse.mimetype,
                 ...(type === 'audio' && durationSeconds != null && { duration: String(durationSeconds) }),
+                ...(type === 'video' && uploadResponse.thumbnailUrl != null && { thumbnailUrl: uploadResponse.thumbnailUrl }),
             });
 
             addMessage(conversationId, newMessage);
@@ -500,7 +505,24 @@ export default function ChatScreen() {
     }, [isRecording, startRecording, stopRecordingAndSend]);
 
     const handleSelectFiles = () => {
-        pickDocument();
+        setShowAttachingMenu(false);
+        // روی iOS باید مودال منو کاملاً بسته شود؛ تأخیر بیشتر برای iOS
+        const delay = Platform.OS === "ios" ? 600 : 400;
+        setTimeout(() => {
+            pickDocument();
+        }, delay);
+    };
+
+    const handleFilePress = (url: string) => {
+        if (url) Linking.openURL(url);
+    };
+
+    const handleVideoPress = (url: string) => {
+        setVideoModalUri(url);
+    };
+
+    const handleImagePress = (uri: string) => {
+        setFullScreenImageUri(uri);
     };
 
     const formatTime = (dateString: string) => {
@@ -608,20 +630,33 @@ export default function ChatScreen() {
                     <Text style={isMe ? styles.messageText : styles.messageOtherText}>{item.content}</Text>
                 )}
                 {item.type === "image" && item.mediaUrl && (
-                    <Image
-                        source={{ uri: item.mediaUrl }}
-                        style={styles.imageThumbnail}
-                        accessibilityRole="image"
-                        accessibilityLabel="Image attachment"
-                    />
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        onPress={() => handleImagePress(item.mediaUrl!)}
+                    >
+                        <Image
+                            source={{ uri: item.mediaUrl }}
+                            style={styles.imageThumbnail}
+                            accessibilityRole="image"
+                            accessibilityLabel="Image attachment"
+                        />
+                    </TouchableOpacity>
                 )}
-                {item.type === "video" && item.mediaUrl && (
-                    <Image
-                        source={{ uri: item.mediaUrl }}
-                        style={styles.videoThumbnail}
-                        accessibilityRole="image"
-                        accessibilityLabel="Video thumbnail"
-                    />
+                {item.type === "video" && (item.thumbnailUrl ?? item.mediaUrl) && item.mediaUrl && (
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        onPress={() => handleVideoPress(item.mediaUrl!)}
+                    >
+                        <Image
+                            source={{ uri: (item.thumbnailUrl ?? item.mediaUrl)! }}
+                            style={styles.videoThumbnail}
+                            accessibilityRole="image"
+                            accessibilityLabel="Video thumbnail"
+                        />
+                        <View style={{ position: "absolute", alignSelf: "center", top: "35%", opacity: 0.9 }}>
+                            <Ionicons name="play-circle" size={48} color="#fff" />
+                        </View>
+                    </TouchableOpacity>
                 )}
                 {item.type === "audio" && item.mediaUrl && (
                     <View style={[
@@ -674,7 +709,10 @@ export default function ChatScreen() {
                     </View>
                 )}
                 {item.type === "file" && (
-                    <TouchableOpacity style={styles.fileContainer}>
+                    <TouchableOpacity
+                        style={styles.fileContainer}
+                        onPress={() => item.mediaUrl && handleFilePress(item.mediaUrl)}
+                    >
                         <Ionicons name="document-text" size={24} color={isMe ? "#fff" : theme.text} />
                         <View style={{ flex: 1 }}>
                             <Text style={isMe ? styles.messageText : styles.messageOtherText}>
@@ -686,6 +724,7 @@ export default function ChatScreen() {
                                 </Text>
                             )}
                         </View>
+                        <Ionicons name="download-outline" size={20} color={isMe ? "#fff" : theme.text} />
                     </TouchableOpacity>
                 )}
                 {item.type === "poll" && item.polls?.length && (
@@ -935,6 +974,65 @@ export default function ChatScreen() {
                         }}
                     />
                 )}
+
+                {/* Full-screen image modal */}
+                <Modal
+                    visible={!!fullScreenImageUri}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setFullScreenImageUri(null)}
+                >
+                    <TouchableOpacity
+                        style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.9)", justifyContent: "center", alignItems: "center" }]}
+                        activeOpacity={1}
+                        onPress={() => setFullScreenImageUri(null)}
+                    >
+                        {fullScreenImageUri && (
+                            <Image
+                                source={{ uri: fullScreenImageUri }}
+                                style={{ width: Dimensions.get("window").width, height: Dimensions.get("window").height, resizeMode: "contain" }}
+                                resizeMode="contain"
+                            />
+                        )}
+                        <TouchableOpacity
+                            style={{ position: "absolute", top: insets.top + 8, right: 16, padding: 8 }}
+                            onPress={() => setFullScreenImageUri(null)}
+                        >
+                            <Ionicons name="close-circle" size={36} color="#fff" />
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                </Modal>
+
+                {/* Video player modal */}
+                <Modal
+                    visible={!!videoModalUri}
+                    animationType="slide"
+                    onRequestClose={() => setVideoModalUri(null)}
+                >
+                    <View style={{ flex: 1, backgroundColor: "#000" }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: insets.top + 8, paddingHorizontal: 16, paddingBottom: 8 }}>
+                            <TouchableOpacity onPress={() => setVideoModalUri(null)}>
+                                <Ionicons name="arrow-back" size={28} color="#fff" />
+                            </TouchableOpacity>
+                            <Text style={{ color: "#fff", fontSize: 16 }}>Video</Text>
+                            <View style={{ width: 28 }} />
+                        </View>
+                        {videoModalUri && (
+                            <Video
+                                ref={videoRef}
+                                source={{ uri: videoModalUri }}
+                                style={{ flex: 1, width: "100%" }}
+                                useNativeControls
+                                resizeMode={ResizeMode.CONTAIN}
+                                onPlaybackStatusUpdate={() => {}}
+                                onError={(e) => {
+                                    console.error("Video error:", e);
+                                    Alert.alert("Error", "Failed to play video");
+                                }}
+                            />
+                        )}
+                    </View>
+                </Modal>
             </KeyboardAvoidingView>
         </View>
     );
