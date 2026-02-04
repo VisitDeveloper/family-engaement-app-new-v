@@ -6,7 +6,7 @@ import {
   messagingService,
 } from "@/services/messaging.service";
 import { useStore } from "@/store";
-import { AntDesign, Feather } from "@expo/vector-icons";
+import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -27,6 +27,15 @@ interface Contact {
   name: string;
 }
 
+type LastMessageType =
+  | "text"
+  | "image"
+  | "video"
+  | "audio"
+  | "file"
+  | "poll"
+  | "announcement";
+
 interface Messages extends Contact {
   message: string;
   time: string;
@@ -35,18 +44,79 @@ interface Messages extends Contact {
   online: boolean;
   group?: boolean;
   admin?: boolean;
+  lastMessageType?: LastMessageType;
+  lastMessageFileName?: string | null;
+  lastMessageThumbnailUrl?: string | null;
+  lastMessageMediaUrl?: string | null;
 }
+
+// File type icon for last message preview
+const FileTypeIcon = ({
+  type,
+  size = 18,
+  color,
+}: {
+  type: LastMessageType;
+  size?: number;
+  color: string;
+}) => {
+  switch (type) {
+    case "image":
+      return <Feather name="image" size={size} color={color} />;
+    case "video":
+      return <Feather name="video" size={size} color={color} />;
+    case "audio":
+      return <Feather name="music" size={size} color={color} />;
+    case "file":
+      return <Ionicons name="document-text" size={size} color={color} />;
+    case "poll":
+      return <Ionicons name="bar-chart" size={size} color={color} />;
+    case "announcement":
+      return <Feather name="bell" size={size} color={color} />;
+    default:
+      return null;
+  }
+};
 
 // ✅ Message Item Component
 const MessageItem = ({
   item,
   onPress,
   styles,
+  theme,
 }: {
   item: Messages;
   onPress: (msg: Messages) => void;
   styles: any;
+  theme: any;
 }) => {
+  const isMediaWithThumbnail =
+    (item.lastMessageType === "image" || item.lastMessageType === "video") &&
+    (item.lastMessageThumbnailUrl || (item.lastMessageType === "image" && item.lastMessageMediaUrl));
+  const thumbnailUri =
+    item.lastMessageThumbnailUrl ||
+    (item.lastMessageType === "image" ? item.lastMessageMediaUrl : null);
+  const displayFileName =
+    item.lastMessageType === "image"
+      ? "Photo"
+      : item.lastMessageType === "video"
+        ? "Video"
+        : item.lastMessageFileName ||
+          (item.lastMessageType === "audio"
+            ? "Voice"
+            : item.lastMessageType === "file"
+              ? "File"
+              : item.lastMessageType === "poll"
+                ? "Poll"
+                : null);
+  const showThumbnail = isMediaWithThumbnail && thumbnailUri;
+  const showFileRow =
+    item.lastMessageType === "image" ||
+    item.lastMessageType === "video" ||
+    item.lastMessageType === "file" ||
+    item.lastMessageType === "audio" ||
+    item.lastMessageType === "poll";
+
   return (
     <TouchableOpacity onPress={() => onPress(item)}>
       <View style={styles.messageItem}>
@@ -66,9 +136,30 @@ const MessageItem = ({
             <Text style={styles.messageName}>{item.name}</Text>
             <Text style={styles.messageTime}>{item.time}</Text>
           </View>
-          <Text numberOfLines={1} style={styles.messageText}>
-            {item.message}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {showThumbnail && (
+              <Image
+                source={{ uri: thumbnailUri! }}
+                style={styles.lastMessageThumbnail}
+              />
+            )}
+            {showFileRow && !showThumbnail && (
+              <View style={styles.lastMessageIconWrap}>
+                <FileTypeIcon
+                  type={item.lastMessageType!}
+                  size={18}
+                  color={theme.subText}
+                />
+              </View>
+            )}
+            <Text numberOfLines={1} style={styles.messageText}>
+              {showFileRow
+                ? item.lastMessageType === "poll"
+                  ? (item.message || "Poll")
+                  : displayFileName
+                : item.message}
+            </Text>
+          </View>
         </View>
 
         {item.unread > 0 && (
@@ -136,9 +227,8 @@ export default function MessagesScreen() {
         );
         if (otherParticipant) {
           // Construct full name from firstName and lastName
-          const fullName = `${otherParticipant.user.firstName || ""} ${
-            otherParticipant.user.lastName || ""
-          }`.trim();
+          const fullName = `${otherParticipant.user.firstName || ""} ${otherParticipant.user.lastName || ""
+            }`.trim();
           name = fullName || otherParticipant.user.email || "Unknown";
           avatar = otherParticipant.user.profilePicture || null;
         }
@@ -148,14 +238,26 @@ export default function MessagesScreen() {
           typeof conv.name === "string"
             ? conv.name
             : typeof conv.name === "object" && conv.name !== null
-            ? (Object.values(conv.name)[0] as string) || "Group"
-            : "Group";
+              ? (Object.values(conv.name)[0] as string) || "Group"
+              : "Group";
         avatar = conv.imageUrl || null;
       }
 
-      const lastMessage = conv.lastMessage?.content || "";
-      const time = conv.lastMessage
-        ? formatTime(conv.lastMessage.createdAt)
+      const last = conv.lastMessage;
+      const lastMessage =
+        last?.type === "text" || last?.type === "poll" || last?.type === "announcement"
+          ? (last.content || "")
+          : last?.type === "image"
+            ? "Photo"
+            : last?.type === "video"
+              ? "Video"
+              : last?.type === "audio"
+                ? "Voice"
+                : last?.type === "file"
+                  ? last.originalFilename || last.fileName || "File"
+                  : "";
+      const time = last
+        ? formatTime(last.createdAt)
         : formatTime(conv.updatedAt);
 
       return {
@@ -165,8 +267,12 @@ export default function MessagesScreen() {
         time,
         unread: conv.unreadCount || 0,
         avatar,
-        online: false, // You might want to add online status from participants
+        online: false,
         group: conv.type === "group",
+        lastMessageType: last?.type,
+        lastMessageFileName: last?.originalFilename ?? last?.fileName ?? null,
+        lastMessageThumbnailUrl: last?.thumbnailUrl ?? null,
+        lastMessageMediaUrl: last?.mediaUrl ?? null,
       };
     },
     [currentUserId]
@@ -318,7 +424,18 @@ export default function MessagesScreen() {
         },
         messageName: { fontWeight: "bold", color: theme.text },
         messageTime: { color: theme.subText, fontSize: 12 },
-        messageText: { color: theme.subText },
+        messageText: { color: theme.subText, flex: 1 },
+        lastMessageThumbnail: {
+          width: 16,
+          height: 16,
+          borderRadius: 4,
+          backgroundColor: theme.border,
+        },
+        lastMessageIconWrap: {
+          width: 24,
+          alignItems: "center",
+          justifyContent: "center",
+        },
         unreadBadge: {
           backgroundColor: theme.tint,
           borderRadius: 12,
@@ -380,7 +497,12 @@ export default function MessagesScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
           renderItem={({ item }) => (
-            <MessageItem item={item} onPress={openChat} styles={styles} />
+            <MessageItem
+              item={item}
+              onPress={openChat}
+              styles={styles}
+              theme={theme}
+            />
           )}
           ListEmptyComponent={
             <View style={{ padding: 20, alignItems: "center" }}>

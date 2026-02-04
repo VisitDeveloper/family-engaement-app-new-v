@@ -55,6 +55,7 @@ export interface MessageResponseDto {
   type: "text" | "image" | "video" | "audio" | "file" | "poll" | "announcement";
   mediaUrl?: string | null;
   fileName?: string | null;
+  originalFilename?: string | null;
   fileSize?: number | string | null;
   mimeType?: string | null;
   duration?: string | null;
@@ -80,6 +81,10 @@ export interface CreateMessageDto {
   thumbnailUrl?: string;
   pollId?: string;
   replyToId?: string;
+}
+
+export interface UpdateMessageDto {
+  content: string;
 }
 
 export interface GetMessagesParams {
@@ -117,7 +122,7 @@ export interface CreatePollDto {
 }
 
 export interface VotePollDto {
-  optionIds: string[];
+  pollOptionId: string;
 }
 
 export interface UploadFileResponse {
@@ -199,6 +204,10 @@ export interface MessagingService {
   markMessageAsRead(messageId: string): Promise<void>;
   markConversationAsRead(conversationId: string): Promise<void>;
   deleteMessage(messageId: string): Promise<void>;
+  updateMessage(
+    messageId: string,
+    data: UpdateMessageDto
+  ): Promise<MessageResponseDto>;
 
   // File Uploads
   uploadImage(file: FormData): Promise<UploadFileResponse>;
@@ -485,6 +494,27 @@ class MessagingServiceImpl implements MessagingService {
       throw {
         message:
           apiError.message || "Failed to delete message. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async updateMessage(
+    messageId: string,
+    data: UpdateMessageDto
+  ): Promise<MessageResponseDto> {
+    try {
+      const response = await apiClient.patch<MessageResponseDto>(
+        `/messaging/messages/${messageId}`,
+        data
+      );
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message || "Failed to update message. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

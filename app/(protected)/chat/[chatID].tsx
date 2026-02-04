@@ -1,6 +1,7 @@
 import HeaderThreeSections from "@/components/reptitive-component/header-three-sections";
 import AttachingMenu from "@/components/ui/attaching-menu";
 import CreatePollBottomSheet from "@/components/ui/create-poll-bottom-sheet";
+import MessageActionsMenu from "@/components/ui/message-actions-menu";
 import PollMessageCard from "@/components/ui/poll-message-card";
 import PollViewBottomSheet from "@/components/ui/poll-view-bottom-sheet";
 import { useThemedStyles } from "@/hooks/use-theme-style";
@@ -28,6 +29,12 @@ export default function ChatScreen() {
     const [showAttachingMenu, setShowAttachingMenu] = useState(false);
     const [fullScreenImageUri, setFullScreenImageUri] = useState<string | null>(null);
     const [videoModalUri, setVideoModalUri] = useState<string | null>(null);
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [editDraft, setEditDraft] = useState("");
+    const [showMessageActionsMenu, setShowMessageActionsMenu] = useState(false);
+    const [selectedMessageForAction, setSelectedMessageForAction] = useState<MessageResponseDto | null>(null);
+    const [messageMenuPosition, setMessageMenuPosition] = useState<{ top: number; right?: number; left?: number } | null>(null);
+    const messageViewRefs = useRef<Record<string, View | null>>({});
     const videoRef = useRef<Video | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const recordingRef = useRef<Audio.Recording | null>(null);
@@ -45,6 +52,8 @@ export default function ChatScreen() {
     const messagesStore = useStore((state: any) => state.messages);
     const addMessage = useStore((state: any) => state.addMessage);
     const setMessages = useStore((state: any) => state.setMessages);
+    const removeMessage = useStore((state: any) => state.removeMessage);
+    const updateMessageInStore = useStore((state: any) => state.updateMessage);
     const markConversationAsRead = useStore((state: any) => state.updateConversation);
     const currentUser = useStore((state: any) => state.user);
     const currentUserId = currentUser?.id || null;
@@ -58,7 +67,6 @@ export default function ChatScreen() {
     }, [conversationId, conversations]);
 
     const messages = useMemo(() => {
-        debugger
         if (!conversationId || !messagesStore) return [];
         return messagesStore[conversationId] || [];
     }, [conversationId, messagesStore]);
@@ -168,6 +176,39 @@ export default function ChatScreen() {
             fontSize: 12,
             color: t.subText,
             minWidth: 50,
+        },
+        editBarContainer: {
+            flexDirection: "row",
+            alignItems: "center",
+            paddingVertical: 8,
+            paddingHorizontal: 15,
+            borderTopWidth: 1,
+            borderTopColor: t.border,
+            backgroundColor: t.panel ?? t.bg,
+            gap: 8,
+        },
+        editBarInput: {
+            flex: 1,
+            borderWidth: 1,
+            borderColor: t.border,
+            borderRadius: 10,
+            paddingHorizontal: 10,
+            paddingVertical: 8,
+            minHeight: 40,
+            maxHeight: 80,
+            color: t.text,
+            backgroundColor: t.bg,
+            fontSize: 16,
+        },
+        editBarCancelButton: {
+            padding: 10,
+            borderRadius: 8,
+            backgroundColor: t.border + "40",
+        },
+        editBarSaveButton: {
+            padding: 10,
+            borderRadius: 8,
+            backgroundColor: t.tint,
         },
     }) as const);
 
@@ -525,6 +566,65 @@ export default function ChatScreen() {
         setFullScreenImageUri(uri);
     };
 
+    const handleDeleteMessage = useCallback(async (messageId: string) => {
+        if (!conversationId) return;
+        try {
+            await messagingService.deleteMessage(messageId);
+            removeMessage(conversationId, messageId);
+        } catch (error: any) {
+            Alert.alert("Error", error?.message ?? "Failed to delete message");
+        }
+    }, [conversationId, removeMessage]);
+
+    const handleEditMessage = useCallback((message: MessageResponseDto) => {
+        if (message.type !== "text") return;
+        setEditingMessageId(message.id);
+        setEditDraft(message.content ?? "");
+    }, []);
+
+    const handleSaveEdit = useCallback(async () => {
+        if (!conversationId || !editingMessageId || !editDraft.trim()) return;
+        try {
+            const updated = await messagingService.updateMessage(editingMessageId, {
+                content: editDraft.trim(),
+            });
+            updateMessageInStore(conversationId, editingMessageId, {
+                content: updated.content,
+                updatedAt: updated.updatedAt,
+            });
+            setEditingMessageId(null);
+            setEditDraft("");
+        } catch (error: any) {
+            Alert.alert("Error", error?.message ?? "Failed to update message");
+        }
+    }, [conversationId, editingMessageId, editDraft, updateMessageInStore]);
+
+    const handleCancelEdit = useCallback(() => {
+        setEditingMessageId(null);
+        setEditDraft("");
+    }, []);
+
+    const handleMessageLongPress = useCallback((item: MessageResponseDto) => {
+        const viewRef = messageViewRefs.current[item.id];
+        if (!viewRef) return;
+
+        viewRef.measureInWindow((x, y, width, height) => {
+            // Get screen dimensions
+            const screenHeight = Dimensions.get("window").height;
+            const screenWidth = Dimensions.get("window").width;
+            
+            // Calculate position - show above message
+            const isMe = item.senderId === currentUserId;
+            const top = y - 10; // Position above message
+            const right = isMe ? screenWidth - x - width : undefined;
+            const left = isMe ? undefined : x;
+
+            setSelectedMessageForAction(item);
+            setMessageMenuPosition({ top, right, left });
+            setShowMessageActionsMenu(true);
+        });
+    }, [currentUserId]);
+
     const formatTime = (dateString: string) => {
         const date = new Date(dateString);
         const hours = date.getHours();
@@ -619,8 +719,12 @@ export default function ChatScreen() {
 
         const isPoll = item.type === "poll" && item.polls?.length;
 
-        return (
-            <View style={[
+        const messageContent = (
+            <View 
+                ref={(ref) => {
+                    messageViewRefs.current[item.id] = ref;
+                }}
+                style={[
                 styles.messageContainer,
                 isPoll
                     ? [styles.messageContainerPoll, isMe ? { alignSelf: "flex-end" } : { alignSelf: "flex-start" }]
@@ -779,6 +883,19 @@ export default function ChatScreen() {
                 )}
             </View>
         );
+
+        if (isMe) {
+            return (
+                <TouchableOpacity
+                    activeOpacity={1}
+                    onLongPress={() => handleMessageLongPress(item)}
+                    delayLongPress={400}
+                >
+                    {messageContent}
+                </TouchableOpacity>
+            );
+        }
+        return messageContent;
     };
 
     const getConversationName = () => {
@@ -857,6 +974,34 @@ export default function ChatScreen() {
                     inverted={true}
                     keyboardShouldPersistTaps="handled"
                 />
+
+                {/* Edit message bar */}
+                {editingMessageId && (
+                    <View style={styles.editBarContainer}>
+                        <TextInput
+                            style={styles.editBarInput}
+                            value={editDraft}
+                            onChangeText={setEditDraft}
+                            placeholder="Edit message..."
+                            placeholderTextColor={theme.subText || theme.text + "80"}
+                            multiline
+                            autoFocus
+                        />
+                        <TouchableOpacity
+                            style={styles.editBarCancelButton}
+                            onPress={handleCancelEdit}
+                        >
+                            <Text style={{ color: theme.text, fontSize: 14 }}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.editBarSaveButton}
+                            onPress={handleSaveEdit}
+                            disabled={!editDraft.trim()}
+                        >
+                            <Text style={{ color: "#fff", fontSize: 14 }}>Save</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
 
                 {/* Input */}
                 <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
@@ -949,6 +1094,32 @@ export default function ChatScreen() {
                     onSelectMedia={handleSelectMedia}
                     onSelectFiles={handleSelectFiles}
                 />
+
+                {/* Message Actions Menu */}
+                {selectedMessageForAction && messageMenuPosition && (
+                    <MessageActionsMenu
+                        visible={showMessageActionsMenu}
+                        onClose={() => {
+                            setShowMessageActionsMenu(false);
+                            setSelectedMessageForAction(null);
+                            setMessageMenuPosition(null);
+                        }}
+                        onEdit={
+                            selectedMessageForAction.type === "text"
+                                ? () => handleEditMessage(selectedMessageForAction)
+                                : undefined
+                        }
+                        onDelete={() => {
+                            if (selectedMessageForAction) {
+                                handleDeleteMessage(selectedMessageForAction.id);
+                            }
+                        }}
+                        top={messageMenuPosition.top}
+                        right={messageMenuPosition.right}
+                        left={messageMenuPosition.left}
+                        isMe={selectedMessageForAction.senderId === currentUserId}
+                    />
+                )}
 
                 {/* Poll Creation Bottom Sheet */}
                 {conversationId && (

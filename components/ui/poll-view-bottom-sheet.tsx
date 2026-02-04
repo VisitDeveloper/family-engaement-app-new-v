@@ -183,8 +183,9 @@ export default function PollViewBottomSheet({
 
     try {
       setVoting(true);
+      // API only accepts a single pollOptionId, so we use the first selected option
       const voteData: VotePollDto = {
-        optionIds: selectedOptions,
+        pollOptionId: selectedOptions[0],
       };
 
       await messagingService.votePoll(pollId, voteData);

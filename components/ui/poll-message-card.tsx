@@ -69,7 +69,7 @@ export default function PollMessageCard({
     if (!poll || !selectedOptionId || voting || poll.isClosed) return;
     try {
       setVoting(true);
-      const voteData: VotePollDto = { optionIds: [selectedOptionId] };
+      const voteData: VotePollDto = { pollOptionId: selectedOptionId };
       await messagingService.votePoll(pollId, voteData);
       await fetchPoll();
       onVote?.();
@@ -177,15 +177,20 @@ export default function PollMessageCard({
               return (
                 <View key={option.id} style={styles.resultOptionRow}>
                   <View>
-                    <Text style={{
-                      fontSize: 15,
-                      color: POLL_CARD.text,
-                      fontWeight: "500",
-                      position: "absolute",
-                      zIndex: 1,
-                      top: 11,
-                      left: 8
-                    }} numberOfLines={1}>
+                    <Text 
+                      style={{
+                        fontSize: 15,
+                        color: POLL_CARD.text,
+                        fontWeight: "500",
+                        position: "absolute",
+                        zIndex: 1,
+                        top: 11,
+                        left: 8,
+                        right: 8,
+                      }} 
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
                       {option.text}
                     </Text>
                   </View>
