@@ -50,10 +50,8 @@ export default function PollMessageCard({
       setLoading(true);
       const data = await messagingService.getPoll(pollId);
       setPoll(data);
-      const userVoted = data.options.find((opt) =>
-        opt.voters?.some((v) => v.id === currentUser?.id)
-      );
-      if (userVoted) setSelectedOptionId(userVoted.id);
+      const userVotedOption = data.options.find((opt) => opt.userVoted);
+      if (userVotedOption) setSelectedOptionId(userVotedOption.id);
     } catch (e) {
       console.error("Poll fetch error:", e);
     } finally {
@@ -80,9 +78,7 @@ export default function PollMessageCard({
     }
   };
 
-  const hasVoted = poll?.options.some((opt) =>
-    opt.voters?.some((v) => v.id === currentUser?.id)
-  );
+  const hasVoted = poll?.options.some((opt) => opt.userVoted) ?? false;
   const canVote = !poll?.isClosed && !hasVoted;
 
   // Admin view: app admin (role === "admin") OR the person who created this poll

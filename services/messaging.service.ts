@@ -1,213 +1,63 @@
 import { apiClient, ApiError } from "./api";
+import type {
+  ConversationResponseDto,
+  MessageResponseDto,
+  CreateConversationDto,
+  UpdateConversationDto,
+  AddMembersDto,
+  CreateMessageDto,
+  UpdateMessageDto,
+  GetMessagesParams,
+  GetGroupsParams,
+  PollResponseDto,
+  CreatePollDto,
+  VotePollDto,
+  UploadFileResponse,
+  CreateClassroomDto,
+  UpdateClassroomDto,
+  ClassroomResponseDto,
+} from "@/types";
+import type { PaginatedResponse, PaginatedResult } from "@/types";
+import { toPaginatedResult } from "@/types";
 
-// Types
-export type ConversationType = "direct" | "group";
+export type {
+  ConversationResponseDto,
+  MessageResponseDto,
+  CreateConversationDto,
+  UpdateConversationDto,
+  AddMembersDto,
+  CreateMessageDto,
+  UpdateMessageDto,
+  GetMessagesParams,
+  GetGroupsParams,
+  PollResponseDto,
+  CreatePollDto,
+  VotePollDto,
+  UploadFileResponse,
+  CreateClassroomDto,
+  UpdateClassroomDto,
+  ClassroomResponseDto,
+};
 
-export interface UserDto {
-  id: string;
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  profilePicture?: string | null;
-}
-
-export interface ConversationResponseDto {
-  id: string;
-  type: ConversationType;
-  name?: Record<string, any> | string | null;
-  description?: Record<string, any> | string | null;
-  imageUrl?: string | null;
-  inviteLink?: string | null;
-  inviteCode?: string | null;
-  createdById?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  unreadCount: number;
-  lastMessage?: MessageResponseDto | null;
-  participantCount: number;
-  participants?: { id: string; user: UserDto }[];
-}
-
-export interface CreateConversationDto {
-  type: ConversationType;
-  name?: string;
-  description?: string;
-  imageUrl?: string;
-  memberIds?: string[];
-}
-
-export interface UpdateConversationDto {
-  name?: string;
-  description?: string;
-  imageUrl?: string;
-}
-
-export interface AddMembersDto {
-  memberIds: string[];
-}
-
-export interface MessageResponseDto {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  sender?: UserDto | null;
-  content?: string | null;
-  type: "text" | "image" | "video" | "audio" | "file" | "poll" | "announcement";
-  mediaUrl?: string | null;
-  fileName?: string | null;
-  originalFilename?: string | null;
-  fileSize?: number | string | null;
-  mimeType?: string | null;
-  duration?: string | null;
-  thumbnailUrl?: string | null;
-  replyToId?: string | null;
-  replyTo?: MessageResponseDto | null;
-  isRead: boolean;
-  readAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  polls?: PollResponseDto[] | null
-}
-
-export interface CreateMessageDto {
-  conversationId: string;
-  content?: string;
-  type: "text" | "image" | "video" | "audio" | "file" | "poll" | "announcement";
-  mediaUrl?: string;
-  fileName?: string;
-  fileSize?: number | string;
-  mimeType?: string;
-  duration?: string;
-  thumbnailUrl?: string;
-  pollId?: string;
-  replyToId?: string;
-}
-
-export interface UpdateMessageDto {
-  content: string;
-}
-
-export interface GetMessagesParams {
-  page?: number;
-  limit?: number;
-  before?: string; // Message ID to fetch messages before
-}
-
-export interface PollOptionResponseDto {
-  id: string;
-  text: string;
-  voteCount: number;
-  voters?: UserDto[];
-}
-
-export interface PollResponseDto {
-  id: string;
-  messageId: string;
-  question: string;
-  options: PollOptionResponseDto[];
-  isClosed: boolean;
-  createdById: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreatePollOptionDto {
-  text: string;
-}
-
-export interface CreatePollDto {
-  messageId: string;
-  question: string;
-  options: CreatePollOptionDto[];
-}
-
-export interface VotePollDto {
-  pollOptionId: string;
-}
-
-export interface UploadFileResponse {
-  url: string;
-  originalName: string;
-  size: number;
-  mimetype: string;
-  /** URL of video thumbnail (returned after video upload) */
-  thumbnailUrl?: string;
-}
-
-// Classroom types
-export interface CreateClassroomDto {
-  name: Record<string, any> | string;
-  description?: Record<string, any> | string | null;
-  imageUrl?: string | null;
-  roomNumber?: string | null;
-}
-
-export interface UpdateClassroomDto {
-  name?: Record<string, any> | string;
-  description?: Record<string, any> | string | null;
-  imageUrl?: string | null;
-  roomNumber?: string | null;
-}
-
-export interface ClassroomResponseDto {
-  id: string;
-  name: Record<string, any> | string;
-  description?: Record<string, any> | string | null;
-  imageUrl?: string | null;
-  roomNumber?: string | null;
-  teacherId?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface GetGroupsParams {
-  page?: number;
-  limit?: number;
-}
+export type GetConversationsResponse = PaginatedResult<ConversationResponseDto, "conversations">;
+export type GetGroupsResponse = PaginatedResult<ConversationResponseDto, "groups">;
+export type GetMessagesResponse = PaginatedResult<MessageResponseDto, "messages">;
 
 export interface MessagingService {
-  // Conversations
-  createConversation(
-    data: CreateConversationDto
-  ): Promise<ConversationResponseDto>;
-  getConversations(): Promise<{
-    conversations: ConversationResponseDto[];
-    limit: number;
-    page: number;
-    total: number;
-  }>;
-  getGroups(params?: GetGroupsParams): Promise<{
-    groups: ConversationResponseDto[];
-    limit: number;
-    page: number;
-    total: number;
-  }>;
+  createConversation(data: CreateConversationDto): Promise<ConversationResponseDto>;
+  getConversations(): Promise<GetConversationsResponse>;
+  getGroups(params?: GetGroupsParams): Promise<GetGroupsResponse>;
   getConversationById(id: string): Promise<ConversationResponseDto>;
-  updateConversation(
-    id: string,
-    data: UpdateConversationDto
-  ): Promise<ConversationResponseDto>;
+  updateConversation(id: string, data: UpdateConversationDto): Promise<ConversationResponseDto>;
   addMembers(conversationId: string, data: AddMembersDto): Promise<void>;
   removeMember(conversationId: string, memberId: string): Promise<void>;
 
-  // Messages
   createMessage(data: CreateMessageDto): Promise<MessageResponseDto>;
-  getMessages(
-    conversationId: string,
-    params?: GetMessagesParams
-  ): Promise<{
-    messages: MessageResponseDto[];
-    limit: number;
-    page: number;
-    total: number;
-  }>;
+  getMessages(conversationId: string, params?: GetMessagesParams): Promise<GetMessagesResponse>;
   markMessageAsRead(messageId: string): Promise<void>;
   markConversationAsRead(conversationId: string): Promise<void>;
   deleteMessage(messageId: string): Promise<void>;
-  updateMessage(
-    messageId: string,
-    data: UpdateMessageDto
-  ): Promise<MessageResponseDto>;
+  updateMessage(messageId: string, data: UpdateMessageDto): Promise<MessageResponseDto>;
 
   // File Uploads
   uploadImage(file: FormData): Promise<UploadFileResponse>;
@@ -256,20 +106,10 @@ class MessagingServiceImpl implements MessagingService {
     }
   }
 
-  async getConversations(): Promise<{
-    conversations: ConversationResponseDto[];
-    limit: number;
-    page: number;
-    total: number;
-  }> {
+  async   getConversations(): Promise<GetConversationsResponse> {
     try {
-      const response = await apiClient.get<{
-        conversations: ConversationResponseDto[];
-        limit: number;
-        page: number;
-        total: number;
-      }>("/messaging/conversations");
-      return response;
+      const response = await apiClient.get<PaginatedResponse<ConversationResponseDto>>("/messaging/conversations");
+      return toPaginatedResult(response, "conversations");
     } catch (error) {
       const apiError = error as ApiError;
       throw {
@@ -302,13 +142,8 @@ class MessagingServiceImpl implements MessagingService {
       const endpoint = `/messaging/groups${queryString ? `?${queryString}` : ""
         }`;
 
-      const response = await apiClient.get<{
-        groups: ConversationResponseDto[];
-        limit: number;
-        page: number;
-        total: number;
-      }>(endpoint);
-      return response;
+      const response = await apiClient.get<PaginatedResponse<ConversationResponseDto>>(endpoint);
+      return toPaginatedResult(response, "groups");
     } catch (error) {
       const apiError = error as ApiError;
       throw {
@@ -413,12 +248,7 @@ class MessagingServiceImpl implements MessagingService {
   async getMessages(
     conversationId: string,
     params?: GetMessagesParams
-  ): Promise<{
-    messages: MessageResponseDto[];
-    limit: number;
-    page: number;
-    total: number;
-  }> {
+  ): Promise<GetMessagesResponse> {
     try {
       const queryParams = new URLSearchParams();
 
@@ -436,15 +266,8 @@ class MessagingServiceImpl implements MessagingService {
       const endpoint = `/messaging/conversations/${conversationId}/messages${queryString ? `?${queryString}` : ""
         }`;
 
-      const response = await apiClient.get<{
-        messages: MessageResponseDto[];
-        limit: number;
-        page: number;
-        total: number;
-      }>(endpoint);
-
-      debugger
-      return response;
+      const response = await apiClient.get<PaginatedResponse<MessageResponseDto>>(endpoint);
+      return toPaginatedResult(response, "messages");
     } catch (error) {
       const apiError = error as ApiError;
       throw {

@@ -1,156 +1,46 @@
 import { apiClient, ApiError } from './api';
+import type {
+  EventType,
+  EventResponseDto,
+  CreateEventDto,
+  UpdateEventDto,
+  GetEventsParams,
+  RepeatType,
+  RSVPStatus,
+  InviteeDto,
+  TimeSlotDto,
+  RSVPStatsDto,
+} from '@/types';
+import type { PaginatedResponse, PaginatedResult } from '@/types';
+import { toPaginatedResult } from '@/types';
 
-export type EventType = 
-  | 'Conference' 
-  | 'Meeting' 
-  | 'ClassEvent' 
-  | 'FamilyWorkshop' 
-  | 'SchoolwideEvent' 
-  | 'FieldTrip' 
-  | 'Assessment' 
-  | 'ServicesAndScreenings';
+export type {
+  EventType,
+  EventResponseDto,
+  CreateEventDto,
+  UpdateEventDto,
+  GetEventsParams,
+  RepeatType,
+  RSVPStatus,
+  InviteeDto,
+  TimeSlotDto,
+  RSVPStatsDto,
+};
 
-export type TimeRepetition = 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
-export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-export type RSVPStatus = 'pending' | 'going' | 'not_going' | 'maybe';
-
-export interface AuthorResponseDto {
-  id: string;
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  profilePicture?: string | null;
-}
-
-export interface CreatorDto {
-  id: string;
-  userId: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  email: string;
-  profilePicture?: string | null;
-}
-
-export interface InviteeDto {
-  id: string;
-  userId: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  email: string;
-  profilePicture?: string | null;
-  rsvpStatus: RSVPStatus;
-  selectedTimeSlotId?: string | null;
-}
-
-export interface TimeSlotDto {
-  id: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  maxParticipants?: number | null;
-  currentParticipants: number;
-}
-
-export interface RSVPStatsDto {
-  total: number;
-  going: number;
-  not_going: number;
-  maybe: number;
-  pending: number;
-}
-
-export interface EventResponseDto {
-  id: string;
-  title: string;
-  type: string; // lowercase: "conference", "fieldtrip", etc.
-  description: Record<string, any> | string; // Can be object or string
-  location: Record<string, any> | string; // Can be object or string
-  locationLatitude?: number | null;
-  locationLongitude?: number | null;
-  appleMapsUrl?: string | null;
-  googleMapsUrl?: string | null;
-  startDate: string;
-  endDate: string;
-  allDay: boolean;
-  startTime?: Record<string, any> | string | null;
-  endTime?: Record<string, any> | string | null;
-  multipleTimeSlots?: boolean;
-  slotDuration?: Record<string, any> | number | null;
-  slotRestriction?: boolean;
-  maxParticipantsPerSlot?: number | null;
-  repeat: RepeatType;
-  requestRSVP: boolean;
-  creatorId: string;
-  creator?: CreatorDto | null;
-  invitees?: InviteeDto[];
-  timeSlots?: TimeSlotDto[];
-  rsvpStats?: RSVPStatsDto;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateEventDto {
-  title: string;
-  type: EventType;
-  description?: string;
-  location?: string;
-  locationLatitude?: number;
-  locationLongitude?: number;
-  startDate: string;
-  endDate: string;
-  allDay?: boolean;
-  startTime?: string; // Format: HH:mm (e.g., "15:00")
-  endTime?: string; // Format: HH:mm (e.g., "16:30")
-  multipleTimeSlots?: boolean;
-  slotDuration?: number; // Duration in minutes
-  slotRestriction?: boolean;
-  maxParticipantsPerSlot?: number;
-  repeat?: RepeatType;
-  requestRSVP?: boolean;
-  inviteeIds?: string[]; // Array of user IDs to invite
-}
-
-export interface UpdateEventDto {
-  title?: string;
-  type?: EventType;
-  description?: string;
-  location?: string;
-  locationLatitude?: number;
-  locationLongitude?: number;
-  startDate?: string;
-  endDate?: string;
-  allDay?: boolean;
-  startTime?: string; // Format: HH:mm
-  endTime?: string; // Format: HH:mm
-  multipleTimeSlots?: boolean;
-  slotDuration?: number;
-  slotRestriction?: boolean;
-  maxParticipantsPerSlot?: number;
-  repeat?: RepeatType;
-  requestRSVP?: boolean;
-}
-
-export interface GetEventsParams {
-  page?: number;
-  limit?: number;
-  filter?: 'all' | 'upcoming' | 'past' | 'my-events';
-  type?: EventType;
-  month?: number; // 1-12
-  year?: number;
-}
+export type GetEventsResponse = PaginatedResult<EventResponseDto, 'events'>;
 
 export interface EventService {
-  getAll(params?: GetEventsParams): Promise<{ events: EventResponseDto[], limit: number, page: number, total: number }>;
+  getAll(params?: GetEventsParams): Promise<GetEventsResponse>;
   getById(id: string): Promise<EventResponseDto>;
   create(data: CreateEventDto): Promise<EventResponseDto>;
   update(id: string, data: UpdateEventDto): Promise<EventResponseDto>;
   delete(id: string): Promise<void>;
   rsvp(id: string, status: RSVPStatus, timeSlotId?: string): Promise<void>;
-  getMyEvents(params?: GetEventsParams): Promise<{ events: EventResponseDto[], limit: number, page: number, total: number }>;
+  getMyEvents(params?: GetEventsParams): Promise<GetEventsResponse>;
 }
 
 class EventServiceImpl implements EventService {
-  async getAll(params?: GetEventsParams): Promise<{ events: EventResponseDto[], limit: number, page: number, total: number }> {
+  async getAll(params?: GetEventsParams): Promise<GetEventsResponse> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -164,8 +54,7 @@ class EventServiceImpl implements EventService {
         queryParams.append('filter', params.filter);
       }
       if (params?.type) {
-        // Convert EventType (e.g., "FieldTrip") to lowercase (e.g., "fieldtrip")
-        queryParams.append('type', params.type.toLowerCase());
+        queryParams.append('type', params.type);
       }
       if (params?.month) {
         queryParams.append('month', params.month.toString());
@@ -176,9 +65,8 @@ class EventServiceImpl implements EventService {
 
       const queryString = queryParams.toString();
       const endpoint = `/events${queryString ? `?${queryString}` : ''}`;
-      
-      const response = await apiClient.get<{ events: EventResponseDto[], limit: number, page: number, total: number }>(endpoint);
-      return response;
+      const response = await apiClient.get<PaginatedResponse<EventResponseDto>>(endpoint);
+      return toPaginatedResult(response, 'events');
     } catch (error) {
       const apiError = error as ApiError;
       throw {
@@ -205,11 +93,8 @@ class EventServiceImpl implements EventService {
 
   async create(data: CreateEventDto): Promise<EventResponseDto> {
     try {
-      // Convert EventType to lowercase for API
-      const requestData = {
-        ...data,
-        type: data.type.toLowerCase() as any,
-      };
+      // API expects lowercase event type (conference, fieldtrip, event, holiday)
+      const requestData = { ...data, type: data.type };
       const response = await apiClient.post<EventResponseDto>('/events', requestData);
       return response;
     } catch (error) {
@@ -224,11 +109,7 @@ class EventServiceImpl implements EventService {
 
   async update(id: string, data: UpdateEventDto): Promise<EventResponseDto> {
     try {
-      // Convert EventType to lowercase for API if provided
-      const requestData = {
-        ...data,
-        ...(data.type && { type: data.type.toLowerCase() as any }),
-      };
+      const requestData = { ...data };
       const response = await apiClient.put<EventResponseDto>(`/events/${id}`, requestData);
       return response;
     } catch (error) {
@@ -271,7 +152,7 @@ class EventServiceImpl implements EventService {
     }
   }
 
-  async getMyEvents(params?: GetEventsParams): Promise<{ events: EventResponseDto[], limit: number, page: number, total: number }> {
+  async getMyEvents(params?: GetEventsParams): Promise<GetEventsResponse> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -285,8 +166,7 @@ class EventServiceImpl implements EventService {
         queryParams.append('filter', params.filter);
       }
       if (params?.type) {
-        // Convert EventType (e.g., "FieldTrip") to lowercase (e.g., "fieldtrip")
-        queryParams.append('type', params.type.toLowerCase());
+        queryParams.append('type', params.type);
       }
       if (params?.month) {
         queryParams.append('month', params.month.toString());
@@ -297,9 +177,8 @@ class EventServiceImpl implements EventService {
 
       const queryString = queryParams.toString();
       const endpoint = `/events/my${queryString ? `?${queryString}` : ''}`;
-      
-      const response = await apiClient.get<{ events: EventResponseDto[], limit: number, page: number, total: number }>(endpoint);
-      return response;
+      const response = await apiClient.get<PaginatedResponse<EventResponseDto>>(endpoint);
+      return toPaginatedResult(response, 'events');
     } catch (error) {
       const apiError = error as ApiError;
       throw {

@@ -73,8 +73,7 @@ export default function LoginScreen() {
         const response = await authService.login({ email, password });
 
         // Determine role from API response or from email (fallback)
-        let detectedRole: "admin" | "teacher" | "parent" | null = null;
-
+        let detectedRole: "admin" | "teacher" | "parent" | "student" | null = null;
         if (response.user?.role) {
           detectedRole = response.user.role;
         } else {
@@ -125,9 +124,7 @@ export default function LoginScreen() {
         });
 
         // After successful registration, log the user in
-        let detectedRole: "admin" | "teacher" | "parent" | undefined =
-          undefined;
-
+        let detectedRole: "admin" | "teacher" | "parent" | "student" | null = null;
         if (response.user?.role) {
           detectedRole = response.user.role;
         }
