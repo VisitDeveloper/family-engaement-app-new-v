@@ -850,7 +850,7 @@ export default function ChatScreen() {
                         </Text>
                         {isMe && (
                             <View style={styles.readStatusContainer}>
-                                {item.isRead ? (
+                                {(item.userStatus === 'read' || (item as any).isRead) ? (
                                     <Ionicons name="checkmark-done" size={14} color={isPoll ? (theme.subText ?? '#666') : '#fff'} />
                                 ) : (
                                     <Ionicons name="checkmark" size={14} color={isPoll ? (theme.subText ?? '#666') : '#fff'} style={{ opacity: 0.7 }} />
@@ -867,7 +867,7 @@ export default function ChatScreen() {
                             {messageTime}
                         </Text>
                         <View style={styles.readStatusContainer}>
-                            {item.isRead ? (
+                            {(item.userStatus === 'read' || (item as any).isRead) ? (
                                 <Ionicons name="checkmark-done" size={14} color="#fff" />
                             ) : (
                                 <Ionicons name="checkmark" size={14} color="#fff" style={{ opacity: 0.7 }} />
@@ -875,7 +875,7 @@ export default function ChatScreen() {
                         </View>
                     </View>
                 )}
-                {isMe && isLastReadMessage && item.isRead && (
+                {isMe && isLastReadMessage && (item.userStatus === 'read' || (item as any).isRead) && (
                     <Text style={[styles.timeText, { fontSize: 9, marginTop: 2, fontStyle: 'italic' }, isPoll ? { color: theme.subText ?? '#666' } : { color: '#fff' }]}>
                         Read
                     </Text>
@@ -933,7 +933,8 @@ export default function ChatScreen() {
         // Find the last message sent by current user that has been read
         for (let i = messages.length - 1; i >= 0; i--) {
             const msg = messages[i];
-            if (msg.senderId === currentUserId && msg.isRead) {
+            const isRead = msg.userStatus === 'read' || (msg as any).isRead;
+            if (msg.senderId === currentUserId && isRead) {
                 return i;
             }
         }

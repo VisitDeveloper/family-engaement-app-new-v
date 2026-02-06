@@ -1,5 +1,4 @@
 import { apiClient, ApiError } from "./api";
-import { ClassroomResponseDto } from "./messaging.service";
 
 export interface AuthorResponseDto {
   id: string;
@@ -18,7 +17,8 @@ export interface PostResponseDto {
   images?: string[] | null;
   files?: string[] | null;
   classroomId?: string | null;
-  classroom?: ClassroomResponseDto | null;  
+  /** Classroom summary (id, name) - null for admin posts */
+  classroom?: { id: string; name: string } | null;
   author: AuthorResponseDto;
   likesCount: number;
   commentsCount: number;

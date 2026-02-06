@@ -11,9 +11,14 @@ export interface ResourceResponseDto {
   contentUrl: string | null;
   averageRating: number;
   ratingsCount: number;
-  createdBy: any | null;
-  isSaved: boolean;
-  userRating: number | null;
+  createdBy: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+  isSaved?: boolean;
+  userRating?: number | null;
   createdAt: string;
   updatedAt: string;
 }

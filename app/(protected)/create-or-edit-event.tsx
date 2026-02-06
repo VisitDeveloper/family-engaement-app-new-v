@@ -355,7 +355,7 @@ function CreateNewEvent() {
 
       const eventData = {
         title: eventTitle,
-        type: eventType[0].value as EventTypeEnum,
+        type: (eventType[0].value as string).toLowerCase() as EventTypeEnum,
         description: description || undefined,
         location: location || undefined,
         locationLatitude: locationLatitude

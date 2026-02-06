@@ -140,7 +140,7 @@ export default function PollViewBottomSheet({
       // Find which options the current user has voted for
       const userVotedOptions: string[] = [];
       pollData.options.forEach((option) => {
-        if (option.voters?.some((voter) => voter.id === currentUser?.id)) {
+        if (option.userVoted) {
           userVotedOptions.push(option.id);
         }
       });
@@ -264,9 +264,7 @@ export default function PollViewBottomSheet({
               const isSelected = selectedOptions.includes(option.id);
               const percentage =
                 totalVotes > 0 ? (option.voteCount / totalVotes) * 100 : 0;
-              const hasUserVoted = option.voters?.some(
-                (voter) => voter.id === currentUser?.id
-              );
+              const hasUserVoted = option.userVoted;
 
               return (
                 <TouchableOpacity

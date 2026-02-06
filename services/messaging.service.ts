@@ -14,17 +14,18 @@ export interface UserDto {
 export interface ConversationResponseDto {
   id: string;
   type: ConversationType;
-  name?: Record<string, any> | string | null;
-  description?: Record<string, any> | string | null;
+  name?: string | null;
+  description?: string | null;
   imageUrl?: string | null;
   inviteLink?: string | null;
   inviteCode?: string | null;
   createdById?: string | null;
   createdAt: string;
   updatedAt: string;
-  unreadCount: number;
+  unreadCount?: number;
   lastMessage?: MessageResponseDto | null;
-  participantCount: number;
+  participantCount?: number;
+  /** Present when API includes participants (e.g. getConversationById) */
   participants?: { id: string; user: UserDto }[];
 }
 
@@ -49,24 +50,32 @@ export interface AddMembersDto {
 export interface MessageResponseDto {
   id: string;
   conversationId: string;
-  senderId: string;
-  sender?: UserDto | null;
+  senderId?: string | null;
+  sender?: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    email: string;
+  } | null;
   content?: string | null;
   type: "text" | "image" | "video" | "audio" | "file" | "poll" | "announcement";
   mediaUrl?: string | null;
   fileName?: string | null;
-  originalFilename?: string | null;
-  fileSize?: number | string | null;
+  fileSize?: string | null;
   mimeType?: string | null;
   duration?: string | null;
   thumbnailUrl?: string | null;
-  replyToId?: string | null;
-  replyTo?: MessageResponseDto | null;
-  isRead: boolean;
-  readAt?: string | null;
+  isEdited: boolean;
+  isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
-  polls?: PollResponseDto[] | null
+  polls?: PollResponseDto[] | null;
+  /** Per-participant status (e.g. sent, delivered, read) */
+  statuses?: string[] | null;
+  /** Current user's status: sent | delivered | read */
+  userStatus?: string | null;
+  /** @deprecated Use userStatus === 'read' instead. Kept for backward compatibility. */
+  isRead?: boolean;
 }
 
 export interface CreateMessageDto {
@@ -97,16 +106,16 @@ export interface PollOptionResponseDto {
   id: string;
   text: string;
   voteCount: number;
-  voters?: UserDto[];
+  percentage: number;
+  userVoted: boolean;
 }
 
 export interface PollResponseDto {
   id: string;
-  messageId: string;
   question: string;
   options: PollOptionResponseDto[];
   isClosed: boolean;
-  createdById: string;
+  totalVotes: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -443,7 +452,6 @@ class MessagingServiceImpl implements MessagingService {
         total: number;
       }>(endpoint);
 
-      debugger
       return response;
     } catch (error) {
       const apiError = error as ApiError;

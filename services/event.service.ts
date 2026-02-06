@@ -1,14 +1,11 @@
 import { apiClient, ApiError } from './api';
 
-export type EventType = 
-  | 'Conference' 
-  | 'Meeting' 
-  | 'ClassEvent' 
-  | 'FamilyWorkshop' 
-  | 'SchoolwideEvent' 
-  | 'FieldTrip' 
-  | 'Assessment' 
-  | 'ServicesAndScreenings';
+/** Matches backend EventType enum: conference | fieldtrip | event | holiday */
+export type EventType =
+  | 'conference'
+  | 'fieldtrip'
+  | 'event'
+  | 'holiday';
 
 export type TimeRepetition = 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -19,15 +16,6 @@ export interface AuthorResponseDto {
   email: string;
   firstName?: string | null;
   lastName?: string | null;
-  profilePicture?: string | null;
-}
-
-export interface CreatorDto {
-  id: string;
-  userId: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  email: string;
   profilePicture?: string | null;
 }
 
@@ -47,14 +35,13 @@ export interface TimeSlotDto {
   date: string;
   startTime: string;
   endTime: string;
-  maxParticipants?: number | null;
+  maxParticipants: number | null;
   currentParticipants: number;
 }
 
 export interface RSVPStatsDto {
-  total: number;
   going: number;
-  not_going: number;
+  notGoing: number;
   maybe: number;
   pending: number;
 }
@@ -62,9 +49,9 @@ export interface RSVPStatsDto {
 export interface EventResponseDto {
   id: string;
   title: string;
-  type: string; // lowercase: "conference", "fieldtrip", etc.
-  description: Record<string, any> | string; // Can be object or string
-  location: Record<string, any> | string; // Can be object or string
+  type: EventType;
+  description: string | null;
+  location: string | null;
   locationLatitude?: number | null;
   locationLongitude?: number | null;
   appleMapsUrl?: string | null;
@@ -72,19 +59,30 @@ export interface EventResponseDto {
   startDate: string;
   endDate: string;
   allDay: boolean;
-  startTime?: Record<string, any> | string | null;
-  endTime?: Record<string, any> | string | null;
-  multipleTimeSlots?: boolean;
-  slotDuration?: Record<string, any> | number | null;
-  slotRestriction?: boolean;
-  maxParticipantsPerSlot?: number | null;
+  startTime: string | null;
+  endTime: string | null;
+  multipleTimeSlots: boolean;
+  slotDuration: number | null;
+  slotRestriction: boolean;
+  maxParticipantsPerSlot: number | null;
   repeat: RepeatType;
   requestRSVP: boolean;
   creatorId: string;
-  creator?: CreatorDto | null;
-  invitees?: InviteeDto[];
-  timeSlots?: TimeSlotDto[];
-  rsvpStats?: RSVPStatsDto;
+  creator: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+    profilePicture: string | null;
+  };
+  invitees: InviteeDto[];
+  timeSlots: TimeSlotDto[];
+  rsvpStats: {
+    going: number;
+    notGoing: number;
+    maybe: number;
+    pending: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -164,8 +162,7 @@ class EventServiceImpl implements EventService {
         queryParams.append('filter', params.filter);
       }
       if (params?.type) {
-        // Convert EventType (e.g., "FieldTrip") to lowercase (e.g., "fieldtrip")
-        queryParams.append('type', params.type.toLowerCase());
+        queryParams.append('type', params.type);
       }
       if (params?.month) {
         queryParams.append('month', params.month.toString());
@@ -205,11 +202,8 @@ class EventServiceImpl implements EventService {
 
   async create(data: CreateEventDto): Promise<EventResponseDto> {
     try {
-      // Convert EventType to lowercase for API
-      const requestData = {
-        ...data,
-        type: data.type.toLowerCase() as any,
-      };
+      // API expects lowercase event type (conference, fieldtrip, event, holiday)
+      const requestData = { ...data, type: data.type };
       const response = await apiClient.post<EventResponseDto>('/events', requestData);
       return response;
     } catch (error) {
@@ -224,11 +218,7 @@ class EventServiceImpl implements EventService {
 
   async update(id: string, data: UpdateEventDto): Promise<EventResponseDto> {
     try {
-      // Convert EventType to lowercase for API if provided
-      const requestData = {
-        ...data,
-        ...(data.type && { type: data.type.toLowerCase() as any }),
-      };
+      const requestData = { ...data };
       const response = await apiClient.put<EventResponseDto>(`/events/${id}`, requestData);
       return response;
     } catch (error) {
@@ -285,8 +275,7 @@ class EventServiceImpl implements EventService {
         queryParams.append('filter', params.filter);
       }
       if (params?.type) {
-        // Convert EventType (e.g., "FieldTrip") to lowercase (e.g., "fieldtrip")
-        queryParams.append('type', params.type.toLowerCase());
+        queryParams.append('type', params.type);
       }
       if (params?.month) {
         queryParams.append('month', params.month.toString());
