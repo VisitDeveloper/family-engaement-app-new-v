@@ -375,7 +375,7 @@ export default function PollViewBottomSheet({
                 {totalVotes} total vote{totalVotes !== 1 ? "s" : ""}
               </Text>
               {poll.isClosed && (
-                <Text style={[styles.pollInfoText, { color: theme.error || "#ff4444" }]}>
+                <Text style={[styles.pollInfoText, { color: (theme as { error?: string }).error ?? "#ff4444" }]}>
                   Poll Closed
                 </Text>
               )}

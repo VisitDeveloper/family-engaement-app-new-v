@@ -1,13 +1,13 @@
 import { StateCreator } from "zustand";
+import type { UserRole } from "@/types";
 
-
-type Role = 'admin' | 'teacher' | 'parent' | null;
+export type Role = UserRole | null;
 
 export interface LoginStatusSlice {
     isLoggedIn: boolean;
     setLoggedIn: (value: boolean) => void;
-    role: Role,
-    setRole: (value: Role) => void,
+    role: Role;
+    setRole: (value: Role) => void;
 }
 
 

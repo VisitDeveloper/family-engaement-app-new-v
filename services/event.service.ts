@@ -1,154 +1,46 @@
 import { apiClient, ApiError } from './api';
+import type {
+  EventType,
+  EventResponseDto,
+  CreateEventDto,
+  UpdateEventDto,
+  GetEventsParams,
+  RepeatType,
+  RSVPStatus,
+  InviteeDto,
+  TimeSlotDto,
+  RSVPStatsDto,
+} from '@/types';
+import type { PaginatedResponse, PaginatedResult } from '@/types';
+import { toPaginatedResult } from '@/types';
 
-/** Matches backend EventType enum: conference | fieldtrip | event | holiday */
-export type EventType =
-  | 'conference'
-  | 'fieldtrip'
-  | 'event'
-  | 'holiday';
+export type {
+  EventType,
+  EventResponseDto,
+  CreateEventDto,
+  UpdateEventDto,
+  GetEventsParams,
+  RepeatType,
+  RSVPStatus,
+  InviteeDto,
+  TimeSlotDto,
+  RSVPStatsDto,
+};
 
-export type TimeRepetition = 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
-export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-export type RSVPStatus = 'pending' | 'going' | 'not_going' | 'maybe';
-
-export interface AuthorResponseDto {
-  id: string;
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  profilePicture?: string | null;
-}
-
-export interface InviteeDto {
-  id: string;
-  userId: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  email: string;
-  profilePicture?: string | null;
-  rsvpStatus: RSVPStatus;
-  selectedTimeSlotId?: string | null;
-}
-
-export interface TimeSlotDto {
-  id: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  maxParticipants: number | null;
-  currentParticipants: number;
-}
-
-export interface RSVPStatsDto {
-  going: number;
-  notGoing: number;
-  maybe: number;
-  pending: number;
-}
-
-export interface EventResponseDto {
-  id: string;
-  title: string;
-  type: EventType;
-  description: string | null;
-  location: string | null;
-  locationLatitude?: number | null;
-  locationLongitude?: number | null;
-  appleMapsUrl?: string | null;
-  googleMapsUrl?: string | null;
-  startDate: string;
-  endDate: string;
-  allDay: boolean;
-  startTime: string | null;
-  endTime: string | null;
-  multipleTimeSlots: boolean;
-  slotDuration: number | null;
-  slotRestriction: boolean;
-  maxParticipantsPerSlot: number | null;
-  repeat: RepeatType;
-  requestRSVP: boolean;
-  creatorId: string;
-  creator: {
-    id: string;
-    firstName: string | null;
-    lastName: string | null;
-    email: string;
-    profilePicture: string | null;
-  };
-  invitees: InviteeDto[];
-  timeSlots: TimeSlotDto[];
-  rsvpStats: {
-    going: number;
-    notGoing: number;
-    maybe: number;
-    pending: number;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateEventDto {
-  title: string;
-  type: EventType;
-  description?: string;
-  location?: string;
-  locationLatitude?: number;
-  locationLongitude?: number;
-  startDate: string;
-  endDate: string;
-  allDay?: boolean;
-  startTime?: string; // Format: HH:mm (e.g., "15:00")
-  endTime?: string; // Format: HH:mm (e.g., "16:30")
-  multipleTimeSlots?: boolean;
-  slotDuration?: number; // Duration in minutes
-  slotRestriction?: boolean;
-  maxParticipantsPerSlot?: number;
-  repeat?: RepeatType;
-  requestRSVP?: boolean;
-  inviteeIds?: string[]; // Array of user IDs to invite
-}
-
-export interface UpdateEventDto {
-  title?: string;
-  type?: EventType;
-  description?: string;
-  location?: string;
-  locationLatitude?: number;
-  locationLongitude?: number;
-  startDate?: string;
-  endDate?: string;
-  allDay?: boolean;
-  startTime?: string; // Format: HH:mm
-  endTime?: string; // Format: HH:mm
-  multipleTimeSlots?: boolean;
-  slotDuration?: number;
-  slotRestriction?: boolean;
-  maxParticipantsPerSlot?: number;
-  repeat?: RepeatType;
-  requestRSVP?: boolean;
-}
-
-export interface GetEventsParams {
-  page?: number;
-  limit?: number;
-  filter?: 'all' | 'upcoming' | 'past' | 'my-events';
-  type?: EventType;
-  month?: number; // 1-12
-  year?: number;
-}
+export type GetEventsResponse = PaginatedResult<EventResponseDto, 'events'>;
 
 export interface EventService {
-  getAll(params?: GetEventsParams): Promise<{ events: EventResponseDto[], limit: number, page: number, total: number }>;
+  getAll(params?: GetEventsParams): Promise<GetEventsResponse>;
   getById(id: string): Promise<EventResponseDto>;
   create(data: CreateEventDto): Promise<EventResponseDto>;
   update(id: string, data: UpdateEventDto): Promise<EventResponseDto>;
   delete(id: string): Promise<void>;
   rsvp(id: string, status: RSVPStatus, timeSlotId?: string): Promise<void>;
-  getMyEvents(params?: GetEventsParams): Promise<{ events: EventResponseDto[], limit: number, page: number, total: number }>;
+  getMyEvents(params?: GetEventsParams): Promise<GetEventsResponse>;
 }
 
 class EventServiceImpl implements EventService {
-  async getAll(params?: GetEventsParams): Promise<{ events: EventResponseDto[], limit: number, page: number, total: number }> {
+  async getAll(params?: GetEventsParams): Promise<GetEventsResponse> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -173,9 +65,8 @@ class EventServiceImpl implements EventService {
 
       const queryString = queryParams.toString();
       const endpoint = `/events${queryString ? `?${queryString}` : ''}`;
-      
-      const response = await apiClient.get<{ events: EventResponseDto[], limit: number, page: number, total: number }>(endpoint);
-      return response;
+      const response = await apiClient.get<PaginatedResponse<EventResponseDto>>(endpoint);
+      return toPaginatedResult(response, 'events');
     } catch (error) {
       const apiError = error as ApiError;
       throw {
@@ -261,7 +152,7 @@ class EventServiceImpl implements EventService {
     }
   }
 
-  async getMyEvents(params?: GetEventsParams): Promise<{ events: EventResponseDto[], limit: number, page: number, total: number }> {
+  async getMyEvents(params?: GetEventsParams): Promise<GetEventsResponse> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -286,9 +177,8 @@ class EventServiceImpl implements EventService {
 
       const queryString = queryParams.toString();
       const endpoint = `/events/my${queryString ? `?${queryString}` : ''}`;
-      
-      const response = await apiClient.get<{ events: EventResponseDto[], limit: number, page: number, total: number }>(endpoint);
-      return response;
+      const response = await apiClient.get<PaginatedResponse<EventResponseDto>>(endpoint);
+      return toPaginatedResult(response, 'events');
     } catch (error) {
       const apiError = error as ApiError;
       throw {

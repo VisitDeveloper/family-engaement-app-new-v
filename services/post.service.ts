@@ -1,87 +1,28 @@
 import { apiClient, ApiError } from "./api";
+import type {
+  PostResponseDto,
+  CommentResponseDto,
+  CreatePostDto,
+  UpdatePostDto,
+  CreateCommentDto,
+  GetPostsParams,
+} from "@/types";
+import type { PaginatedResponse, PaginatedResult } from "@/types";
+import { toPaginatedResult } from "@/types";
 
-export interface AuthorResponseDto {
-  id: string;
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  profilePicture?: string | null;
-}
+export type {
+  PostResponseDto,
+  CommentResponseDto,
+  CreatePostDto,
+  UpdatePostDto,
+  CreateCommentDto,
+  GetPostsParams,
+};
 
-export interface PostResponseDto {
-  id: string;
-  description: string;
-  tags?: string[] | null;
-  recommended: boolean;
-  visibility: "everyone" | "followers" | "private";
-  images?: string[] | null;
-  files?: string[] | null;
-  classroomId?: string | null;
-  /** Classroom summary (id, name) - null for admin posts */
-  classroom?: { id: string; name: string } | null;
-  author: AuthorResponseDto;
-  likesCount: number;
-  commentsCount: number;
-  createdAt: string;
-  updatedAt: string;
-  isSaved?: boolean;
-  isLiked?: boolean;
-  comments?: CommentResponseDto[];
-  hasMoreComments?: boolean;
-}
-
-export interface CommentResponseDto {
-  id: string;
-  content: string;
-  author: AuthorResponseDto;
-  parentCommentId?: string | null;
-  likesCount: number;
-  repliesCount: number;
-  createdAt: string;
-  updatedAt: string;
-  isLiked?: boolean;
-  replies?: CommentResponseDto[];
-}
-
-export interface CreatePostDto {
-  description: string;
-  tags?: string[];
-  recommended?: boolean;
-  visibility?: "everyone" | "followers" | "private";
-  images?: string[];
-  files?: string[];
-  classroomId?: string | null;
-}
-
-export interface UpdatePostDto {
-  description?: string;
-  tags?: string[];
-  recommended?: boolean;
-  visibility?: "everyone" | "followers" | "private";
-  images?: string[];
-  files?: string[];
-  classroomId?: string | null;
-}
-
-export interface CreateCommentDto {
-  content: string;
-}
-
-export interface GetPostsParams {
-  page?: number;
-  limit?: number;
-  filter?: "all" | "media" | "reports" | "recommended" | "saved";
-}
+export type GetPostsResponse = PaginatedResult<PostResponseDto, "posts">;
 
 export interface PostService {
-  getAll(
-    params?: GetPostsParams
-  ): Promise<{
-    posts: PostResponseDto[];
-    limit: number;
-    page: number;
-    total: number;
-  }>;
+  getAll(params?: GetPostsParams): Promise<GetPostsResponse>;
   getById(id: string): Promise<PostResponseDto>;
   create(data: CreatePostDto): Promise<PostResponseDto>;
   update(id: string, data: UpdatePostDto): Promise<PostResponseDto>;
@@ -89,23 +30,10 @@ export interface PostService {
   likePost(id: string): Promise<void>;
   savePost(id: string): Promise<void>;
   getPostComments(id: string): Promise<CommentResponseDto[]>;
-  createComment(
-    id: string,
-    data: CreateCommentDto
-  ): Promise<CommentResponseDto>;
-  replyToComment(
-    commentId: string,
-    data: CreateCommentDto
-  ): Promise<CommentResponseDto>;
+  createComment(id: string, data: CreateCommentDto): Promise<CommentResponseDto>;
+  replyToComment(commentId: string, data: CreateCommentDto): Promise<CommentResponseDto>;
   likeComment(commentId: string): Promise<void>;
-  getSavedPosts(
-    params?: GetPostsParams
-  ): Promise<{
-    posts: PostResponseDto[];
-    limit: number;
-    page: number;
-    total: number;
-  }>;
+  getSavedPosts(params?: GetPostsParams): Promise<GetPostsResponse>;
 }
 
 class PostServiceImpl implements PostService {
@@ -132,14 +60,8 @@ class PostServiceImpl implements PostService {
 
       const queryString = queryParams.toString();
       const endpoint = `/posts${queryString ? `?${queryString}` : ""}`;
-
-      const response = await apiClient.get<{
-        posts: PostResponseDto[];
-        limit: number;
-        page: number;
-        total: number;
-      }>(endpoint);
-      return response;
+      const response = await apiClient.get<PaginatedResponse<PostResponseDto>>(endpoint);
+      return toPaginatedResult(response, "posts");
     } catch (error) {
       const apiError = error as ApiError;
       throw {
@@ -329,15 +251,8 @@ class PostServiceImpl implements PostService {
       const endpoint = `/posts/saved/all${
         queryString ? `?${queryString}` : ""
       }`;
-
-      const response = await apiClient.get<PostResponseDto[]>(endpoint);
-
-      return {
-        posts: Array.isArray(response) ? response : [],
-        limit: params?.limit || 10,
-        page: params?.page || 1,
-        total: Array.isArray(response) ? response.length : 0,
-      };
+      const response = await apiClient.get<PaginatedResponse<PostResponseDto>>(endpoint);
+      return toPaginatedResult(response, "posts");
     } catch (error) {
       const apiError = error as ApiError;
       throw {

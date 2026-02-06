@@ -1,4 +1,15 @@
 import { apiClient, ApiError } from "./api";
+import type {
+  UserResponseDto,
+  AuthResponse,
+  RefreshTokenResponse,
+  ProfileResponseDto,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  UpdateProfilePictureResponse,
+} from "@/types";
+
+export type { UserResponseDto, AuthResponse, RefreshTokenResponse, ProfileResponseDto, UpdateProfilePictureResponse };
 
 export interface LoginRequest {
   email: string;
@@ -11,92 +22,13 @@ export interface RegisterRequest {
   confirmPassword?: string;
 }
 
-// UserResponseDto from API
-export interface UserResponseDto {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  role: "admin" | "teacher" | "parent";
-  phoneNumber?: string;
-  profilePicture?: string;
-  childName?: string;
-  subjects?: string[];
+/** Profile as used in app (alias + index signature for extra API fields) */
+export interface ProfileResponse extends ProfileResponseDto {
+  [key: string]: unknown;
 }
 
-// LoginResponseDto from API
-export interface AuthResponse {
-  access_token: string;
-  refresh_token: string;
-  user: UserResponseDto;
-  message: string;
-  data?: {
-    user?: any;
-    access_token?: string;
-    refresh_token?: string;
-  };
-}
-
-// RefreshTokenResponse from API
-export interface RefreshTokenResponse {
-  access_token: string;
-  refresh_token: string;
-  message: string;
-}
-
-export interface ChangePasswordRequest {
-  oldPassword: string;
-  newPassword: string;
-  // confirmPassword?: string;
-}
-
-export interface ChangePasswordResponse {
-  message?: string;
-  success?: boolean;
-  access_token?: string; // API may return a new token
-  data?: {
-    access_token?: string;
-  };
-}
-
-// ProfileResponseDto from API
-export interface ProfileResponse {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  role: "admin" | "teacher" | "parent";
-  phoneNumber?: string;
-  profilePicture?: string;
-  subjects?: string[]; // Array of subjects/interests
-  childName?: string; // Child's name (for parent role)
-  createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
-  [key: string]: any; // For additional fields that may come from the API
-}
-
-// UserProfile interface that maps API fields
-export interface UserProfile {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  phoneNumber?: string;
-  phone?: string; // backward compatibility
-  profilePicture?: string;
-  role: "admin" | "teacher" | "parent";
-  subjects?: string[]; // Array of subjects/interests
-  childName?: string; // Child's name (for parent role)
-  createdAt?: string;
-  updatedAt?: string;
-  [key: string]: any;
-}
-
-export interface UpdateProfilePictureResponse {
-  message?: string;
-  profilePicture?: string;
-  user?: ProfileResponse;
-}
+/** UserProfile alias for profile display */
+export type UserProfile = ProfileResponseDto & { phone?: string; [key: string]: unknown };
 
 export interface AuthService {
   login(credentials: LoginRequest): Promise<AuthResponse>;
@@ -268,8 +200,8 @@ class AuthServiceImpl implements AuthService {
 
   async getProfile(): Promise<ProfileResponse> {
     try {
-      const response = await apiClient.get<ProfileResponse>("/auth/profile");
-      return response;
+      const response = await apiClient.get<ProfileResponseDto>("/auth/profile");
+      return response as ProfileResponse;
     } catch (error) {
       const apiError = error as ApiError;
       throw {

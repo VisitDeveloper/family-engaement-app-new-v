@@ -61,7 +61,7 @@ const BookDetailScreen = () => {
             createdAt: updatedResource.createdAt,
             updatedAt: updatedResource.updatedAt,
           });
-          setIsSaved(updatedResource.isSaved);
+          setIsSaved(updatedResource.isSaved ?? false);
         } catch (error) {
           console.error("Error refreshing resource:", error);
         }

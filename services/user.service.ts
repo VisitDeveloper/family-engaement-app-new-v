@@ -1,40 +1,14 @@
 import { apiClient, ApiError } from './api';
+import type { UserListItemDto, ParentDto } from '@/types';
+import type { PaginatedResponse, PaginatedResult } from '@/types';
+import { toPaginatedResult } from '@/types';
 
-export interface ParentDto {
-  id: string;
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  profilePicture?: string | null;
-  phoneNumber?: string | null;
-  role?: 'parent' | 'admin' | 'teacher' | 'student';
-  childName?: string | null;
-}
+export type { UserListItemDto, ParentDto };
 
 export interface GetParentsParams {
   page?: number;
   limit?: number;
   search?: string;
-}
-
-// Standard NestJS/Swagger paginated response structure
-export interface GetParentsResponse {
-  users: ParentDto[];
-  page: number;
-  limit: number;
-  total: number;
-  totalPages?: number;
-}
-
-export interface UserListItemDto {
-  id: string;
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  profilePicture?: string | null;
-  phoneNumber?: string | null;
-  role?: 'parent' | 'admin' | 'teacher' | 'student';
-  childName?: string | null;
 }
 
 export interface GetUsersParams {
@@ -44,13 +18,8 @@ export interface GetUsersParams {
   role?: 'parent' | 'teacher' | 'student' | ('parent' | 'teacher' | 'student')[];
 }
 
-export interface GetUsersResponse {
-  users: UserListItemDto[];
-  page: number;
-  limit: number;
-  total: number;
-  totalPages?: number;
-}
+export type GetParentsResponse = PaginatedResult<ParentDto, 'users'>;
+export type GetUsersResponse = PaginatedResult<UserListItemDto, 'users'>;
 
 export interface UserService {
   getAll(params?: GetUsersParams): Promise<GetUsersResponse>;
@@ -84,11 +53,8 @@ class UserServiceImpl implements UserService {
 
       const queryString = queryParams.toString();
       const endpoint = `/users${queryString ? `?${queryString}` : ''}`;
-
-      console.log("endpoint", endpoint);
-      
-      const response = await apiClient.get<GetUsersResponse>(endpoint);
-      return response;
+      const response = await apiClient.get<PaginatedResponse<UserListItemDto>>(endpoint);
+      return toPaginatedResult(response, 'users');
     } catch (error) {
       const apiError = error as ApiError;
       throw {
@@ -115,9 +81,8 @@ class UserServiceImpl implements UserService {
 
       const queryString = queryParams.toString();
       const endpoint = `/users/parents${queryString ? `?${queryString}` : ''}`;
-      
-      const response = await apiClient.get<GetParentsResponse>(endpoint);
-      return response;
+      const response = await apiClient.get<PaginatedResponse<ParentDto>>(endpoint);
+      return toPaginatedResult(response, 'users');
     } catch (error) {
       const apiError = error as ApiError;
       throw {

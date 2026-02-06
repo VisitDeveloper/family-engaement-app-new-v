@@ -1,42 +1,14 @@
 import { apiClient, ApiError } from './api';
+import type { ResourceResponseDto, GetResourcesParams, RateResourceDto } from '@/types';
+import type { PaginatedResponse, PaginatedResult } from '@/types';
+import { toPaginatedResult } from '@/types';
 
-export interface ResourceResponseDto {
-  id: string;
-  title: string;
-  description: string;
-  type: 'book' | 'activity' | 'video';
-  category: string;
-  ageRange: string | null;
-  imageUrl: string | null;
-  contentUrl: string | null;
-  averageRating: number;
-  ratingsCount: number;
-  createdBy: {
-    id: string;
-    email: string;
-    firstName: string | null;
-    lastName: string | null;
-  } | null;
-  isSaved?: boolean;
-  userRating?: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
+export type { ResourceResponseDto, GetResourcesParams, RateResourceDto };
 
-export interface GetResourcesParams {
-  page?: number;
-  limit?: number;
-  filter?: 'all' | 'books' | 'activities' | 'videos' | 'saved';
-  category?: string;
-  search?: string;
-}
-
-export interface RateResourceDto {
-  rating: number; // 1-5
-}
+export type GetResourcesResponse = PaginatedResult<ResourceResponseDto, 'resources'>;
 
 export interface ResourceService {
-  getAll(params?: GetResourcesParams): Promise<{ resources: ResourceResponseDto[], limit: number, page: number, total: number }>;
+  getAll(params?: GetResourcesParams): Promise<GetResourcesResponse>;
   getById(id: string): Promise<ResourceResponseDto>;
   create(data: Partial<ResourceResponseDto>): Promise<ResourceResponseDto>;
   update(id: string, data: Partial<ResourceResponseDto>): Promise<ResourceResponseDto>;
@@ -46,7 +18,7 @@ export interface ResourceService {
 }
 
 class ResourceServiceImpl implements ResourceService {
-  async getAll(params?: GetResourcesParams): Promise<{ resources: ResourceResponseDto[], limit: number, page: number, total: number }> {
+  async getAll(params?: GetResourcesParams): Promise<GetResourcesResponse> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -68,9 +40,8 @@ class ResourceServiceImpl implements ResourceService {
 
       const queryString = queryParams.toString();
       const endpoint = `/resources${queryString ? `?${queryString}` : ''}`;
-      
-      const response = await apiClient.get<{ resources: ResourceResponseDto[], limit: number, page: number, total: number }>(endpoint);
-      return response;
+      const response = await apiClient.get<PaginatedResponse<ResourceResponseDto>>(endpoint);
+      return toPaginatedResult(response, 'resources');
     } catch (error) {
       const apiError = error as ApiError;
       throw {

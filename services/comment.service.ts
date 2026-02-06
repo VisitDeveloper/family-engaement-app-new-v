@@ -1,30 +1,9 @@
 import { apiClient, ApiError } from './api';
+import type { CommentResponseDto, CreateCommentDto, AuthorResponseDto } from '@/types';
+import type { PaginatedResponse, PaginatedResult } from '@/types';
+import { toPaginatedResult } from '@/types';
 
-export interface AuthorResponseDto {
-  id: string;
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  profilePicture?: string | null;
-}
-
-export interface CommentResponseDto {
-  id: string;
-  content: string;
-  author: AuthorResponseDto;
-  parentCommentId?: string | null;
-  likesCount: number;
-  repliesCount: number;
-  createdAt: string;
-  updatedAt: string;
-  isLiked?: boolean;
-  replies?: CommentResponseDto[];
-}
-
-export interface CreateCommentDto {
-  content: string;
-  parentCommentId?: string | null;
-}
+export type { CommentResponseDto, CreateCommentDto, AuthorResponseDto };
 
 export interface UpdateCommentDto {
   content: string;
@@ -36,6 +15,8 @@ export interface GetCommentsParams {
   sort?: 'newest' | 'oldest' | 'mostLiked';
 }
 
+export type GetCommentRepliesResponse = PaginatedResult<CommentResponseDto, 'replies'>;
+
 export interface CommentService {
   getPostComments(postId: string, params?: GetCommentsParams): Promise<CommentResponseDto[]>;
   getCommentById(commentId: string): Promise<CommentResponseDto>;
@@ -43,7 +24,7 @@ export interface CommentService {
   updateComment(commentId: string, data: UpdateCommentDto): Promise<CommentResponseDto>;
   deleteComment(commentId: string): Promise<void>;
   replyToComment(commentId: string, data: CreateCommentDto): Promise<CommentResponseDto>;
-  getCommentReplies(commentId: string, params?: GetCommentsParams): Promise<{ replies: CommentResponseDto[], limit: number, page: number, total: number }>;
+  getCommentReplies(commentId: string, params?: GetCommentsParams): Promise<GetCommentRepliesResponse>;
 }
 
 class CommentServiceImpl implements CommentService {
@@ -149,7 +130,7 @@ class CommentServiceImpl implements CommentService {
     }
   }
 
-  async getCommentReplies(commentId: string, params?: GetCommentsParams): Promise<{ replies: CommentResponseDto[], limit: number, page: number, total: number }> {
+  async getCommentReplies(commentId: string, params?: GetCommentsParams): Promise<GetCommentRepliesResponse> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -166,9 +147,8 @@ class CommentServiceImpl implements CommentService {
       
       const queryString = queryParams.toString();
       const endpoint = `/posts/comments/${commentId}/replies${queryString ? `?${queryString}` : ''}`;
-      
-      const response = await apiClient.get<{ replies: CommentResponseDto[], limit: number, page: number, total: number }>(endpoint);
-      return response;
+      const response = await apiClient.get<PaginatedResponse<CommentResponseDto>>(endpoint);
+      return toPaginatedResult(response, 'replies');
     } catch (error) {
       
 
