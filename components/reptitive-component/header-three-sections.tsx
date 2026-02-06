@@ -15,9 +15,10 @@ interface HeaderThreeSectionsProps {
     colorDesc?: string;
     onPress?: () => void;
     buttonRoles?: string[];
+    titlePrefix?: React.ReactNode | React.ReactElement;
 }
 
-export default function HeaderThreeSections(props: HeaderThreeSectionsProps) {
+export default function HeaderThreeSections({ titlePrefix = <></>, ...props }: HeaderThreeSectionsProps) {
     const theme = useStore(state => state.theme);
     const router = useRouter();
 
@@ -48,13 +49,16 @@ export default function HeaderThreeSections(props: HeaderThreeSectionsProps) {
                 <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={20} color={theme.text} />
                 </TouchableOpacity>
-                <View>
-                    <ThemedText type="subtitle" style={{ fontWeight: 500 }}>
-                        {props.title}
-                    </ThemedText>
-                    <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
-                        {props.desc}
-                    </ThemedText>
+                <View style={{ gap: 12, flexDirection: "row", alignItems: "center" }}>
+                    {titlePrefix}
+                    <View>
+                        <ThemedText type="subtitle" style={{ fontWeight: 600, fontSize: 16 }}>
+                            {props.title}
+                        </ThemedText>
+                        <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
+                            {props.desc}
+                        </ThemedText>
+                    </View>
                 </View>
             </View>
             <RoleGuard roles={props.buttonRoles || ["admin", "teacher", "parent"]}>

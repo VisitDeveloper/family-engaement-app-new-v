@@ -1,5 +1,5 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
-import { Ionicons } from "@expo/vector-icons";
+import { AnnouncementIcon, FileIcon, MediaIcon, PollIcon } from "@/components/ui/messages-icons";
 import { BlurView } from "expo-blur";
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -93,14 +93,14 @@ export default function AttachingMenu({
   const menuItems = [
     {
       id: "announcement",
-      icon: <Ionicons name="megaphone-outline" size={22} color={iconColor} />,
+      icon: <AnnouncementIcon color={iconColor} size={22} />,
       title: "Announcement",
       subtitle: undefined,
       onPress: onSelectAnnouncement || onClose,
     },
     {
       id: "poll",
-      icon: <Ionicons name="list" size={22} color={iconColor} />,
+      icon: <PollIcon color={iconColor} size={22} />,
       title: "Poll",
       subtitle: undefined,
       onPress: () => {
@@ -110,7 +110,7 @@ export default function AttachingMenu({
     },
     {
       id: "media",
-      icon: <Ionicons name="images-outline" size={22} color={iconColor} />,
+      icon: <MediaIcon color={iconColor} size={22} />,
       title: "Media",
       subtitle: "Images / Videos",
       onPress: () => {
@@ -120,7 +120,7 @@ export default function AttachingMenu({
     },
     {
       id: "files",
-      icon: <Ionicons name="document-text-outline" size={22} color={iconColor} />,
+      icon: <FileIcon color={iconColor} size={22} />,
       title: "Files",
       subtitle: undefined,
       onPress: () => {

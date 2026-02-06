@@ -1,13 +1,15 @@
 import HeaderThreeSections from "@/components/reptitive-component/header-three-sections";
 import AttachingMenu from "@/components/ui/attaching-menu";
+import { TranslateIcon } from "@/components/ui/common-icons";
 import CreatePollBottomSheet from "@/components/ui/create-poll-bottom-sheet";
 import MessageActionsMenu from "@/components/ui/message-actions-menu";
+import { SendIcon, VoiceIcon } from "@/components/ui/messages-icons";
 import PollMessageCard from "@/components/ui/poll-message-card";
 import PollViewBottomSheet from "@/components/ui/poll-view-bottom-sheet";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ConversationResponseDto, MessageResponseDto, messagingService, PollResponseDto } from "@/services/messaging.service";
 import { useStore } from "@/store";
-import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Audio, ResizeMode, Video } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
@@ -210,6 +212,16 @@ export default function ChatScreen() {
             borderRadius: 8,
             backgroundColor: t.tint,
         },
+        avatar: { width: 36, height: 36, borderRadius: 18 },
+        avatarPlaceholder: {
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: t.tint,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        avatarPlaceholderText: { color: '#fff', fontSize: 14, fontWeight: '600' },
     }) as const);
 
     const loadConversation = useCallback(async () => {
@@ -372,6 +384,7 @@ export default function ChatScreen() {
     };
 
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const uploadAndSendFile = async (
         uri: string,
         type: 'image' | 'video' | 'audio' | 'file',
@@ -611,7 +624,7 @@ export default function ChatScreen() {
             // Get screen dimensions
             const screenHeight = Dimensions.get("window").height;
             const screenWidth = Dimensions.get("window").width;
-            
+
             // Calculate position - show above message
             const isMe = item.senderId === currentUserId;
             const top = y - 10; // Position above message
@@ -719,16 +732,16 @@ export default function ChatScreen() {
         const isPoll = item.type === "poll" && item.polls?.length;
 
         const messageContent = (
-            <View 
+            <View
                 ref={(ref) => {
                     messageViewRefs.current[item.id] = ref;
                 }}
                 style={[
-                styles.messageContainer,
-                isPoll
-                    ? [styles.messageContainerPoll, isMe ? { alignSelf: "flex-end" } : { alignSelf: "flex-start" }]
-                    : (isMe ? styles.myMessage : styles.otherMessage),
-            ]}>
+                    styles.messageContainer,
+                    isPoll
+                        ? [styles.messageContainerPoll, isMe ? { alignSelf: "flex-end" } : { alignSelf: "flex-start" }]
+                        : (isMe ? styles.myMessage : styles.otherMessage),
+                ]}>
                 {item.type === "text" && item.content && (
                     <Text style={isMe ? styles.messageText : styles.messageOtherText}>{item.content}</Text>
                 )}
@@ -911,6 +924,27 @@ export default function ChatScreen() {
         return 'Chat';
     };
 
+    const getConversationAvatar = () => {
+        const name = getConversationName()
+        let avatarUri: string | null = null
+        if (conversation?.type === 'group' && conversation.imageUrl) {
+            avatarUri = conversation.imageUrl
+        } else if (conversation?.type === 'direct' && conversation.participants) {
+            const other = conversation.participants.find((p: { user: { id: string } }) => p.user.id !== currentUserId)
+            if (other?.user?.profilePicture) avatarUri = other.user.profilePicture
+        }
+        const initials = name
+            ? name.trim().split(/\s+/).map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
+            : '?'
+        return avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatar} />
+        ) : (
+            <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarPlaceholderText}>{initials}</Text>
+            </View>
+        )
+    }
+
     // Get online/offline status for direct conversations
     // TODO: Replace with actual online status from API when available
     const getOnlineStatus = useMemo(() => {
@@ -958,8 +992,12 @@ export default function ChatScreen() {
             >
                 <HeaderThreeSections
                     title={getConversationName()}
+                    titlePrefix={
+                        getConversationAvatar()
+                    }
                     desc={getOnlineStatus || undefined}
-                    icon={<MaterialIcons name="translate" size={24} color={theme.text} />}
+                    icon={<TranslateIcon size={28} color={theme.text} />}
+                    onPress={() => { }}
                     colorDesc={getOnlineStatus === 'Online' ? theme.passDesc : theme.subText}
                 />
 
@@ -1039,10 +1077,9 @@ export default function ChatScreen() {
                         disabled={sending || uploadingFile}
                         accessibilityLabel={isRecording ? 'Stop and send voice message' : 'Record voice message'}
                     >
-                        <Ionicons
-                            name={isRecording ? 'stop' : 'mic'}
-                            size={20}
+                        <VoiceIcon
                             color={isRecording ? theme.tint : (theme.text || 'rgba(18, 18, 18, 1)')}
+                            size={20}
                         />
                     </TouchableOpacity>
 
@@ -1058,7 +1095,7 @@ export default function ChatScreen() {
                         {(sending || uploadingFile) ? (
                             <ActivityIndicator size="small" color="#fff" />
                         ) : (
-                            <Feather name="send" size={20} color="#fff" />
+                            <SendIcon color="#fff" size={16} />
                         )}
                     </TouchableOpacity>
 
@@ -1195,7 +1232,7 @@ export default function ChatScreen() {
                                 style={{ flex: 1, width: "100%" }}
                                 useNativeControls
                                 resizeMode={ResizeMode.CONTAIN}
-                                onPlaybackStatusUpdate={() => {}}
+                                onPlaybackStatusUpdate={() => { }}
                                 onError={(e) => {
                                     console.error("Video error:", e);
                                     Alert.alert("Error", "Failed to play video");
