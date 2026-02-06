@@ -464,6 +464,7 @@ export default function MessagesScreen() {
         buttonLink="/new-message"
         buttonTitle="New"
         buttonRoles={["admin", "teacher", "parent"]}
+        buttonVariant="primary"
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
       />
 

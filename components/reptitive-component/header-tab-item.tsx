@@ -16,13 +16,14 @@ interface HeaderTabItemProps {
   buttonSecondLink?: string;
   buttonSecondIcon?: React.ReactNode | React.ReactElement;
   buttonSecondRoles?: string[];
+  buttonVariant?: "default" | "primary";
 
   title: string;
   subTitle: string;
   addstyles?: StyleProp<ViewStyle>;
 }
 
-export default function HeaderTabItem(props: HeaderTabItemProps) {
+export default function HeaderTabItem({ buttonVariant = "default", ...props }: HeaderTabItemProps) {
   const router = useRouter();
   const theme = useStore((state) => state.theme);
 
@@ -44,15 +45,13 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
       eventButton: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: theme.tint,
-        color: theme.bg,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 6,
         borderColor: theme.tint,
         borderWidth: 1,
       },
-      eventText: { color: theme.bg, marginLeft: 5 },
+      eventText: { marginLeft: 5 },
     } as const)
   );
 
@@ -72,7 +71,9 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
             roles={props.buttonRoles || ["admin", "teacher", "parent"]}
           >
             <TouchableOpacity
-              style={styles.eventButton}
+              style={[styles.eventButton, {
+                backgroundColor: buttonVariant === "primary" ? theme.tint : theme.bg,
+              }]}
               onPress={() => router.push(props.buttonLink as any)}
               accessibilityRole="button"
               accessibilityLabel={props.buttonTitle}
@@ -80,7 +81,7 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
             >
               {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
               {props.buttonIcon ? props.buttonIcon : null}
-              <ThemedText type="subText" style={styles.eventText}>
+              <ThemedText type="subText" style={[styles.eventText, { color: buttonVariant === "primary" ? theme.bg : theme.tint }]}>
                 {props.buttonTitle!}
               </ThemedText>
             </TouchableOpacity>
