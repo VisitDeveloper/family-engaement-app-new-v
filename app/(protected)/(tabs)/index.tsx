@@ -1,12 +1,13 @@
 import RoleGuard from "@/components/check-permisions";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
+import { AiAssistantIcon, EmergencyIcon, NewIcon } from "@/components/ui/messages-icons";
 import {
   ConversationResponseDto,
   messagingService,
 } from "@/services/messaging.service";
 import { useStore } from "@/store";
-import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -102,13 +103,13 @@ const MessageItem = ({
       : item.lastMessageType === "video"
         ? "Video"
         : item.lastMessageFileName ||
-          (item.lastMessageType === "audio"
-            ? "Voice"
-            : item.lastMessageType === "file"
-              ? "File"
-              : item.lastMessageType === "poll"
-                ? "Poll"
-                : null);
+        (item.lastMessageType === "audio"
+          ? "Voice"
+          : item.lastMessageType === "file"
+            ? "File"
+            : item.lastMessageType === "poll"
+              ? "Poll"
+              : null);
   const showThumbnail = isMediaWithThumbnail && thumbnailUri;
   const showFileRow =
     item.lastMessageType === "image" ||
@@ -380,23 +381,30 @@ export default function MessagesScreen() {
 
         filterContainer: {
           flexDirection: "row",
-          justifyContent: "space-between",
+          justifyContent: "flex-start",
           alignItems: "center",
-          gap: 15,
+          gap: 12,
           marginVertical: 5,
           paddingHorizontal: 10,
           borderBottomColor: theme.border,
           borderBottomWidth: 1,
         },
         filterBtn: {
-          flex: 1,
           flexDirection: "row",
           justifyContent: "center",
-          gap: 10,
+          gap: 8,
           alignItems: "center",
+          flex: 1,
+          height: 56,
+          minHeight: 56,
           borderWidth: 1,
           borderRadius: 8,
-          padding: 8,
+          paddingTop: 16,
+          paddingRight: 32,
+          paddingBottom: 16,
+          paddingLeft: 32,
+          backgroundColor: "#FFFFFF",
+          borderColor: "#DADADA",
           marginBottom: 10,
         },
 
@@ -451,10 +459,10 @@ export default function MessagesScreen() {
     <View style={styles.container}>
       <HeaderTabItem
         title="Messages"
-        subTitle="Conversations and notices"
-        buttonIcon={<Feather name="edit" size={16} color={theme.tint} />}
+        subTitle="Conversations and important notices"
+        buttonIcon={<NewIcon size={16} color="#ffffff" />}
         buttonLink="/new-message"
-        buttonTtitle="New"
+        buttonTitle="New"
         buttonRoles={["admin", "teacher", "parent"]}
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
       />
@@ -471,14 +479,25 @@ export default function MessagesScreen() {
       <RoleGuard roles={["admin", "teacher"]}>
         {/* Filter Buttons */}
         <View style={styles.filterContainer}>
+
+          <TouchableOpacity
+            onPress={() => router.push("/ai-assisstant")}
+            style={styles.filterBtn}
+          >
+            <AiAssistantIcon size={16} color={theme.tint} />
+            <Text>AI Assistant</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             onPress={() => router.push("/emergency")}
-            style={[styles.filterBtn, { borderColor: theme.emergencyColor }]}
+            style={styles.filterBtn}
           >
-            <AntDesign name="warning" size={15} color={theme.emergencyColor} />
-            <Text style={{ color: theme.emergencyColor }}>Emergency</Text>
+            <EmergencyIcon size={16} color={theme.emergencyColor} />
+            <Text>Emergency</Text>
           </TouchableOpacity>
+
         </View>
+
       </RoleGuard>
 
       {/* Message List */}

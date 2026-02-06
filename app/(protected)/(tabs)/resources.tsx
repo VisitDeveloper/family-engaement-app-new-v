@@ -292,7 +292,7 @@ const ResourceLibrary = () => {
         subTitle="200+ books and activities"
         buttonIcon={<FontAwesome5 name="robot" size={15} color={theme.tint} />}
         buttonLink="/ai-assisstant"
-        buttonTtitle="AI Assistant"
+        buttonTitle="AI Assistant"
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
       />
 

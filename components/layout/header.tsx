@@ -1,20 +1,21 @@
 import { useStore } from "@/store";
-import { Feather, FontAwesome5 } from "@expo/vector-icons";
+import { FontAwesome5 } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { GearIcon } from "../ui/common-icons";
 
 export default function Header({
   userImage,
   logo,
   link,
 }: // theme
-{
-  userImage: any;
-  logo: any;
-  link: any;
-  // theme: Theme;
-}) {
+  {
+    userImage: any;
+    logo: any;
+    link: any;
+    // theme: Theme;
+  }) {
   const insets = useSafeAreaInsets();
   const theme = useStore((state) => state.theme);
 
@@ -50,7 +51,7 @@ export default function Header({
                 source={userImage}
                 style={[
                   styles.userImage,
-                  { borderColor: theme.text, backgroundColor: theme.panel },
+                  { borderColor: "transparent", backgroundColor: theme.panel },
                 ]}
               />
             ) : (
@@ -61,12 +62,14 @@ export default function Header({
                 style={{ backgroundColor: theme.bg }}
               />
             )}
-            <Feather
-              name="settings"
-              size={15}
-              color={theme.text}
-              style={[styles.iconSetting, { backgroundColor: theme.bg }]}
-            />
+            <View style={[styles.iconSetting, { backgroundColor: theme.bg, padding: 3 }]}>
+              <GearIcon
+                size={15}
+                // color={theme.text}
+                color="#717182"
+                style={{}}
+              />
+            </View>
           </TouchableOpacity>
         </Link>
       </View>
@@ -117,8 +120,7 @@ const styles = StyleSheet.create({
   iconSetting: {
     position: "absolute",
     bottom: -6,
-    right: -5,
+    right: -4,
     borderRadius: 50,
-    padding: 4,
   },
 });

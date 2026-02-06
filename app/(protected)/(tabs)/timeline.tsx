@@ -31,186 +31,186 @@ const TimelineScreen = () => {
 
   const styles = useThemedStyles(
     (theme) =>
-      ({
-        container: {
-          flex: 1,
-          backgroundColor: theme.bg,
-          paddingHorizontal: 0,
-          paddingVertical: 10,
-        },
-        // tabs: {
-        //   flexDirection: 'row',
-        //   paddingVertical: 10,
-        //   borderBottomWidth: 1,
-        //   borderColor: theme.border,
-        // },
-        // tab: {
-        //   paddingHorizontal: 12,
-        //   paddingVertical: 6,
-        //   borderRadius: 10,
-        //   backgroundColor: theme.bg,
-        //   height: 30,
-        // },
-        // tabs: {
-        //   flexDirection: 'row',
-        //   borderBottomWidth: 1,
-        //   borderColor: theme.border,
-        //   alignItems: 'center',
-        //   paddingVertical: 10,
-        //   // height: 50,
-        // },
-        // tab: {
-        //   paddingHorizontal: 12,
-        //   // Remove paddingVertical
-        //   borderRadius: 10,
-        //   backgroundColor: theme.bg,
-        //   height: 30, // Fixed height for each tab
-        //   justifyContent: 'center', // Center text vertically in tab
-        //   marginHorizontal: 4,
-        // },
-        tabs: {
-          borderBottomWidth: 1,
-          borderColor: theme.border,
-          paddingVertical: 5,
-        },
-        tab: {
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          borderRadius: 10,
-          backgroundColor: theme.bg,
-          marginHorizontal: 4,
-          justifyContent: "center",
-        },
+    ({
+      container: {
+        flex: 1,
+        backgroundColor: theme.bg,
+        paddingHorizontal: 0,
+        paddingVertical: 10,
+      },
+      // tabs: {
+      //   flexDirection: 'row',
+      //   paddingVertical: 10,
+      //   borderBottomWidth: 1,
+      //   borderColor: theme.border,
+      // },
+      // tab: {
+      //   paddingHorizontal: 12,
+      //   paddingVertical: 6,
+      //   borderRadius: 10,
+      //   backgroundColor: theme.bg,
+      //   height: 30,
+      // },
+      // tabs: {
+      //   flexDirection: 'row',
+      //   borderBottomWidth: 1,
+      //   borderColor: theme.border,
+      //   alignItems: 'center',
+      //   paddingVertical: 10,
+      //   // height: 50,
+      // },
+      // tab: {
+      //   paddingHorizontal: 12,
+      //   // Remove paddingVertical
+      //   borderRadius: 10,
+      //   backgroundColor: theme.bg,
+      //   height: 30, // Fixed height for each tab
+      //   justifyContent: 'center', // Center text vertically in tab
+      //   marginHorizontal: 4,
+      // },
+      tabs: {
+        borderBottomWidth: 1,
+        borderColor: theme.border,
+        paddingVertical: 5,
+      },
+      tab: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 10,
+        backgroundColor: theme.bg,
+        marginHorizontal: 4,
+        justifyContent: "center",
+      },
 
-        tabActive: {
-          backgroundColor: theme.tint,
-        },
-        postCard: {
-          backgroundColor: theme.bg,
-          borderRadius: 10,
-          padding: 15,
-          marginTop: 15,
-          borderWidth: 1,
-          borderColor: theme.border,
-        },
-        postHeader: {
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: 10,
-        },
-        avatar: {
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          backgroundColor: theme.panel,
-          justifyContent: "center",
-          alignItems: "center",
-          marginRight: 10,
-          borderColor: theme.border,
-          borderWidth: 1,
-        },
-        badge: {
-          marginLeft: "auto",
-          backgroundColor: theme.star,
-          borderRadius: 50,
-          paddingHorizontal: 5,
-          paddingVertical: 5,
-        },
-        postImage: {
-          width: "100%",
-          height: 180,
-          borderRadius: 8,
-          marginTop: 10,
-        },
-        tags: { flexDirection: "row", flexWrap: "wrap", marginTop: 10, gap: 8 },
-        tag: {
-          paddingHorizontal: 10,
-          paddingVertical: 4,
-          borderRadius: 12,
-          backgroundColor: theme.panel,
-        },
-        actions: {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 20,
-          marginTop: 10,
-          borderTopWidth: 1,
-          borderBottomWidth: 1,
-          borderColor: theme.border,
-          paddingVertical: 5,
-        },
-        actionButtons: {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          gap: 10,
-        },
-        ationItem: { flexDirection: "row", alignItems: "center" },
-        comments: { marginTop: 10 },
-        commentRow: {
-          flexDirection: "row",
-          alignItems: "center",
-          marginTop: 5,
-        },
-        commentInput: {
-          flex: 1,
-          borderWidth: 1,
-          borderColor: theme.border,
-          borderRadius: 10,
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          marginLeft: 8,
-          color: theme.text,
-          height: 40,
-          backgroundColor: theme.panel,
-        },
-        generalmargin: {
-          marginLeft: 5,
-        },
+      tabActive: {
+        backgroundColor: theme.tint,
+      },
+      postCard: {
+        backgroundColor: theme.bg,
+        borderRadius: 10,
+        padding: 15,
+        marginTop: 15,
+        borderWidth: 1,
+        borderColor: theme.border,
+      },
+      postHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 10,
+      },
+      avatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: theme.panel,
+        justifyContent: "center",
+        alignItems: "center",
+        marginRight: 10,
+        borderColor: theme.border,
+        borderWidth: 1,
+      },
+      badge: {
+        marginLeft: "auto",
+        backgroundColor: theme.star,
+        borderRadius: 50,
+        paddingHorizontal: 5,
+        paddingVertical: 5,
+      },
+      postImage: {
+        width: "100%",
+        height: 180,
+        borderRadius: 8,
+        marginTop: 10,
+      },
+      tags: { flexDirection: "row", flexWrap: "wrap", marginTop: 10, gap: 8 },
+      tag: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        backgroundColor: theme.panel,
+      },
+      actions: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 20,
+        marginTop: 10,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: theme.border,
+        paddingVertical: 5,
+      },
+      actionButtons: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        gap: 10,
+      },
+      ationItem: { flexDirection: "row", alignItems: "center" },
+      comments: { marginTop: 10 },
+      commentRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 5,
+      },
+      commentInput: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: theme.border,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        marginLeft: 8,
+        color: theme.text,
+        height: 40,
+        backgroundColor: theme.panel,
+      },
+      generalmargin: {
+        marginLeft: 5,
+      },
 
-        createElement: {
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          width: "100%",
-          justifyContent: "space-between",
-          backgroundColor: theme.bg,
-          paddingVertical: 10,
-          paddingHorizontal: 10,
-          borderRadius: 10,
-          borderWidth: 1,
-          borderColor: theme.border,
-          elevation: 2,
-          marginTop: 20,
-        },
-        avatarcreate: {
-          width: 40,
-          height: 40,
-          borderRadius: 20, // Make image circular
-          marginRight: 12,
-          borderColor: theme.border,
-          borderWidth: 1,
-        },
-        inputContainer: {
-          flex: 1,
-          backgroundColor: theme.panel,
-          borderRadius: 10,
-          paddingHorizontal: 16,
-          paddingVertical: 8,
-          marginRight: 12,
-          justifyContent: "center",
-          marginHorizontal: 10,
-        },
-        textInput: {
-          fontSize: 15,
-          color: "#1c1e21",
-          padding: 0, // Remove default padding on some platforms
-        },
-        icon: {
-          marginLeft: 4,
-        },
-      } as const)
+      createElement: {
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%",
+        justifyContent: "space-between",
+        backgroundColor: theme.bg,
+        paddingVertical: 10,
+        paddingHorizontal: 10,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: theme.border,
+        elevation: 2,
+        marginTop: 20,
+      },
+      avatarcreate: {
+        width: 40,
+        height: 40,
+        borderRadius: 20, // Make image circular
+        marginRight: 12,
+        borderColor: theme.border,
+        borderWidth: 1,
+      },
+      inputContainer: {
+        flex: 1,
+        backgroundColor: theme.panel,
+        borderRadius: 10,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginRight: 12,
+        justifyContent: "center",
+        marginHorizontal: 10,
+      },
+      textInput: {
+        fontSize: 15,
+        color: "#1c1e21",
+        padding: 0, // Remove default padding on some platforms
+      },
+      icon: {
+        marginLeft: 4,
+      },
+    } as const)
   );
   const tabsData = useMemo(
     () => [
@@ -310,7 +310,7 @@ const TimelineScreen = () => {
           subTitle="Learning journey & memories"
           buttonIcon={<Feather name="calendar" size={16} color={theme.tint} />}
           buttonLink="/event"
-          buttonTtitle="School Calendar"
+          buttonTitle="School Calendar"
           buttonRoles={["admin", "teacher", "parent"]}
         />
       </View>
@@ -446,9 +446,9 @@ const TimelineScreen = () => {
                   post.author.firstName && post.author.lastName
                     ? `${post.author.firstName} ${post.author.lastName}`
                     : post.author.firstName ||
-                      post.author.lastName ||
-                      post.author.email ||
-                      "Unknown";
+                    post.author.lastName ||
+                    post.author.email ||
+                    "Unknown";
 
                 return (
                   <TimelineItem
@@ -476,12 +476,12 @@ const TimelineScreen = () => {
                           prevPosts.map((p) =>
                             p.id === post.id
                               ? {
-                                  ...p,
-                                  isLiked: !p.isLiked,
-                                  likesCount: p.isLiked
-                                    ? p.likesCount - 1
-                                    : p.likesCount + 1,
-                                }
+                                ...p,
+                                isLiked: !p.isLiked,
+                                likesCount: p.isLiked
+                                  ? p.likesCount - 1
+                                  : p.likesCount + 1,
+                              }
                               : p
                           )
                         );
@@ -492,10 +492,10 @@ const TimelineScreen = () => {
                           prevPosts.map((p) =>
                             p.id === post.id
                               ? {
-                                  ...p,
-                                  isLiked: post.isLiked,
-                                  likesCount: post.likesCount,
-                                }
+                                ...p,
+                                isLiked: post.isLiked,
+                                likesCount: post.likesCount,
+                              }
                               : p
                           )
                         );
@@ -509,9 +509,9 @@ const TimelineScreen = () => {
                           prevPosts.map((p) =>
                             p.id === post.id
                               ? {
-                                  ...p,
-                                  isSaved: !p.isSaved,
-                                }
+                                ...p,
+                                isSaved: !p.isSaved,
+                              }
                               : p
                           )
                         );
@@ -522,9 +522,9 @@ const TimelineScreen = () => {
                           prevPosts.map((p) =>
                             p.id === post.id
                               ? {
-                                  ...p,
-                                  isSaved: post.isSaved,
-                                }
+                                ...p,
+                                isSaved: post.isSaved,
+                              }
                               : p
                           )
                         );
@@ -537,9 +537,9 @@ const TimelineScreen = () => {
                         prevPosts.map((p) =>
                           p.id === post.id
                             ? {
-                                ...p,
-                                commentsCount: (p.commentsCount || 0) + 1,
-                              }
+                              ...p,
+                              commentsCount: (p.commentsCount || 0) + 1,
+                            }
                             : p
                         )
                       );

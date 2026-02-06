@@ -8,7 +8,7 @@ import { ThemedText } from "../themed-text";
 
 interface HeaderTabItemProps {
   buttonLink?: string;
-  buttonTtitle?: string;
+  buttonTitle?: string;
   buttonIcon?: React.ReactNode | React.ReactElement;
   buttonRoles?: string[];
 
@@ -28,32 +28,32 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
 
   const styles = useThemedStyles(
     (theme) =>
-      ({
-        header: {
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          // padding: 10,
-        },
-        headerWrap: {
-          flexDirection: "column",
-          alignItems: "flex-start",
-        },
-        headerTitle: { fontWeight: "bold", color: theme.text },
-        headerSubTitle: { color: theme.text },
-        eventButton: {
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: theme.bg,
-          color: theme.tint,
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          borderRadius: 6,
-          borderColor: theme.tint,
-          borderWidth: 1,
-        },
-        eventText: { color: theme.tint, marginLeft: 5 },
-      } as const)
+    ({
+      header: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        // padding: 10,
+      },
+      headerWrap: {
+        flexDirection: "column",
+        alignItems: "flex-start",
+      },
+      headerTitle: { fontWeight: "bold", color: theme.text },
+      headerSubTitle: { color: theme.text },
+      eventButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: theme.tint,
+        color: theme.bg,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 6,
+        borderColor: theme.tint,
+        borderWidth: 1,
+      },
+      eventText: { color: theme.bg, marginLeft: 5 },
+    } as const)
   );
 
   return (
@@ -67,7 +67,7 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
         </ThemedText>
       </View>
       <View style={{ flexDirection: "row", gap: 5 }}>
-        {props?.buttonTtitle ? (
+        {props?.buttonTitle ? (
           <RoleGuard
             roles={props.buttonRoles || ["admin", "teacher", "parent"]}
           >
@@ -75,13 +75,13 @@ export default function HeaderTabItem(props: HeaderTabItemProps) {
               style={styles.eventButton}
               onPress={() => router.push(props.buttonLink as any)}
               accessibilityRole="button"
-              accessibilityLabel={props.buttonTtitle}
-              accessibilityHint={`Double tap to ${props.buttonTtitle?.toLowerCase()}`}
+              accessibilityLabel={props.buttonTitle}
+              accessibilityHint={`Double tap to ${props.buttonTitle?.toLowerCase()}`}
             >
               {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
               {props.buttonIcon ? props.buttonIcon : null}
               <ThemedText type="subText" style={styles.eventText}>
-                {props.buttonTtitle!}
+                {props.buttonTitle!}
               </ThemedText>
             </TouchableOpacity>
           </RoleGuard>

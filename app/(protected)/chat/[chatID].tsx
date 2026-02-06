@@ -547,7 +547,6 @@ export default function ChatScreen() {
 
     const handleSelectFiles = () => {
         setShowAttachingMenu(false);
-        // روی iOS باید مودال منو کاملاً بسته شود؛ تأخیر بیشتر برای iOS
         const delay = Platform.OS === "ios" ? 600 : 400;
         setTimeout(() => {
             pickDocument();

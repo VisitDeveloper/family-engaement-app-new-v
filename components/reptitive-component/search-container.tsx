@@ -1,9 +1,9 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
-import { Feather } from "@expo/vector-icons";
 import { useEffect } from "react";
 import { StyleProp, TextInput, View, ViewStyle } from "react-native";
 import { useDebounce } from "use-debounce";
+import { SearchIcon } from "../ui/common-icons";
 
 interface SearchContainerProps {
   query: string;
@@ -28,8 +28,8 @@ export default function SearchContainer({
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: theme.panel,
-      borderWidth: 1,
-      borderColor: theme.border,
+      // borderWidth: 1,
+      // borderColor: theme.border,
       borderRadius: 8,
       paddingHorizontal: 10,
       marginVertical: 8,
@@ -44,7 +44,7 @@ export default function SearchContainer({
 
   return (
     <View style={[styles.searchContainer, addstyles]}>
-      <Feather name="search" size={20} color={theme.subText} />
+      <SearchIcon size={16} color={theme.subText} />
       <TextInput
         placeholder={placeholder || "Search..."}
         placeholderTextColor={theme.subText}

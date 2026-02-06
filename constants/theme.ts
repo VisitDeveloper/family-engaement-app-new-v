@@ -23,7 +23,9 @@ export const Colors = {
     emergencyBackground: emergencyBackgroundColor,
 
     text: '#11181C',
+    // text: '#717182',
     textSecondary: '#9393a0',
+    // textSecondaryه: '#ECECF0',
     // #9393a0
     // #232323
     background: '#fff',
