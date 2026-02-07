@@ -1,10 +1,10 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import Divider from "@/components/ui/divider";
+import { Person2WithPlusIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
-import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -49,91 +49,91 @@ export default function NewMessageScreen() {
 
   const styles = useThemedStyles(
     (t) =>
-      ({
-        container: {
-          flex: 1,
-          backgroundColor: t.bg,
-        },
-        sectionTitle: {
-          paddingHorizontal: 16,
-          paddingTop: 16,
-          paddingBottom: 8,
-          fontSize: 14,
-          fontWeight: "600",
-          color: t.text,
-        },
-        sectionTitleContacts: {
-          paddingHorizontal: 16,
-          paddingTop: 8,
-          paddingBottom: 8,
-          fontSize: 14,
-          fontWeight: "600",
-          color: t.text,
-        },
-        row: {
-          flexDirection: "row",
-          alignItems: "center",
-          paddingVertical: 8,
-          paddingHorizontal: 12,
-          minHeight: 60, // Minimum height for item
-          maxHeight: 80, // Maximum height to control stretching
-        },
-        actionIcon: {
-          width: 48,
-          height: 48,
-          borderRadius: 24,
-          backgroundColor: t.subText,
-          alignItems: "center",
-          justifyContent: "center",
-        },
-        itemName: {
-          marginLeft: 12,
-          fontSize: 16,
-          fontWeight: "500",
-          color: t.text,
-        },
-        avatar: {
-          width: 48,
-          height: 48,
-          borderRadius: 24,
-        },
-        avatarPlaceholder: {
-          width: 48,
-          height: 48,
-          borderRadius: 24,
-          backgroundColor: t.panel,
-          alignItems: "center",
-          justifyContent: "center",
-        },
-        avatarInitials: {
-          fontSize: 16,
-          fontWeight: "600",
-          color: t.text,
-        },
-        itemContent: {
-          marginLeft: 12,
-          flex: 1,
-        },
-        itemHeader: {
-          flexDirection: "row",
-          alignItems: "center",
-        },
-        roleBadge: {
-          marginLeft: 8,
-          paddingHorizontal: 8,
-          paddingVertical: 2,
-          fontSize: 12,
-          backgroundColor: "#fde68a",
-          color: "#92400e",
-          borderRadius: 6,
-          overflow: "hidden",
-        },
-        lastSeen: {
-          fontSize: 12,
-          color: "#666",
-          marginTop: 2,
-        },
-      } as const)
+    ({
+      container: {
+        flex: 1,
+        backgroundColor: t.bg,
+      },
+      sectionTitle: {
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 8,
+        fontSize: 14,
+        fontWeight: "600",
+        color: t.text,
+      },
+      sectionTitleContacts: {
+        paddingHorizontal: 16,
+        paddingTop: 8,
+        paddingBottom: 8,
+        fontSize: 14,
+        fontWeight: "600",
+        color: t.text,
+      },
+      row: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        minHeight: 60, // Minimum height for item
+        maxHeight: 80, // Maximum height to control stretching
+      },
+      actionIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: t.tint + "25",
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      itemName: {
+        marginLeft: 12,
+        fontSize: 16,
+        fontWeight: "500",
+        color: t.text,
+      },
+      avatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+      },
+      avatarPlaceholder: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: t.panel,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      avatarInitials: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: t.text,
+      },
+      itemContent: {
+        marginLeft: 12,
+        flex: 1,
+      },
+      itemHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+      },
+      roleBadge: {
+        marginLeft: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        fontSize: 12,
+        backgroundColor: "#fde68a",
+        color: "#92400e",
+        borderRadius: 6,
+        overflow: "hidden",
+      },
+      lastSeen: {
+        fontSize: 12,
+        color: "#666",
+        marginTop: 2,
+      },
+    } as const)
   );
   const theme = useStore((state) => state.theme);
 
@@ -149,8 +149,8 @@ export default function NewMessageScreen() {
           typeof conv.name === "string"
             ? conv.name
             : conv.name && typeof conv.name === "object"
-            ? (Object.values(conv.name)[0] as string) || "Group"
-            : "Group";
+              ? (Object.values(conv.name)[0] as string) || "Group"
+              : "Group";
         return {
           id: conv.id,
           name: name,
@@ -182,10 +182,10 @@ export default function NewMessageScreen() {
           page: number;
           limit: number;
           role?:
-            | "parent"
-            | "teacher"
-            | "student"
-            | ("parent" | "teacher" | "student")[];
+          | "parent"
+          | "teacher"
+          | "student"
+          | ("parent" | "teacher" | "student")[];
         } = {
           page,
           limit: 20,
@@ -225,13 +225,12 @@ export default function NewMessageScreen() {
               user.role === "teacher"
                 ? "Teacher"
                 : user.role === "parent"
-                ? "Parent"
-                : "Student",
+                  ? "Parent"
+                  : "Student",
             image: user.profilePicture || null,
             initials:
-              `${user.firstName?.[0] || ""}${
-                user.lastName?.[0] || ""
-              }`.toUpperCase() || user.email[0].toUpperCase(),
+              `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""
+                }`.toUpperCase() || user.email[0].toUpperCase(),
           }));
 
         if (append) {
@@ -243,7 +242,7 @@ export default function NewMessageScreen() {
         setContactsPage(page);
         setHasMoreContacts(
           page <
-            (response.totalPages || Math.ceil(response.total / response.limit))
+          (response.totalPages || Math.ceil(response.total / response.limit))
         );
       } catch (error: any) {
         console.error("Error loading contacts:", error);
@@ -385,14 +384,21 @@ export default function NewMessageScreen() {
       <HeaderInnerPage title="New Message" />
 
       {/* Groups */}
-      <Text style={styles.sectionTitle}>Groups</Text>
+      <Text style={[styles.sectionTitle, { marginBottom: 4 }]}>Groups</Text>
       {currentUser?.role !== "parent" && (
         <TouchableOpacity
           style={styles.row}
           onPress={() => router.push("/create-group")}
         >
-          <View style={styles.actionIcon}>
-            <Ionicons name={"people-outline"} size={24} color={theme.tint} />
+          <View style={{ position: "relative" }}>
+            <View style={[styles.actionIcon, { paddingLeft: 3 }]}>
+              <Person2WithPlusIcon size={24} color={theme.tint} />
+            </View>
+            <View style={{
+              position: "absolute", bottom: -2, right: -2, backgroundColor: theme.bg, width: 14, height: 14, borderRadius: 50, justifyContent: "center", alignItems: "center", padding: 2
+            }}>
+              <View style={{ backgroundColor: "#00C950", width: 10, height: 10, borderRadius: 50 }} />
+            </View>
           </View>
           <Text style={styles.itemName}>Create New Group</Text>
         </TouchableOpacity>
@@ -422,7 +428,7 @@ export default function NewMessageScreen() {
       <Divider marginVertical={8} />
 
       {/* Contacts */}
-      <Text style={styles.sectionTitleContacts}>Contacts</Text>
+      <Text style={[styles.sectionTitleContacts, { marginBottom: 4 }]}>Contacts</Text>
       {loadingContacts ? (
         <View style={{ padding: 20, alignItems: "center" }}>
           <ActivityIndicator size="small" color={theme.tint} />

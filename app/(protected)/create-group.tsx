@@ -4,6 +4,7 @@ import Badge from "@/components/ui/badge";
 import Divider from "@/components/ui/divider";
 import { CheckboxIcon, CheckedboxIcon } from "@/components/ui/icons/common-icons";
 import { CameraIcon, PencilIcon, PersonWithPlusIcon, SmallUsersIcon, UsersIcon } from "@/components/ui/icons/messages-icons";
+import SelectListBottomSheet from "@/components/ui/select-list-bottom-sheet";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
@@ -52,6 +53,9 @@ export default function CreateGroupScreen() {
   const [loadingClassrooms, setLoadingClassrooms] = useState(true);
   const [creating, setCreating] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [listSheetOpen, setListSheetOpen] = useState<"users" | "classrooms" | null>(null);
+
+  const PREVIEW_LIMIT = 5;
 
   const styles = useThemedStyles((theme) => ({
     container: { flex: 1, backgroundColor: theme.bg },
@@ -111,7 +115,8 @@ export default function CreateGroupScreen() {
     },
     footerButton: {
       backgroundColor: theme.tint,
-      padding: 14,
+      paddingVertical: 8,
+      paddingHorizontal: 20,
       borderRadius: 10,
       alignItems: "center",
       marginVertical: 20,
@@ -510,7 +515,7 @@ export default function CreateGroupScreen() {
               <ActivityIndicator size="small" color={theme.tint} />
             </View>
           ) : group.length > 0 ? (
-            group.map((room) => (
+            group.slice(0, PREVIEW_LIMIT).map((room) => (
               <View key={room.id}>
                 <TouchableOpacity
                   style={styles.rows}
@@ -575,13 +580,15 @@ export default function CreateGroupScreen() {
             </View>
           )}
 
-          <TouchableOpacity>
-            <ThemedText
-              style={{ color: theme.tint, textAlign: "center", marginTop: 8 }}
-            >
-              See All Classrooms
-            </ThemedText>
-          </TouchableOpacity>
+          {group.length > PREVIEW_LIMIT && (
+            <TouchableOpacity onPress={() => setListSheetOpen("classrooms")}>
+              <ThemedText
+                style={{ color: theme.tint, textAlign: "center", marginTop: 8 }}
+              >
+                See All Classrooms
+              </ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Add Members */}
@@ -691,7 +698,7 @@ export default function CreateGroupScreen() {
               <ActivityIndicator size="small" color={theme.tint} />
             </View>
           ) : data.length > 0 ? (
-            data.map((person) => (
+            data.slice(0, PREVIEW_LIMIT).map((person) => (
               <View key={person.id}>
                 <TouchableOpacity
                   style={styles.rows}
@@ -769,13 +776,15 @@ export default function CreateGroupScreen() {
             </View>
           )}
 
-          <TouchableOpacity>
-            <ThemedText
-              style={{ color: theme.tint, textAlign: "center", marginTop: 8 }}
-            >
-              See All Contacts
-            </ThemedText>
-          </TouchableOpacity>
+          {data.length > PREVIEW_LIMIT && (
+            <TouchableOpacity onPress={() => setListSheetOpen("users")}>
+              <ThemedText
+                style={{ color: theme.tint, textAlign: "center", marginTop: 8 }}
+              >
+                See All Contacts
+              </ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Footer Button */}
@@ -798,12 +807,34 @@ export default function CreateGroupScreen() {
           {creating ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <ThemedText style={styles.footerButtonText}>
-              Create Group
-            </ThemedText>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <UsersIcon size={18} color="#fff" />
+              <ThemedText style={styles.footerButtonText}>
+                Create Group
+              </ThemedText>
+            </View>
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      <SelectListBottomSheet
+        visible={listSheetOpen === "classrooms"}
+        onClose={() => setListSheetOpen(null)}
+        mode="classrooms"
+        items={group}
+        selectedIds={selectedGroup}
+        onToggle={toggleSelectGroup}
+        title="All Classrooms"
+      />
+      <SelectListBottomSheet
+        visible={listSheetOpen === "users"}
+        onClose={() => setListSheetOpen(null)}
+        mode="users"
+        items={data}
+        selectedIds={selected}
+        onToggle={toggleSelect}
+        title="All Contacts"
+      />
     </View>
   );
 }

@@ -4,7 +4,6 @@ import { useStore } from "@/store";
 import {
   BottomSheetFlatList,
   BottomSheetModal,
-  BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, View } from "react-native";
@@ -98,15 +97,9 @@ export default function CommentsBottomSheet({
 
   // Handle sheet changes
   useEffect(() => {
-    console.log("Bottom sheet visible changed:", visible);
     if (visible) {
-      // Use setTimeout to ensure the sheet is mounted
-      setTimeout(() => {
-        console.log("Presenting bottom sheet");
-        bottomSheetRef.current?.present();
-      }, 100);
+      setTimeout(() => bottomSheetRef.current?.present(), 100);
     } else {
-      console.log("Dismissing bottom sheet");
       bottomSheetRef.current?.dismiss();
     }
   }, [visible]);
@@ -540,129 +533,136 @@ export default function CommentsBottomSheet({
     return null;
   }
 
-  return (
-    <BottomSheetModal
-      ref={bottomSheetRef}
-      index={1}
-      snapPoints={snapPoints}
-      onChange={handleSheetChanges}
-      enablePanDownToClose
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{
-        backgroundColor: theme.bg,
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        flex: 1,
-      }}
-      handleIndicatorStyle={{ backgroundColor: theme.subText }}
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="none"
-      android_keyboardInputMode="adjustResize"
-    >
-      <BottomSheetView style={{ flex: 1, height: "100%" }}>
+  const listHeaderComponent = useMemo(
+    () => (
+      <View style={{ paddingBottom: 16 }}>
         <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
             padding: 16,
+            paddingBottom: 0,
           }}
         >
           <ThemedText type="defaultSemiBold" style={{ fontSize: 18, color: theme.text }}>
             Comments
           </ThemedText>
         </View>
-
-        {loading ? (
-          <View style={{ padding: 20, alignItems: "center", flex: 1 }}>
-            <ThemedText type="subText" style={{ color: theme.text }}>Loading comments...</ThemedText>
+        {loading && (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <ThemedText type="subText" style={{ color: theme.text }}>
+              Loading comments...
+            </ThemedText>
           </View>
-        ) : comments.length === 0 ? (
-          <View style={{ padding: 20, alignItems: "center", flex: 1 }}>
-            <ThemedText type="subText" style={{ color: theme.text }}>No comments yet</ThemedText>
+        )}
+        {!loading && comments.length === 0 && (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <ThemedText type="subText" style={{ color: theme.text }}>
+              No comments yet
+            </ThemedText>
           </View>
-        ) : (
-          <BottomSheetFlatList<CommentResponseDto>
-            data={comments}
-            keyExtractor={(item: CommentResponseDto) => item.id}
-            showsVerticalScrollIndicator={true}
-            keyboardShouldPersistTaps="handled"
-            style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1 }}
-            renderItem={({ item: commentItem }: { item: CommentResponseDto }) => {
-              const replies =
-                commentReplies[commentItem.id] || commentItem.replies || [];
-              const isShowingReplies = showReplies[commentItem.id] || false;
-              const hasReplies =
-                commentItem.repliesCount > 0 ||
-                (commentItem.replies && commentItem.replies.length > 0) ||
-                replies.length > 0;
-              const repliesCount =
-                commentItem.repliesCount || replies.length || 0;
+        )}
+      </View>
+    ),
+    [loading, comments.length, theme.text]
+  );
 
-              return (
-                <View>
-                  <CommentItem
-                    comment={commentItem}
+  return (
+    <BottomSheetModal
+      ref={bottomSheetRef}
+      index={0}
+      snapPoints={snapPoints}
+      onChange={handleSheetChanges}
+      enablePanDownToClose
+      backdropComponent={renderBackdrop}
+      backgroundStyle={{
+        backgroundColor: theme.bg,
+      }}
+      handleIndicatorStyle={{ backgroundColor: theme.subText }}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="none"
+      android_keyboardInputMode="adjustResize"
+    >
+      <View style={{ flex: 1 }}>
+        <BottomSheetFlatList<CommentResponseDto>
+          data={comments}
+          keyExtractor={(item: CommentResponseDto) => item.id}
+          ListHeaderComponent={listHeaderComponent}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 16 }}
+          renderItem={({ item: commentItem }: { item: CommentResponseDto }) => {
+            const replies =
+              commentReplies[commentItem.id] || commentItem.replies || [];
+            const isShowingReplies = showReplies[commentItem.id] || false;
+            const hasReplies =
+              commentItem.repliesCount > 0 ||
+              (commentItem.replies && commentItem.replies.length > 0) ||
+              replies.length > 0;
+            const repliesCount =
+              commentItem.repliesCount || replies.length || 0;
+
+            return (
+              <View>
+                <CommentItem
+                  comment={commentItem}
+                  commentLikes={commentLikes}
+                  onLike={handleCommentLike}
+                  onReply={() => {
+                    setShowReplyInput((prev) => ({
+                      ...prev,
+                      [commentItem.id]: !prev[commentItem.id],
+                    }));
+                    if (!showReplyInput[commentItem.id]) {
+                      setReplyInputs((prev) => ({
+                        ...prev,
+                        [commentItem.id]: "",
+                      }));
+                    }
+                  }}
+                  onToggleReplies={toggleShowReplies}
+                  showReplies={isShowingReplies}
+                  hasReplies={hasReplies}
+                  repliesCount={repliesCount}
+                />
+
+                {/* Replies */}
+                {isShowingReplies && (
+                  <RepliesList
+                    replies={replies}
                     commentLikes={commentLikes}
                     onLike={handleCommentLike}
-                    onReply={() => {
-                      setShowReplyInput((prev) => ({
-                        ...prev,
-                        [commentItem.id]: !prev[commentItem.id],
-                      }));
-                      if (!showReplyInput[commentItem.id]) {
-                        setReplyInputs((prev) => ({
-                          ...prev,
-                          [commentItem.id]: "",
-                        }));
-                      }
-                    }}
-                    onToggleReplies={toggleShowReplies}
-                    showReplies={isShowingReplies}
-                    hasReplies={hasReplies}
-                    repliesCount={repliesCount}
+                    isLoading={loadingReplies[commentItem.id] || false}
                   />
+                )}
 
-                  {/* Replies */}
-                  {isShowingReplies && (
-                    <RepliesList
-                      replies={replies}
-                      commentLikes={commentLikes}
-                      onLike={handleCommentLike}
-                      isLoading={loadingReplies[commentItem.id] || false}
-                    />
-                  )}
-
-                  {/* Reply input */}
-                  {showReplyInput[commentItem.id] && (
-                    <ReplyInput
-                      replyText={replyInputs[commentItem.id] || ""}
-                      setReplyText={(text) =>
-                        setReplyInputs((prev) => ({
-                          ...prev,
-                          [commentItem.id]: text,
-                        }))
-                      }
-                      onSubmit={() => handleReply(commentItem.id)}
-                      isSubmitting={isSubmittingReply[commentItem.id] || false}
-                    />
-                  )}
-                </View>
-              );
-            }}
-          />
-        )}
-
-        {/* Comment input */}
+                {/* Reply input */}
+                {showReplyInput[commentItem.id] && (
+                  <ReplyInput
+                    replyText={replyInputs[commentItem.id] || ""}
+                    setReplyText={(text) =>
+                      setReplyInputs((prev) => ({
+                        ...prev,
+                        [commentItem.id]: text,
+                      }))
+                    }
+                    onSubmit={() => handleReply(commentItem.id)}
+                    isSubmitting={isSubmittingReply[commentItem.id] || false}
+                  />
+                )}
+              </View>
+            );
+          }}
+        />
         <CommentInput
           comment={comment}
           setComment={setComment}
           onSubmit={handleSubmitComment}
           isSubmitting={isSubmittingComment}
         />
-      </BottomSheetView>
+      </View>
     </BottomSheetModal>
   );
 }
