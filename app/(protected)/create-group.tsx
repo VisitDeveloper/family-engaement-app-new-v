@@ -52,7 +52,7 @@ export default function CreateGroupScreen() {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [loadingClassrooms, setLoadingClassrooms] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<{ uri: string; mimeType?: string; fileName?: string } | null>(null);
   const [listSheetOpen, setListSheetOpen] = useState<"users" | "classrooms" | null>(null);
 
   const PREVIEW_LIMIT = 5;
@@ -286,7 +286,12 @@ export default function CreateGroupScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setSelectedImage(result.assets[0].uri);
+        const asset = result.assets[0];
+        setSelectedImage({
+          uri: asset.uri,
+          mimeType: asset.mimeType ?? "image/jpeg",
+          fileName: asset.fileName ?? `group-avatar-${Date.now()}.jpg`,
+        });
       }
     } catch (error) {
       console.error("Error picking image:", error);
@@ -300,18 +305,21 @@ export default function CreateGroupScreen() {
       return;
     }
 
-    // if (selected.length < 3) {
-    //   Alert.alert('Error', 'Please select at least 3 members');
-    //   return;
-    // }
-
-    // if (selectedGroup.length < 1) {
-    // Alert.alert('Error', 'Please select at least 1 classroom');
-    // return;
-    // }
-
     setCreating(true);
     try {
+      let imageUrl: string | undefined;
+      if (selectedImage) {
+        const formData = new FormData();
+        // @ts-ignore - FormData in React Native expects { uri, type, name }
+        formData.append("file", {
+          uri: selectedImage.uri,
+          type: selectedImage.mimeType ?? "image/jpeg",
+          name: selectedImage.fileName ?? "group-avatar.jpg",
+        });
+        const uploadResponse = await messagingService.uploadImage(formData);
+        imageUrl = uploadResponse.url;
+      }
+
       const newConversation = await messagingService.createConversation({
         type: "group",
         name: groupName.trim(),
@@ -320,6 +328,7 @@ export default function CreateGroupScreen() {
             ? `Attached ${selectedGroup.length} classroom(s)`
             : undefined,
         memberIds: selected,
+        imageUrl,
       });
 
       // Add the new conversation to the store
@@ -354,7 +363,7 @@ export default function CreateGroupScreen() {
           <TouchableOpacity onPress={pickImage}>
             {selectedImage ? (
               <Image
-                source={{ uri: selectedImage }}
+                source={{ uri: selectedImage.uri }}
                 style={{
                   width: 100,
                   height: 100,

@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Audio, ResizeMode, Video } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -61,6 +61,7 @@ export default function ChatScreen() {
     const prevConversationIdRef = useRef<string | undefined>(undefined);
     const { chatID } = useLocalSearchParams<{ chatID: string }>();
     const conversationId = chatID;
+    const router = useRouter();
     const insets = useSafeAreaInsets();
 
     // Select data from store instead of calling functions
@@ -86,6 +87,9 @@ export default function ChatScreen() {
         if (!conversationId || !messagesStore) return [];
         return messagesStore[conversationId] || [];
     }, [conversationId, messagesStore]);
+
+    // Parent cannot send messages in group chats (only view)
+    const isParentInGroup = currentUser?.role === "parent" && conversation?.type === "group";
 
     const styles = useThemedStyles((t) => ({
         container: { flex: 1, backgroundColor: t.bg },
@@ -313,6 +317,7 @@ export default function ChatScreen() {
 
     const handleSendMessage = async () => {
         if (!input.trim() || !conversationId || sending) return;
+        if (isParentInGroup) return;
 
         setSending(true);
         try {
@@ -415,6 +420,7 @@ export default function ChatScreen() {
         durationSeconds?: number
     ) => {
         if (!conversationId || uploadingFile) return;
+        if (isParentInGroup) return;
 
         setUploadingFile(true);
         setUploadProgress(0);
@@ -528,6 +534,7 @@ export default function ChatScreen() {
 
     const startRecording = useCallback(async () => {
         if (!conversationId || uploadingFile || sending) return;
+        if (isParentInGroup) return;
         const ok = await requestRecordingPermission();
         if (!ok) return;
 
@@ -541,7 +548,7 @@ export default function ChatScreen() {
             console.error('Failed to start recording:', error);
             Alert.alert('Error', error?.message || 'Could not start recording');
         }
-    }, [conversationId, uploadingFile, sending, requestRecordingPermission]);
+    }, [conversationId, uploadingFile, sending, isParentInGroup, requestRecordingPermission]);
 
     const stopRecordingAndSend = useCallback(async () => {
         const recording = recordingRef.current;
@@ -1096,12 +1103,32 @@ export default function ChatScreen() {
             >
                 <HeaderThreeSections
                     title={getConversationName()}
-                    titlePrefix={
-                        getConversationAvatar()
-                    }
+                    titlePrefix={getConversationAvatar()}
                     desc={getOnlineStatus || undefined}
                     icon={<TranslateIcon size={28} color={translateMessages ? theme.tint : theme.text} />}
                     onPress={() => setShowTranslateLangModal(true)}
+                    onCenterPress={
+                        conversation && conversationId
+                            ? () => {
+                                if (conversation.type === 'group') {
+                                    router.push({ pathname: '/group-profile/[chatID]', params: { chatID: conversationId } });
+                                } else if (conversation.type === 'direct' && conversation.participants) {
+                                    const other = conversation.participants.find((p: any) => p.user?.id !== currentUserId);
+                                    if (other?.user?.id) {
+                                        const name = `${other.user.firstName || ''} ${other.user.lastName || ''}`.trim() || other.user.email || '';
+                                        router.push({
+                                            pathname: '/contact-profile/[userId]',
+                                            params: {
+                                                userId: other.user.id,
+                                                name: name || undefined,
+                                                image: other.user.profilePicture || undefined,
+                                            },
+                                        });
+                                    }
+                                }
+                            }
+                            : undefined
+                    }
                     colorDesc={getOnlineStatus === 'Online' ? theme.passDesc : theme.subText}
                 />
 
@@ -1145,66 +1172,73 @@ export default function ChatScreen() {
                     </View>
                 )}
 
-                {/* Input */}
+                {/* Input — parent cannot send in group chats */}
                 <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-                    <View style={styles.inputWrapper}>
-                        <TouchableOpacity
-                            style={styles.attachmentButton}
-                            onPress={() => setShowAttachingMenu(true)}
-                            disabled={uploadingFile || sending}
-                        >
-                            <Ionicons
-                                name="add"
-                                size={24}
-                                color={uploadingFile || sending ? theme.subText : theme.text}
-                            />
-                        </TouchableOpacity>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Type a message..."
-                            placeholderTextColor={theme.subText || theme.text + '80'}
-                            value={input}
-                            onChangeText={setInput}
-                            multiline={true}
-                            blurOnSubmit={false}
-                            editable={!sending && !uploadingFile}
-                            accessibilityLabel="Message input"
-                            accessibilityHint="Type your message here. Press Enter for a new line, use the send button to send."
-                            accessibilityState={{ disabled: sending || uploadingFile }}
-                            textAlignVertical="top"
-                        />
-                    </View>
+                    {isParentInGroup ? (
+                        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+                            <Text style={{ fontSize: 13, color: theme.subText || theme.text + "99", textAlign: "center" }}>
+                                Only teachers and admins can send messages in this group.
+                            </Text>
+                        </View>
+                    ) : (
+                        <>
+                            <View style={styles.inputWrapper}>
+                                <TouchableOpacity
+                                    style={styles.attachmentButton}
+                                    onPress={() => setShowAttachingMenu(true)}
+                                    disabled={uploadingFile || sending}
+                                >
+                                    <Ionicons
+                                        name="add"
+                                        size={24}
+                                        color={uploadingFile || sending ? theme.subText : theme.text}
+                                    />
+                                </TouchableOpacity>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Type a message..."
+                                    placeholderTextColor={theme.subText || theme.text + '80'}
+                                    value={input}
+                                    onChangeText={setInput}
+                                    multiline={true}
+                                    blurOnSubmit={false}
+                                    editable={!sending && !uploadingFile}
+                                    accessibilityLabel="Message input"
+                                    accessibilityHint="Type your message here. Press Enter for a new line, use the send button to send."
+                                    accessibilityState={{ disabled: sending || uploadingFile }}
+                                    textAlignVertical="top"
+                                />
+                            </View>
 
-                    <TouchableOpacity
-                        style={[styles.micButton, isRecording && { backgroundColor: theme.tint + '40' }]}
-                        onPress={handleMicPress}
-                        disabled={sending || uploadingFile}
-                        accessibilityLabel={isRecording ? 'Stop and send voice message' : 'Record voice message'}
-                    >
-                        <VoiceIcon
-                            color={isRecording ? theme.tint : (theme.text || 'rgba(18, 18, 18, 1)')}
-                            size={20}
-                        />
-                    </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.micButton, isRecording && { backgroundColor: theme.tint + '40' }]}
+                                onPress={handleMicPress}
+                                disabled={sending || uploadingFile}
+                                accessibilityLabel={isRecording ? 'Stop and send voice message' : 'Record voice message'}
+                            >
+                                <VoiceIcon
+                                    color={isRecording ? theme.tint : (theme.text || 'rgba(18, 18, 18, 1)')}
+                                    size={20}
+                                />
+                            </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={[styles.sendButton, (sending || uploadingFile || !input.trim()) && { opacity: 0.5 }]}
-                        onPress={handleSendMessage}
-                        disabled={sending || uploadingFile || !input.trim()}
-                        accessibilityRole="button"
-                        accessibilityLabel="Send message"
-                        accessibilityHint="Double tap to send your message"
-                        accessibilityState={{ disabled: sending || uploadingFile || !input.trim() }}
-                    >
-                        {(sending || uploadingFile) ? (
-                            <ActivityIndicator size="small" color="#fff" />
-                        ) : (
-                            <SendIcon color="#fff" size={16} />
-                        )}
-                    </TouchableOpacity>
-
-
-
+                            <TouchableOpacity
+                                style={[styles.sendButton, (sending || uploadingFile || !input.trim()) && { opacity: 0.5 }]}
+                                onPress={handleSendMessage}
+                                disabled={sending || uploadingFile || !input.trim()}
+                                accessibilityRole="button"
+                                accessibilityLabel="Send message"
+                                accessibilityHint="Double tap to send your message"
+                                accessibilityState={{ disabled: sending || uploadingFile || !input.trim() }}
+                            >
+                                {(sending || uploadingFile) ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <SendIcon color="#fff" size={16} />
+                                )}
+                            </TouchableOpacity>
+                        </>
+                    )}
                 </View>
 
                 {/* Upload Progress Indicator */}

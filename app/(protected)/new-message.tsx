@@ -1,6 +1,6 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import Divider from "@/components/ui/divider";
-import { Person2WithPlusIcon } from "@/components/ui/icons/messages-icons";
+import { Person2WithPlusIcon, SmallUsersIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
@@ -37,7 +37,6 @@ export default function NewMessageScreen() {
   const router = useRouter();
   const currentUser = useStore((state: any) => state.user);
   const currentUserId = currentUser?.id || null;
-  const addConversation = useStore((state: any) => state.addConversation);
 
   const [groups, setGroups] = useState<GroupItem[]>([]);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
@@ -288,39 +287,16 @@ export default function NewMessageScreen() {
     });
   };
 
-  const handleContactPress = async (contact: ContactItem) => {
-    try {
-      // Check if a direct conversation already exists
-      const { conversations } = await messagingService.getConversations();
-      const existingConversation = conversations.find(
-        (conv) =>
-          conv.type === "direct" &&
-          conv.participants?.some((p) => p.id === contact.id)
-      );
-
-      if (existingConversation) {
-        // Navigate to existing conversation
-        router.push({
-          pathname: "/chat/[chatID]",
-          params: { chatID: existingConversation.id },
-        });
-      } else {
-        // Create new direct conversation
-        const newConversation = await messagingService.createConversation({
-          type: "direct",
-          memberIds: [contact.id],
-        });
-        // Add the new conversation to the store
-        addConversation(newConversation);
-        router.push({
-          pathname: "/chat/[chatID]",
-          params: { chatID: newConversation.id },
-        });
-      }
-    } catch (error: any) {
-      console.error("Error creating/opening conversation:", error);
-      Alert.alert("Error", error.message || "Failed to open conversation");
-    }
+  const handleContactPress = (contact: ContactItem) => {
+    router.push({
+      pathname: "/contact-profile/[userId]",
+      params: {
+        userId: contact.id,
+        name: contact.name,
+        role: contact.role ?? "",
+        image: contact.image ?? "",
+      },
+    });
   };
 
   const renderGroupItem = ({ item }: { item: GroupItem }) => {
@@ -329,16 +305,24 @@ export default function NewMessageScreen() {
         style={styles.row}
         onPress={() => handleGroupPress(item)}
       >
-        {item.image ? (
-          <Image source={{ uri: item.image }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitials}>
-              {item.name[0]}
-              {item.name.split(" ")[1] ? item.name.split(" ")[1][0] : ""}
-            </Text>
+
+        <View style={{ position: "relative" }}>
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarInitials}>
+                {item.name[0]}
+                {item.name.split(" ")[1] ? item.name.split(" ")[1][0] : ""}
+              </Text>
+            </View>
+          )}
+          <View style={{ position: "absolute", bottom: -4, right: -4, backgroundColor: theme.bg, borderRadius: 50, width: 16, height: 16, alignItems: "center", justifyContent: "center" }}>
+            <View style={{ backgroundColor: "#2B7FFF", borderRadius: 50, width: 12, height: 12, alignItems: "center", justifyContent: "center" }}>
+              <SmallUsersIcon color="#fff" size={8} />
+            </View>
           </View>
-        )}
+        </View>
         <View style={styles.itemContent}>
           <Text style={styles.itemName}>{item.name}</Text>
         </View>

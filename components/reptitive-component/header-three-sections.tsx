@@ -14,6 +14,7 @@ interface HeaderThreeSectionsProps {
     icon?: React.ReactNode | React.ReactElement;
     colorDesc?: string;
     onPress?: () => void;
+    onCenterPress?: () => void;
     buttonRoles?: string[];
     titlePrefix?: React.ReactNode | React.ReactElement;
 }
@@ -49,17 +50,35 @@ export default function HeaderThreeSections({ titlePrefix = <></>, ...props }: H
                 <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={20} color={theme.text} />
                 </TouchableOpacity>
-                <View style={{ gap: 12, flexDirection: "row", alignItems: "center" }}>
-                    {titlePrefix}
-                    <View>
-                        <ThemedText type="subtitle" style={{ fontWeight: 600, fontSize: 16 }}>
-                            {props.title}
-                        </ThemedText>
-                        <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
-                            {props.desc}
-                        </ThemedText>
+                {props.onCenterPress ? (
+                    <TouchableOpacity
+                        style={{ gap: 12, flexDirection: "row", alignItems: "center", flex: 1 }}
+                        onPress={props.onCenterPress}
+                        activeOpacity={0.7}
+                    >
+                        {titlePrefix}
+                        <View>
+                            <ThemedText type="subtitle" style={{ fontWeight: 600, fontSize: 16 }}>
+                                {props.title}
+                            </ThemedText>
+                            <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
+                                {props.desc}
+                            </ThemedText>
+                        </View>
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ gap: 12, flexDirection: "row", alignItems: "center" }}>
+                        {titlePrefix}
+                        <View>
+                            <ThemedText type="subtitle" style={{ fontWeight: 600, fontSize: 16 }}>
+                                {props.title}
+                            </ThemedText>
+                            <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
+                                {props.desc}
+                            </ThemedText>
+                        </View>
                     </View>
-                </View>
+                )}
             </View>
             <RoleGuard roles={props.buttonRoles || ["admin", "teacher", "parent"]}>
                 <TouchableOpacity onPress={props.onPress}>

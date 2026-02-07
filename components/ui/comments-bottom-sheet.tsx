@@ -339,7 +339,7 @@ export default function CommentsBottomSheet({
         ...prev,
         [commentId]: [newReply, ...(prev[commentId] || [])],
       }));
-      
+
       // Initialize likes state for new reply
       setCommentLikes((prev) => ({
         ...prev,
@@ -348,7 +348,7 @@ export default function CommentsBottomSheet({
           likesCount: newReply.likesCount || 0,
         },
       }));
-      
+
       // Update parent comment's repliesCount
       const updatedComments = comments.map((c) =>
         c.id === commentId
@@ -356,12 +356,12 @@ export default function CommentsBottomSheet({
           : c
       );
       setComments(updatedComments);
-      
+
       // Show replies if not already shown
       if (!showReplies[commentId]) {
         setShowReplies((prev) => ({ ...prev, [commentId]: true }));
       }
-      
+
       // Notify parent about comment changes
       if (onCommentsChange) {
         onCommentsChange(updatedComments);
@@ -428,12 +428,12 @@ export default function CommentsBottomSheet({
       const updatedComments = comments.map((c) =>
         c.id === commentId
           ? {
-              ...c,
-              isLiked: !isLiked,
-              likesCount: isLiked
-                ? (c.likesCount || 0) - 1
-                : (c.likesCount || 0) + 1,
-            }
+            ...c,
+            isLiked: !isLiked,
+            likesCount: isLiked
+              ? (c.likesCount || 0) - 1
+              : (c.likesCount || 0) + 1,
+          }
           : c
       );
       setComments(updatedComments);
@@ -449,12 +449,12 @@ export default function CommentsBottomSheet({
             (reply) =>
               reply.id === commentId
                 ? {
-                    ...reply,
-                    isLiked: !isLiked,
-                    likesCount: isLiked
-                      ? (reply.likesCount || 0) - 1
-                      : (reply.likesCount || 0) + 1,
-                  }
+                  ...reply,
+                  isLiked: !isLiked,
+                  likesCount: isLiked
+                    ? (reply.likesCount || 0) - 1
+                    : (reply.likesCount || 0) + 1,
+                }
                 : reply
           );
         });
@@ -471,10 +471,10 @@ export default function CommentsBottomSheet({
         prevComments.map((c) =>
           c.id === commentId
             ? {
-                ...c,
-                isLiked: currentState.isLiked,
-                likesCount: currentState.likesCount,
-              }
+              ...c,
+              isLiked: currentState.isLiked,
+              likesCount: currentState.likesCount,
+            }
             : c
         )
       );
@@ -486,10 +486,10 @@ export default function CommentsBottomSheet({
             (reply) =>
               reply.id === commentId
                 ? {
-                    ...reply,
-                    isLiked: currentState.isLiked,
-                    likesCount: currentState.likesCount,
-                  }
+                  ...reply,
+                  isLiked: currentState.isLiked,
+                  likesCount: currentState.likesCount,
+                }
                 : reply
           );
         });
@@ -529,10 +529,6 @@ export default function CommentsBottomSheet({
     []
   );
 
-  if (!visible) {
-    return null;
-  }
-
   const listHeaderComponent = useMemo(
     () => (
       <View style={{ paddingBottom: 16 }}>
@@ -567,6 +563,11 @@ export default function CommentsBottomSheet({
     ),
     [loading, comments.length, theme.text]
   );
+
+
+  if (!visible) {
+    return null;
+  }
 
   return (
     <BottomSheetModal
