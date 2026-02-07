@@ -1,6 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import * as RNLocalize from "react-native-localize";
+import { getLocales } from "expo-localization";
 
 import en from "./locales/en.json";
 import fa from "./locales/fa.json";
@@ -10,9 +10,9 @@ const resources = {
     fa: { translation: fa },
 };
 
-const fallback = { languageTag: "en", isRTL: false };
-
-const { languageTag } = RNLocalize.findBestAvailableLanguage(Object.keys(resources)) || fallback;
+const supportedLangs = Object.keys(resources);
+const deviceCode = getLocales()[0]?.languageCode?.split(/[-_]/)[0] || "en";
+const languageTag = supportedLangs.includes(deviceCode) ? deviceCode : "en";
 
 i18n.use(initReactI18next).init({
     compatibilityJSON: "v3",

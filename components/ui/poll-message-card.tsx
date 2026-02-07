@@ -24,6 +24,9 @@ const POLL_CARD = {
 interface PollMessageCardProps {
   pollId: string;
   isMe?: boolean;
+  translatedQuestion?: string;
+  translatedOptions?: Record<string, string>;
+  isTranslating?: boolean;
   onVote?: () => void;
   onClosePoll?: () => void;
   onEditPoll?: () => void;
@@ -32,6 +35,9 @@ interface PollMessageCardProps {
 export default function PollMessageCard({
   pollId,
   isMe,
+  translatedQuestion,
+  translatedOptions,
+  isTranslating,
   onVote,
   onClosePoll,
   onEditPoll,
@@ -129,6 +135,12 @@ export default function PollMessageCard({
     );
   }
 
+  const questionDisplay = isTranslating && translatedQuestion === undefined
+    ? "…"
+    : (translatedQuestion ?? poll.question);
+  const getOptionDisplay = (optionId: string, original: string) =>
+    isTranslating && translatedOptions === undefined ? "…" : (translatedOptions?.[optionId] ?? original);
+
   // Admin view: options or results inline; "View Poll Results" / "Back"; Edit Poll, Close poll
   if (isAdmin) {
     const totalVotes = poll.options.reduce((s, o) => s + o.voteCount, 0);
@@ -140,13 +152,13 @@ export default function PollMessageCard({
             <View style={styles.newPollBadge}>
               <Text style={styles.newPollBadgeText}>New Poll</Text>
             </View>
-            <Text style={styles.question}>{poll.question}</Text>
+            <Text style={styles.question}>{questionDisplay}</Text>
 
             {poll.options.map((option) => (
               <View key={option.id} style={styles.optionRow}>
                 <View style={[styles.radioOuter, styles.radioOuterUnselected]} />
                 <Text style={styles.optionText} numberOfLines={2}>
-                  {option.text}
+                  {getOptionDisplay(option.id, option.text)}
                 </Text>
               </View>
             ))}
@@ -166,7 +178,7 @@ export default function PollMessageCard({
             <View style={styles.newPollBadge}>
               <Text style={styles.newPollBadgeText}>Poll Results</Text>
             </View>
-            <Text style={styles.question}>{poll.question}</Text>
+            <Text style={styles.question}>{questionDisplay}</Text>
 
             {poll.options.map((option) => {
               const pct = totalVotes > 0 ? (option.voteCount / totalVotes) * 100 : 0;
@@ -187,7 +199,7 @@ export default function PollMessageCard({
                       numberOfLines={1}
                       ellipsizeMode="tail"
                     >
-                      {option.text}
+                      {getOptionDisplay(option.id, option.text)}
                     </Text>
                   </View>
                   <View style={styles.barRow}>
@@ -244,7 +256,7 @@ export default function PollMessageCard({
       <View style={styles.newPollBadge}>
         <Text style={styles.newPollBadgeText}>New Poll</Text>
       </View>
-      <Text style={styles.question}>{poll.question}</Text>
+      <Text style={styles.question}>{questionDisplay}</Text>
 
       {poll.options.map((option) => {
         const isSelected = selectedOptionId === option.id;
@@ -270,7 +282,7 @@ export default function PollMessageCard({
               {isSelected && <View style={styles.radioInner} />}
             </View>
             <Text style={styles.optionText} numberOfLines={2}>
-              {option.text}
+              {getOptionDisplay(option.id, option.text)}
             </Text>
           </TouchableOpacity>
         );

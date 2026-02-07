@@ -1,7 +1,7 @@
 import RoleGuard from "@/components/check-permisions";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
-import { AiAssistantIcon, EmergencyIcon, NewIcon } from "@/components/ui/messages-icons";
+import { AiAssistantIcon, EmergencyIcon, NewIcon } from "@/components/ui/icons/messages-icons";
 import {
   ConversationResponseDto,
   messagingService,

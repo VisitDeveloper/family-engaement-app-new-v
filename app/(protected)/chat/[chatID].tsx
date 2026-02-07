@@ -1,13 +1,14 @@
 import HeaderThreeSections from "@/components/reptitive-component/header-three-sections";
 import AttachingMenu from "@/components/ui/attaching-menu";
-import { TranslateIcon } from "@/components/ui/common-icons";
 import CreatePollBottomSheet from "@/components/ui/create-poll-bottom-sheet";
+import { TranslateIcon } from "@/components/ui/icons/common-icons";
+import { SendIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
 import MessageActionsMenu from "@/components/ui/message-actions-menu";
-import { SendIcon, VoiceIcon } from "@/components/ui/messages-icons";
 import PollMessageCard from "@/components/ui/poll-message-card";
 import PollViewBottomSheet from "@/components/ui/poll-view-bottom-sheet";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ConversationResponseDto, MessageResponseDto, messagingService, PollResponseDto } from "@/services/messaging.service";
+import { detectSourceLanguage, SUPPORTED_LANGUAGES, translateText } from "@/services/translate.service";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio, ResizeMode, Video } from "expo-av";
@@ -15,7 +16,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChatScreen() {
@@ -45,6 +46,19 @@ export default function ChatScreen() {
     const [audioDurations, setAudioDurations] = useState<Record<string, number>>({});
     const soundRef = useRef<Audio.Sound | null>(null);
     const positionUpdateInterval = useRef<NodeJS.Timeout | null>(null);
+    const [translateMessages, setTranslateMessages] = useState(false);
+    const [translateApplyKey, setTranslateApplyKey] = useState(0);
+    const [translateSource, setTranslateSource] = useState<"auto" | string>("auto");
+    const [translateTarget, setTranslateTarget] = useState<string>("en");
+    const [showTranslateLangModal, setShowTranslateLangModal] = useState(false);
+    const [translatedCache, setTranslatedCache] = useState<Record<string, string>>({});
+    const translatedCacheRef = useRef<Record<string, string>>({});
+    type TranslatedPoll = { question: string; options: Record<string, string> };
+    const [translatedPollCache, setTranslatedPollCache] = useState<Record<string, TranslatedPoll>>({});
+    const translatedPollCacheRef = useRef<Record<string, TranslatedPoll>>({});
+    const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
+    const requestedTranslateRef = useRef<Set<string>>(new Set());
+    const prevConversationIdRef = useRef<string | undefined>(undefined);
     const { chatID } = useLocalSearchParams<{ chatID: string }>();
     const conversationId = chatID;
     const insets = useSafeAreaInsets();
@@ -222,6 +236,14 @@ export default function ChatScreen() {
             alignItems: 'center',
         },
         avatarPlaceholderText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+        translateModalBox: { width: '100%', maxWidth: 340, borderRadius: 16, padding: 20 },
+        translateModalTitle: { fontSize: 18, fontWeight: '600', marginBottom: 16 },
+        translateModalLabel: { fontSize: 12, marginBottom: 6 },
+        translateModalList: { maxHeight: 140 },
+        translateModalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 10, marginBottom: 4 },
+        translateModalActions: { marginTop: 20, gap: 10 },
+        translateModalOffBtn: { paddingVertical: 10, alignItems: 'center', borderRadius: 10, borderWidth: 1 },
+        translateModalApplyBtn: { paddingVertical: 14, alignItems: 'center', borderRadius: 10 },
     }) as const);
 
     const loadConversation = useCallback(async () => {
@@ -468,7 +490,7 @@ export default function ChatScreen() {
     };
 
     const handlePollCreated = async (poll: PollResponseDto, message: MessageResponseDto) => {
-        addMessage(conversationId, message);
+        addMessage(conversationId, { ...message, polls: [poll] });
         setShowPollSheet(false);
     };
 
@@ -724,6 +746,74 @@ export default function ChatScreen() {
         };
     }, []);
 
+    useEffect(() => {
+        if (prevConversationIdRef.current !== undefined && prevConversationIdRef.current !== conversationId) {
+            translatedCacheRef.current = {};
+            setTranslatedCache({});
+            translatedPollCacheRef.current = {};
+            setTranslatedPollCache({});
+            setTranslatingIds(new Set());
+            requestedTranslateRef.current = new Set();
+        }
+        prevConversationIdRef.current = conversationId;
+    }, [conversationId]);
+
+    useEffect(() => {
+        if (!translateMessages) return;
+        const translatableMessages = messages.filter((m: MessageResponseDto) =>
+            (m.type === "text" || m.type === "announcement") && m.content?.trim()
+        );
+        for (const msg of translatableMessages) {
+            if (translatedCacheRef.current[msg.id] !== undefined || requestedTranslateRef.current.has(msg.id)) continue;
+            requestedTranslateRef.current.add(msg.id);
+            setTranslatingIds((prev) => new Set(prev).add(msg.id));
+            const sourceLang = translateSource === "auto" ? detectSourceLanguage(msg.content!) : translateSource;
+            const messageId = msg.id;
+            translateText(msg.content!, { sourceLang, targetLang: translateTarget })
+                .then((translated) => {
+                    translatedCacheRef.current[messageId] = translated;
+                    setTranslatedCache({ ...translatedCacheRef.current });
+                })
+                .catch(() => { })
+                .finally(() => {
+                    setTranslatingIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(messageId);
+                        return next;
+                    });
+                });
+        }
+        const pollMessages = messages.filter((m: MessageResponseDto) => m.type === "poll" && m.polls?.[0]?.id);
+        for (const msg of pollMessages) {
+            const pollId = msg.polls![0].id;
+            const messageId = msg.id;
+            if (translatedPollCacheRef.current[messageId] !== undefined || requestedTranslateRef.current.has(`poll:${messageId}`)) continue;
+            requestedTranslateRef.current.add(`poll:${messageId}`);
+            setTranslatingIds((prev) => new Set(prev).add(messageId));
+            messagingService.getPoll(pollId)
+                .then(async (poll) => {
+                    const sourceLang = translateSource === "auto" ? detectSourceLanguage(poll.question) : translateSource;
+                    const questionTranslated = await translateText(poll.question, { sourceLang, targetLang: translateTarget });
+                    const optionsTranslated: Record<string, string> = {};
+                    for (const opt of poll.options) {
+                        optionsTranslated[opt.id] = await translateText(opt.text, { sourceLang, targetLang: translateTarget });
+                    }
+                    translatedPollCacheRef.current[messageId] = { question: questionTranslated, options: optionsTranslated };
+                    setTranslatedPollCache({ ...translatedPollCacheRef.current });
+                })
+                .catch(() => { })
+                .finally(() => {
+                    setTranslatingIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(messageId);
+                        return next;
+                    });
+                });
+        }
+        // translateApplyKey: با هر Apply عوض می‌شود تا effect دوباره اجرا شود و ترجمه‌ها درست آپدیت شوند
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [translateMessages, translateApplyKey, translateSource, translateTarget, conversationId, messages.length]);
+
     const renderMessage = ({ item, index }: { item: MessageResponseDto; index: number }) => {
         const isMe = item.senderId === currentUserId;
         const messageTime = formatTime(item.createdAt);
@@ -743,7 +833,18 @@ export default function ChatScreen() {
                         : (isMe ? styles.myMessage : styles.otherMessage),
                 ]}>
                 {item.type === "text" && item.content && (
-                    <Text style={isMe ? styles.messageText : styles.messageOtherText}>{item.content}</Text>
+                    <Text style={isMe ? styles.messageText : styles.messageOtherText}>
+                        {translateMessages
+                            ? (translatedCache[item.id] ?? (translatingIds.has(item.id) ? "…" : item.content))
+                            : item.content}
+                    </Text>
+                )}
+                {item.type === "announcement" && item.content && (
+                    <Text style={isMe ? styles.messageText : styles.messageOtherText}>
+                        {translateMessages
+                            ? (translatedCache[item.id] ?? (translatingIds.has(item.id) ? "…" : item.content))
+                            : item.content}
+                    </Text>
                 )}
                 {item.type === "image" && item.mediaUrl && (
                     <TouchableOpacity
@@ -847,6 +948,9 @@ export default function ChatScreen() {
                     <PollMessageCard
                         pollId={item.polls[0].id}
                         isMe={isMe}
+                        translatedQuestion={translateMessages ? translatedPollCache[item.id]?.question : undefined}
+                        translatedOptions={translateMessages ? translatedPollCache[item.id]?.options : undefined}
+                        isTranslating={translateMessages && translatingIds.has(item.id)}
                         onVote={() => { }}
                         onClosePoll={() => {
                             loadMessages();
@@ -996,8 +1100,8 @@ export default function ChatScreen() {
                         getConversationAvatar()
                     }
                     desc={getOnlineStatus || undefined}
-                    icon={<TranslateIcon size={28} color={theme.text} />}
-                    onPress={() => { }}
+                    icon={<TranslateIcon size={28} color={translateMessages ? theme.tint : theme.text} />}
+                    onPress={() => setShowTranslateLangModal(true)}
                     colorDesc={getOnlineStatus === 'Online' ? theme.passDesc : theme.subText}
                 />
 
@@ -1130,6 +1234,7 @@ export default function ChatScreen() {
                     onSelectPoll={() => setShowPollSheet(true)}
                     onSelectMedia={handleSelectMedia}
                     onSelectFiles={handleSelectFiles}
+                    isGroup={conversation?.type === "group"}
                 />
 
                 {/* Message Actions Menu */}
@@ -1207,6 +1312,86 @@ export default function ChatScreen() {
                             onPress={() => setFullScreenImageUri(null)}
                         >
                             <Ionicons name="close-circle" size={36} color="#fff" />
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                </Modal>
+
+                {/* Translate: choose source & target language */}
+                <Modal
+                    visible={showTranslateLangModal}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setShowTranslateLangModal(false)}
+                >
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 24 }]}
+                        onPress={() => setShowTranslateLangModal(false)}
+                    >
+                        <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()} style={[styles.translateModalBox, { backgroundColor: theme.panel || theme.bg }]}>
+                            <Text style={[styles.translateModalTitle, { color: theme.text }]}>Translate messages</Text>
+                            <Text style={[styles.translateModalLabel, { color: theme.subText }]}>From (source)</Text>
+                            <ScrollView style={styles.translateModalList} showsVerticalScrollIndicator={false}>
+                                <TouchableOpacity
+                                    style={[styles.translateModalRow, translateSource === "auto" && { backgroundColor: theme.tint + "30" }]}
+                                    onPress={() => setTranslateSource("auto")}
+                                >
+                                    <Text style={{ color: theme.text, fontSize: 16 }}>Auto (detect)</Text>
+                                    {translateSource === "auto" && <Ionicons name="checkmark-circle" size={22} color={theme.tint} />}
+                                </TouchableOpacity>
+                                {SUPPORTED_LANGUAGES.map((lang) => (
+                                    <TouchableOpacity
+                                        key={lang.code}
+                                        style={[styles.translateModalRow, translateSource === lang.code && { backgroundColor: theme.tint + "30" }]}
+                                        onPress={() => setTranslateSource(lang.code)}
+                                    >
+                                        <Text style={{ color: theme.text, fontSize: 16 }}>{lang.label}</Text>
+                                        {translateSource === lang.code && <Ionicons name="checkmark-circle" size={22} color={theme.tint} />}
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                            <Text style={[styles.translateModalLabel, { color: theme.subText, marginTop: 12 }]}>To (target)</Text>
+                            <ScrollView style={styles.translateModalList} showsVerticalScrollIndicator={false}>
+                                {SUPPORTED_LANGUAGES.map((lang) => (
+                                    <TouchableOpacity
+                                        key={lang.code}
+                                        style={[styles.translateModalRow, translateTarget === lang.code && { backgroundColor: theme.tint + "30" }]}
+                                        onPress={() => setTranslateTarget(lang.code)}
+                                    >
+                                        <Text style={{ color: theme.text, fontSize: 16 }}>{lang.label}</Text>
+                                        {translateTarget === lang.code && <Ionicons name="checkmark-circle" size={22} color={theme.tint} />}
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                            <View style={styles.translateModalActions}>
+                                {translateMessages && (
+                                    <TouchableOpacity
+                                        style={[styles.translateModalOffBtn, { borderColor: theme.border }]}
+                                        onPress={() => {
+                                            setTranslateMessages(false);
+                                            setShowTranslateLangModal(false);
+                                        }}
+                                    >
+                                        <Text style={{ color: theme.subText, fontSize: 14 }}>Turn off translation</Text>
+                                    </TouchableOpacity>
+                                )}
+                                <TouchableOpacity
+                                    style={[styles.translateModalApplyBtn, { backgroundColor: theme.tint }]}
+                                    onPress={() => {
+                                        translatedCacheRef.current = {};
+                                        setTranslatedCache({});
+                                        translatedPollCacheRef.current = {};
+                                        setTranslatedPollCache({});
+                                        setTranslatingIds(new Set());
+                                        requestedTranslateRef.current = new Set();
+                                        setTranslateApplyKey((k) => k + 1);
+                                        setTranslateMessages(true);
+                                        setShowTranslateLangModal(false);
+                                    }}
+                                >
+                                    <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>Apply</Text>
+                                </TouchableOpacity>
+                            </View>
                         </TouchableOpacity>
                     </TouchableOpacity>
                 </Modal>

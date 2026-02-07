@@ -1,5 +1,5 @@
+import { AnnouncementIcon, FileIcon, MediaIcon, PollIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
-import { AnnouncementIcon, FileIcon, MediaIcon, PollIcon } from "@/components/ui/messages-icons";
 import { BlurView } from "expo-blur";
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -12,6 +12,7 @@ interface AttachingMenuProps {
   onSelectAnnouncement?: () => void;
   /** Distance from bottom to show dropdown above input (default ~100) */
   bottomOffset?: number;
+  isGroup?: boolean;
 }
 
 export default function AttachingMenu({
@@ -22,6 +23,7 @@ export default function AttachingMenu({
   onSelectFiles,
   onSelectAnnouncement,
   bottomOffset = 100,
+  isGroup = false,
 }: AttachingMenuProps) {
   const styles = useThemedStyles((t) => ({
     modalOverlay: {
@@ -91,7 +93,7 @@ export default function AttachingMenu({
 
   const iconColor = "#444";
   const menuItems = [
-    {
+    ...(isGroup ? [{
       id: "announcement",
       icon: <AnnouncementIcon color={iconColor} size={22} />,
       title: "Announcement",
@@ -108,6 +110,7 @@ export default function AttachingMenu({
         onClose();
       },
     },
+    ] : []),
     {
       id: "media",
       icon: <MediaIcon color={iconColor} size={22} />,

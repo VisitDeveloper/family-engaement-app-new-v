@@ -3,7 +3,7 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GearIcon } from "../ui/common-icons";
+import { GearIcon } from "../ui/icons/common-icons";
 
 export default function Header({
   userImage,

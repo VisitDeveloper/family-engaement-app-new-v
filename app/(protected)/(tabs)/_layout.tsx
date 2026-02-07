@@ -1,11 +1,10 @@
 import { HapticTab } from '@/components/haptic-tab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
-import { DashboardIcon, MessagesIcon, ResourcesIcon, TimelineIcon } from '@/components/ui/tab-icons';
+import { DashboardIcon, MessagesIcon, ResourcesIcon, TimelineIcon } from '@/components/ui/icons/tab-icons';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useStore } from '@/store';
 import { Tabs } from 'expo-router';
-import React from 'react';
 import { Platform, View } from 'react-native';
 
 export default function TabLayout() {

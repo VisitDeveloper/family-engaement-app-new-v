@@ -3,7 +3,7 @@ import { useStore } from "@/store";
 import { useEffect } from "react";
 import { StyleProp, TextInput, View, ViewStyle } from "react-native";
 import { useDebounce } from "use-debounce";
-import { SearchIcon } from "../ui/common-icons";
+import { SearchIcon } from "../ui/icons/common-icons";
 
 interface SearchContainerProps {
   query: string;

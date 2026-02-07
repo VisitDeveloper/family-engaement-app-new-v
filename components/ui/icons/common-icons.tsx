@@ -18,6 +18,19 @@ const translateSvg = `<svg width="24" height="17" viewBox="0 0 24 17" fill="none
 </svg>
 `
 
+const checkedboxSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="0.25" y="0.25" width="23.5" height="23.5" rx="7.75" fill="#A846C3"/>
+<rect x="0.25" y="0.25" width="23.5" height="23.5" rx="7.75" stroke="#A846C3" stroke-width="0.5"/>
+<path d="M19.347 8.65948L10.347 17.6595C10.2686 17.7381 10.1754 17.8006 10.0729 17.8431C9.9703 17.8857 9.86035 17.9076 9.7493 17.9076C9.63825 17.9076 9.52829 17.8857 9.42573 17.8431C9.32317 17.8006 9.23003 17.7381 9.15164 17.6595L5.21414 13.722C5.13566 13.6435 5.0734 13.5503 5.03092 13.4478C4.98845 13.3452 4.96658 13.2353 4.96658 13.1243C4.96658 13.0133 4.98845 12.9034 5.03092 12.8009C5.0734 12.6983 5.13566 12.6052 5.21414 12.5267C5.29263 12.4482 5.3858 12.3859 5.48835 12.3434C5.59089 12.301 5.7008 12.2791 5.8118 12.2791C5.92279 12.2791 6.0327 12.301 6.13525 12.3434C6.23779 12.3859 6.33097 12.4482 6.40945 12.5267L9.75 15.8672L18.153 7.46557C18.3116 7.30707 18.5265 7.21802 18.7507 7.21802C18.9749 7.21802 19.1899 7.30707 19.3484 7.46557C19.5069 7.62408 19.5959 7.83907 19.5959 8.06323C19.5959 8.2874 19.5069 8.50238 19.3484 8.66089L19.347 8.65948Z" fill="#FEFAFF"/>
+</svg>
+`
+
+
+const checkboxSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="0.25" y="0.25" width="23.5" height="23.5" rx="7.75" stroke="currentColor" stroke-width="0.5"/>
+</svg>
+`
+
 interface IconProps {
   color?: string;
   size?: number;
@@ -43,4 +56,12 @@ export function GearIcon({ color = '#000', size = 24, style }: IconProps) {
 }
 export function TranslateIcon({ color = '#000', size = 24, style }: IconProps) {
   return <SvgIcon svgContent={translateSvg} color={color} size={size} style={style} />;
+}
+
+export function CheckedboxIcon({ color = '#000', size = 24, style }: IconProps) {
+  return <SvgIcon svgContent={checkedboxSvg} color={color} size={size} style={style} />;
+}
+
+export function CheckboxIcon({ color = '#000', size = 24, style }: IconProps) {
+  return <SvgIcon svgContent={checkboxSvg} color={color} size={size} style={style} />;
 }

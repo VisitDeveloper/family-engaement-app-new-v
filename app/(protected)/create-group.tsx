@@ -2,6 +2,8 @@ import HeaderInnerPage from "@/components/reptitive-component/header-inner-page"
 import { ThemedText } from "@/components/themed-text";
 import Badge from "@/components/ui/badge";
 import Divider from "@/components/ui/divider";
+import { CheckboxIcon, CheckedboxIcon } from "@/components/ui/icons/common-icons";
+import { CameraIcon, PencilIcon, SmallUsersIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
@@ -53,11 +55,12 @@ export default function CreateGroupScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const styles = useThemedStyles((theme) => ({
-    container: { flex: 1, paddingHorizontal: 12, backgroundColor: theme.bg },
+    container: { flex: 1, backgroundColor: theme.bg },
     containerScrollView: {
       flex: 1,
       backgroundColor: theme.bg,
-      marginBottom: 30,
+      paddingHorizontal: 12,
+      // marginBottom: 30,
     },
     card: {
       borderWidth: 1,
@@ -94,7 +97,7 @@ export default function CreateGroupScreen() {
       fontSize: 16,
       fontWeight: "600",
       color: theme.text,
-      marginTop: 8,
+      // marginTop: 8,
     },
     subText: { fontSize: 14, color: theme.subText, marginBottom: 6 },
     optionItem: {
@@ -130,7 +133,7 @@ export default function CreateGroupScreen() {
       justifyContent: "center",
     },
     initials: { color: "#fff", fontWeight: "600" },
-    name: { fontSize: 16, fontWeight: "600", color: theme.text },
+    name: { fontSize: 16, fontWeight: "400", color: theme.text },
     subtitle: { fontSize: 12, color: theme.subText },
 
     numberOfInvitees: {
@@ -165,13 +168,12 @@ export default function CreateGroupScreen() {
             user.role === "admin"
               ? "Admin"
               : user.role === "teacher"
-              ? "Teacher"
-              : "Parent",
+                ? "Teacher"
+                : "Parent",
           avatar: user.profilePicture || null,
           initials:
-            `${user.firstName?.[0] || ""}${
-              user.lastName?.[0] || ""
-            }`.toUpperCase() || user.email[0].toUpperCase(),
+            `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""
+              }`.toUpperCase() || user.email[0].toUpperCase(),
           isAdmin: user.role === "admin",
           role: user.role,
         }));
@@ -193,8 +195,8 @@ export default function CreateGroupScreen() {
           typeof classroom.name === "string"
             ? classroom.name
             : classroom.name && typeof classroom.name === "object"
-            ? (Object.values(classroom.name)[0] as string) || "Classroom"
-            : "Classroom";
+              ? (Object.values(classroom.name)[0] as string) || "Classroom"
+              : "Classroom";
         return {
           id: classroom.id,
           name: name,
@@ -335,7 +337,7 @@ export default function CreateGroupScreen() {
     <View style={styles.container}>
       <HeaderInnerPage
         title="Create New Group"
-        addstyles={{ marginBottom: 20 }}
+        addstyles={{ marginBottom: 0 }}
       />
 
       <ScrollView
@@ -365,9 +367,10 @@ export default function CreateGroupScreen() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  overflow: "hidden",
                 }}
               >
-                <Feather name="users" size={28} color={theme.text} />
+                <Image source={require("@/assets/images/image-placeholder.png")} style={{ width: '100%', height: "100%" }} />
               </View>
             )}
             <View
@@ -375,7 +378,7 @@ export default function CreateGroupScreen() {
                 position: "absolute",
                 bottom: 2,
                 right: 0,
-                backgroundColor: "#fff",
+                backgroundColor: theme.tint,
                 borderRadius: 40,
                 width: 20,
                 height: 20,
@@ -383,10 +386,9 @@ export default function CreateGroupScreen() {
                 justifyContent: "center",
               }}
             >
-              <Feather
-                name="camera"
-                size={15}
-                color={theme.tint}
+              <CameraIcon
+                size={12}
+                color="#fff"
               />
             </View>
           </TouchableOpacity>
@@ -395,7 +397,7 @@ export default function CreateGroupScreen() {
               flexDirection: "row",
               alignItems: "center",
               gap: 10,
-              marginTop: 10,
+              marginTop: 16,
             }}
           >
             {showInputOfGroupName ? (
@@ -417,12 +419,12 @@ export default function CreateGroupScreen() {
               </ThemedText>
             )}
 
-            <AntDesign
-              name="edit"
-              size={20}
-              color={theme.tint}
-              onPress={() => setShowInputOFGroupName(!showInputOfGroupName)}
-            />
+            <TouchableOpacity onPress={() => setShowInputOFGroupName(!showInputOfGroupName)}>
+              <PencilIcon
+                size={14}
+                color={theme.tint}
+              />
+            </TouchableOpacity>
           </View>
           <ThemedText style={styles.subText}>Group</ThemedText>
         </View>
@@ -437,6 +439,7 @@ export default function CreateGroupScreen() {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
+              marginBottom: 16,
             }}
           >
             <View
@@ -466,13 +469,12 @@ export default function CreateGroupScreen() {
                   onPress={selectAllGroup}
                   style={[
                     styles.numberOfInvitees,
-                    { backgroundColor: theme.emergencyBackground },
+                    { backgroundColor: theme.emergencyBackground, paddingVertical: 5 },
                   ]}
                 >
                   <ThemedText type="subLittleText" style={{ color: "#212121" }}>
                     Select All
                   </ThemedText>
-                  <Feather name={"check-square"} size={15} color={"#212121"} />
                 </TouchableOpacity>
               )}
 
@@ -516,20 +518,31 @@ export default function CreateGroupScreen() {
                   onPress={() => toggleSelectGroup(room.id)}
                 >
                   <View style={styles.leftRow}>
-                    {room.avatar ? (
-                      <Image
-                        source={{ uri: room.avatar }}
-                        style={styles.avatar}
-                      />
-                    ) : (
-                      <View
-                        style={[styles.avatar, { backgroundColor: "#aaa" }]}
-                      >
-                        <ThemedText style={styles.initials}>
-                          {room.initials}
-                        </ThemedText>
+                    <View style={{ position: "relative" }}>
+                      {room.avatar ? (
+                        <Image
+                          source={{ uri: room.avatar }}
+                          style={styles.avatar}
+                        />
+                      ) : (
+                        // <View
+                        //   style={[styles.avatar, { backgroundColor: "#aaa" }]}
+                        // >
+                        //   <ThemedText style={styles.initials}>
+                        //     {room.initials}
+                        //   </ThemedText>
+                        // </View>
+                        <Image
+                          source={require("@/assets/images/classroom-placeholder.png")}
+                          style={styles.avatar}
+                        />
+                      )}
+                      <View style={{ position: "absolute", bottom: -4, right: -4, backgroundColor: theme.bg, borderRadius: 50, width: 16, height: 16, alignItems: "center", justifyContent: "center" }}>
+                        <View style={{ backgroundColor: "#2B7FFF", borderRadius: 50, width: 12, height: 12, alignItems: "center", justifyContent: "center" }}>
+                          <SmallUsersIcon color="#fff" size={8} />
+                        </View>
                       </View>
-                    )}
+                    </View>
                     <View style={{ flex: 1 }}>
                       <View
                         style={{ flexDirection: "row", alignItems: "center" }}
@@ -539,17 +552,18 @@ export default function CreateGroupScreen() {
                     </View>
                   </View>
 
-                  <Feather
-                    name={
-                      selectedGroup.includes(room.id)
-                        ? "check-square"
-                        : "square"
-                    }
-                    size={22}
-                    color={
-                      selectedGroup.includes(room.id) ? theme.tint : "#bbb"
-                    }
-                  />
+
+                  {selectedGroup.includes(room.id) ? (
+                    <CheckedboxIcon
+                      size={22}
+                      color={theme.tint}
+                    />
+                  ) : (
+                    <CheckboxIcon
+                      size={22}
+                      color={theme.text}
+                    />
+                  )}
                 </TouchableOpacity>
                 <Divider horizontal={true} marginVertical={5} />
               </View>
@@ -734,13 +748,19 @@ export default function CreateGroupScreen() {
                     </View>
                   </View>
 
-                  <Feather
-                    name={
-                      selected.includes(person.id) ? "check-square" : "square"
-                    }
-                    size={22}
-                    color={selected.includes(person.id) ? theme.tint : "#bbb"}
-                  />
+
+                  {selected.includes(person.id) ? (
+                    <CheckedboxIcon
+                      size={22}
+                      color={theme.tint}
+                    />
+                  ) : (
+                    <CheckboxIcon
+                      size={22}
+                      color={theme.text}
+                    />
+                  )}
+
                 </TouchableOpacity>
                 <Divider horizontal={true} marginVertical={5} />
               </View>
