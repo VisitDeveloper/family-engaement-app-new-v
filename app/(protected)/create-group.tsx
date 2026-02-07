@@ -3,12 +3,11 @@ import { ThemedText } from "@/components/themed-text";
 import Badge from "@/components/ui/badge";
 import Divider from "@/components/ui/divider";
 import { CheckboxIcon, CheckedboxIcon } from "@/components/ui/icons/common-icons";
-import { CameraIcon, PencilIcon, SmallUsersIcon } from "@/components/ui/icons/messages-icons";
+import { CameraIcon, PencilIcon, PersonWithPlusIcon, SmallUsersIcon, UsersIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
-import { AntDesign, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -89,8 +88,9 @@ export default function CreateGroupScreen() {
       borderWidth: 1,
       borderColor: theme.border,
       width: "100%",
-      paddingVertical: 40,
+      paddingVertical: 16,
       paddingHorizontal: 10,
+      paddingBottom: 4,
       borderRadius: 10,
     },
     groupName: {
@@ -128,23 +128,23 @@ export default function CreateGroupScreen() {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "#ccc",
+      backgroundColor: "#ECECF0",
       alignItems: "center",
       justifyContent: "center",
     },
-    initials: { color: "#fff", fontWeight: "600" },
+    initials: { color: "#121212", fontWeight: 400, fontSize: 12 },
     name: { fontSize: 16, fontWeight: "400", color: theme.text },
     subtitle: { fontSize: 12, color: theme.subText },
 
     numberOfInvitees: {
       flexDirection: "row",
-      gap: 10,
+      gap: 4,
       alignItems: "center",
       justifyContent: "center",
-      paddingHorizontal: 10,
-      paddingVertical: 3,
+      paddingHorizontal: 8,
+      paddingVertical: 1,
       backgroundColor: theme.panel,
-      borderRadius: 10,
+      borderRadius: 6,
     },
     wrapperInviteesShows: {
       flexDirection: "row",
@@ -345,7 +345,7 @@ export default function CreateGroupScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Group Image + Name */}
-        <View style={styles.imageWrapper}>
+        <View style={[styles.imageWrapper]}>
           <TouchableOpacity onPress={pickImage}>
             {selectedImage ? (
               <Image
@@ -451,7 +451,7 @@ export default function CreateGroupScreen() {
             >
               <ThemedText
                 type="middleTitle"
-                style={{ color: theme.text, marginLeft: 0 }}
+                style={{ color: theme.text, marginLeft: 0, fontWeight: 500 }}
               >
                 Attach Classrooms
               </ThemedText>
@@ -464,7 +464,7 @@ export default function CreateGroupScreen() {
             </View>
 
             <View style={styles.wrapperInviteesShows}>
-              {selectedGroup.length !== 0 && (
+              {/* {selectedGroup.length !== 0 && (
                 <TouchableOpacity
                   onPress={selectAllGroup}
                   style={[
@@ -476,9 +476,9 @@ export default function CreateGroupScreen() {
                     Select All
                   </ThemedText>
                 </TouchableOpacity>
-              )}
+              )} */}
 
-              <View
+              {/* <View
                 style={[
                   styles.numberOfInvitees,
                   {
@@ -487,7 +487,6 @@ export default function CreateGroupScreen() {
                   },
                 ]}
               >
-                {/* <Feather name="users" size={15} color={selectedGroup.length === 3 ? '#fff' : theme.text} /> */}
                 <MaterialCommunityIcons
                   name="google-classroom"
                   size={15}
@@ -498,11 +497,11 @@ export default function CreateGroupScreen() {
                     color: selectedGroup.length === 3 ? "#fff" : theme.text,
                     paddingVertical: 3,
                   }}
-                  type="middleTitle"
+                  type="subText"
                 >
                   {selectedGroup.length}
                 </ThemedText>
-              </View>
+              </View> */}
             </View>
           </View>
 
@@ -592,6 +591,7 @@ export default function CreateGroupScreen() {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
+              marginBottom: 16,
             }}
           >
             <View
@@ -601,7 +601,7 @@ export default function CreateGroupScreen() {
                 alignItems: "flex-start",
               }}
             >
-              <ThemedText type="middleTitle" style={{ color: theme.text }}>
+              <ThemedText type="middleTitle" style={{ color: theme.text, fontWeight: 500 }}>
                 Add Members
               </ThemedText>
               <ThemedText type="subText" style={{ color: theme.subText }}>
@@ -610,7 +610,7 @@ export default function CreateGroupScreen() {
             </View>
 
             <View style={styles.wrapperInviteesShows}>
-              {selected.length !== 0 && (
+              {/* {selected.length !== 0 && (
                 <TouchableOpacity
                   onPress={selectAllUsers}
                   style={[
@@ -623,7 +623,7 @@ export default function CreateGroupScreen() {
                   </ThemedText>
                   <Feather name={"check-square"} size={15} color={"#212121"} />
                 </TouchableOpacity>
-              )}
+              )} */}
 
               <View
                 style={[
@@ -634,17 +634,15 @@ export default function CreateGroupScreen() {
                   },
                 ]}
               >
-                <Feather
-                  name="users"
-                  size={15}
+                <UsersIcon
+                  size={16}
                   color={selected.length === 3 ? "#fff" : theme.text}
                 />
                 <ThemedText
                   style={{
                     color: selected.length === 3 ? "#fff" : theme.text,
-                    paddingVertical: 3,
                   }}
-                  type="middleTitle"
+                  type="subText"
                 >
                   {selected.length}
                 </ThemedText>
@@ -655,37 +653,35 @@ export default function CreateGroupScreen() {
           <TouchableOpacity style={styles.optionItem}>
             <View
               style={{
-                borderWidth: 1,
-                borderColor: theme.border,
+                backgroundColor: theme.tint + "25",
                 borderRadius: 50,
                 width: 40,
                 height: 40,
                 position: "relative",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingLeft: 3,
               }}
             >
-              {/* <ThemedText style={{ color: theme.tint,  }}>
-                                +
-                            </ThemedText> */}
-              <AntDesign
-                name="user-add"
-                size={22}
-                color={theme.tint}
-                style={{ margin: "auto", paddingTop: 0 }}
-              />
+              <PersonWithPlusIcon size={16} color={theme.tint} />
 
               <View
                 style={{
-                  backgroundColor: theme.passDesc,
+                  backgroundColor: theme.bg,
                   width: 10,
                   height: 10,
                   borderRadius: 50,
                   position: "absolute",
                   right: 0,
                   bottom: 0,
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
-              />
+              >
+                <View style={{ backgroundColor: "#00C950", width: 8, height: 8, borderRadius: 50 }} />
+              </View>
             </View>
-            <ThemedText style={{ color: theme.tint }}>
+            <ThemedText style={{ color: theme.text, fontWeight: 500 }}>
               Add New Contact
             </ThemedText>
           </TouchableOpacity>
@@ -709,7 +705,7 @@ export default function CreateGroupScreen() {
                       />
                     ) : (
                       <View
-                        style={[styles.avatar, { backgroundColor: "#aaa" }]}
+                        style={[styles.avatar]}
                       >
                         <ThemedText style={styles.initials}>
                           {person.initials}
@@ -743,7 +739,7 @@ export default function CreateGroupScreen() {
                         )}
                       </View>
                       <ThemedText style={styles.subtitle}>
-                        {person.subtitle}
+                        Last Seen: 2 hours ago
                       </ThemedText>
                     </View>
                   </View>
