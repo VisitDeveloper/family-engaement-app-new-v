@@ -69,7 +69,7 @@ function buildTheme(colorScheme: "light" | "dark", isHighContrast: boolean): The
     iconDash: isHighContrast ? "#fff" : baseTheme.dashboardColorNumber,
     emergencyColor: isHighContrast ? "#f87171" : baseTheme.emergencyColor,
     emergencyBackground: isHighContrast ? "#f87171" : baseTheme.emergencyBackground,
-    star : isHighContrast ? "#efb000" : baseTheme.star
+    star: isHighContrast ? "#efb000" : baseTheme.star
   };
 }
 

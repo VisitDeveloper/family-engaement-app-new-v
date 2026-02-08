@@ -5,6 +5,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -37,6 +38,7 @@ export default function PollResultsBottomSheet({
   onPollClosed,
   onEditPoll,
 }: PollResultsBottomSheetProps) {
+  const { t } = useTranslation();
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [poll, setPoll] = useState<PollResponseDto | null>(null);
   const [loading, setLoading] = useState(false);
@@ -80,9 +82,9 @@ export default function PollResultsBottomSheet({
       "Close poll",
       "Are you sure you want to close this poll? No more votes will be accepted.",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Close poll",
+          text: t("buttons.closePoll"),
           style: "destructive",
           onPress: async () => {
             try {

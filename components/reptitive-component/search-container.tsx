@@ -1,6 +1,7 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { StyleProp, TextInput, View, ViewStyle } from "react-native";
 import { useDebounce } from "use-debounce";
 import { SearchIcon } from "../ui/icons/common-icons";
@@ -20,6 +21,7 @@ export default function SearchContainer({
   onDebouncedQuery,
   addstyles,
 }: SearchContainerProps) {
+  const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
   const [debouncedQuery] = useDebounce(query, 300);
 
@@ -46,7 +48,7 @@ export default function SearchContainer({
     <View style={[styles.searchContainer, addstyles]}>
       <SearchIcon size={16} color={theme.subText} />
       <TextInput
-        placeholder={placeholder || "Search..."}
+        placeholder={placeholder ?? t("placeholders.search")}
         placeholderTextColor={theme.subText}
         style={styles.searchInput}
         value={query}

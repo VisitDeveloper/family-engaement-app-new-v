@@ -52,18 +52,19 @@ export default function HeaderThreeSections({ titlePrefix = <></>, ...props }: H
                 </TouchableOpacity>
                 {props.onCenterPress ? (
                     <TouchableOpacity
-                        style={{ gap: 12, flexDirection: "row", alignItems: "center", flex: 1 }}
+                        style={{ gap: 12, flexDirection: "row", alignItems: "center" }}
                         onPress={props.onCenterPress}
                         activeOpacity={0.7}
                     >
                         {titlePrefix}
                         <View>
                             <ThemedText type="subtitle" style={{ fontWeight: 600, fontSize: 16 }}>
-                                {props.title}
+                                {props.title}222
                             </ThemedText>
-                            <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
-                                {props.desc}
-                            </ThemedText>
+                            {props.desc ?
+                                <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
+                                    {props.desc}
+                                </ThemedText> : <></>}
                         </View>
                     </TouchableOpacity>
                 ) : (
@@ -73,15 +74,16 @@ export default function HeaderThreeSections({ titlePrefix = <></>, ...props }: H
                             <ThemedText type="subtitle" style={{ fontWeight: 600, fontSize: 16 }}>
                                 {props.title}
                             </ThemedText>
-                            <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
-                                {props.desc}
-                            </ThemedText>
+                            {props.desc ?
+                                <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
+                                    {props.desc}
+                                </ThemedText> : <></>}
                         </View>
                     </View>
                 )}
             </View>
             <RoleGuard roles={props.buttonRoles || ["admin", "teacher", "parent"]}>
-                <TouchableOpacity onPress={props.onPress}>
+                <TouchableOpacity onPress={props.onPress} style={{ flexShrink: 1 }}>
                     {props.icon}
                 </TouchableOpacity>
             </RoleGuard>

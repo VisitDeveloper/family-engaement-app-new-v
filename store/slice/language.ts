@@ -1,9 +1,9 @@
 import { StateCreator } from "zustand";
 
 export interface LanguageSlice {
-  appLanguage: string; // Application language: 'en' or 'fa'
+  appLanguage: string; // Application language: 'en' | 'fr' | 'es'
   setAppLanguage: (language: string) => void;
-  getAcceptLanguage: () => string; // Convert to Accept-Language format (e.g., en-US or fa-IR)
+  getAcceptLanguage: () => string; // For API Accept-Language header
 }
 
 export const createLanguageSlice: StateCreator<any, [], [], LanguageSlice> = (set, get) => {

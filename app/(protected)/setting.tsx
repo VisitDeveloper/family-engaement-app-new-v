@@ -12,6 +12,8 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import i18n from "@/i18n";
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -27,8 +29,15 @@ import {
 // const { width: screenWidth } = Dimensions.get("window");
 // const CONTENT_WIDTH = Math.min(420, screenWidth - 32); // responsive central column
 
+const LANGUAGE_OPTIONS = [
+  { label: "English", value: "en" },
+  { label: "French", value: "fr" },
+  { label: "Spanish", value: "es" },
+];
+
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const theme = useStore((state) => state.theme);
   const isHighContrast = useStore((state) => state.isHighContrast);
@@ -36,7 +45,6 @@ export default function SettingsScreen() {
   const colorScheme = useStore((state) => state.colorScheme);
   const setColorScheme = useStore((state) => state.setColorScheme);
   const user = useStore((state) => state.user);
-  const role = useStore((state) => state.role);
 
   const [pushNotifs, setPushNotifs] = useState(true);
   const [emailNotifs, setEmailNotifs] = useState(true);
@@ -56,21 +64,15 @@ export default function SettingsScreen() {
   const setAppLanguage = useStore((state) => state.setAppLanguage);
   const [tone, setTone] = useState("Default");
   const [logoutLoading, setLogoutLoading] = useState(false);
-  const [lang, setLang] = useState<OptionsList[]>([
-    {
-      label: "English",
-      value: appLanguage || "en",
-    },
-  ]);
+  const [lang, setLang] = useState<OptionsList[]>(() => {
+    const opt = LANGUAGE_OPTIONS.find((o) => o.value === (appLanguage || "en"));
+    return opt ? [opt] : [LANGUAGE_OPTIONS[0]];
+  });
 
   // Sync lang with appLanguage from store
   useEffect(() => {
     if (appLanguage) {
-      const languageOptions = [
-        { label: "English", value: "en" },
-        { label: "Persian", value: "fa" },
-      ];
-      const selectedOption = languageOptions.find(
+      const selectedOption = LANGUAGE_OPTIONS.find(
         (opt) => opt.value === appLanguage
       );
       if (selectedOption) {
@@ -80,13 +82,16 @@ export default function SettingsScreen() {
   }, [appLanguage]);
 
   const handleLogout = async () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
+    Alert.alert(
+      t("settings.logoutConfirmTitle"),
+      t("settings.logoutConfirmMessage"),
+      [
+        {
+          text: t("common.cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("common.logout"),
         style: "destructive",
         onPress: async () => {
           setLogoutLoading(true);
@@ -119,8 +124,8 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.container]}>
       <HeaderInnerPage
-        title="Settings"
-        subTitle="Manage your app preferences and account"
+        title={t("settings.title")}
+        subTitle={t("settings.subTitle")}
         addstyles={{ marginBottom: 0 }}
       />
 
@@ -188,7 +193,7 @@ export default function SettingsScreen() {
               type="middleTitle"
               style={[styles.cardTitle, { color: theme.text }]}
             >
-              Notifications
+              {t("settings.notifications")}
             </ThemedText>
           </View>
 
@@ -196,13 +201,13 @@ export default function SettingsScreen() {
           <View style={[styles.row]}>
             <View style={{ flex: 1 }}>
               <ThemedText type="middleTitle" style={{ color: theme.text }}>
-                Push Notifications
+                {t("settings.pushNotifications")}
               </ThemedText>
               <ThemedText
                 type="subText"
                 style={[styles.rowSubtitle, { color: theme.subText }]}
               >
-                Receive notifications on your device
+                {t("settings.pushNotificationsDesc")}
               </ThemedText>
             </View>
             <Switch
@@ -217,13 +222,13 @@ export default function SettingsScreen() {
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <ThemedText type="middleTitle" style={{ color: theme.text }}>
-                Email Notifications
+                {t("settings.emailNotifications")}
               </ThemedText>
               <ThemedText
                 type="subText"
                 style={[styles.rowSubtitle, { color: theme.subText }]}
               >
-                Get updates via email
+                {t("settings.emailNotificationsDesc")}
               </ThemedText>
             </View>
             <Switch
@@ -238,13 +243,13 @@ export default function SettingsScreen() {
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <ThemedText type="middleTitle" style={{ color: theme.text }}>
-                Text Messages
+                {t("settings.textMessages")}
               </ThemedText>
               <ThemedText
                 type="subText"
                 style={[styles.rowSubtitle, { color: theme.subText }]}
               >
-                SMS alerts for important updates
+                {t("settings.textMessagesDesc")}
               </ThemedText>
             </View>
             <Switch
@@ -270,14 +275,14 @@ export default function SettingsScreen() {
                   type="middleTitle"
                   style={{ color: theme.text, marginLeft: 8 }}
                 >
-                  Urgent Alerts
+                  {t("settings.urgentAlerts")}
                 </ThemedText>
               </View>
               <ThemedText
                 type="subText"
                 style={[styles.rowSubtitle, { color: theme.subText }]}
               >
-                Emergency broadcasts & safety alerts
+                {t("settings.urgentAlertsDesc")}
               </ThemedText>
             </View>
             <Switch
@@ -294,7 +299,7 @@ export default function SettingsScreen() {
               type="middleTitle"
               style={[styles.selectLabel, { color: theme.text }]}
             >
-              Alert Tone
+              {t("settings.alertTone")}
             </ThemedText>
 
             <SelectBox
@@ -310,7 +315,7 @@ export default function SettingsScreen() {
               ]}
               value={tone}
               onChange={setTone}
-              title="List of Alert Tone"
+              title={t("settings.listOfAlertTone")}
             />
 
             {/* <Dropdown
@@ -333,7 +338,7 @@ export default function SettingsScreen() {
               type="middleTitle"
               style={[styles.cardTitle, { color: theme.text }]}
             >
-              Language & Accessibility
+              {t("settings.languageAndAccessibility")}
             </ThemedText>
           </View>
 
@@ -343,29 +348,26 @@ export default function SettingsScreen() {
               type="middleTitle"
               style={[styles.selectLabel, { color: theme.text }]}
             >
-              App Language
+              {t("settings.appLanguage")}
             </ThemedText>
 
             <SelectBox
-              options={[
-                { label: "English", value: "en" },
-                { label: "French", value: "fr" },
-                { label: "Spanish", value: "es" },
-              ]}
-              value={appLanguage || lang[0].value} // Use language from store
+              options={LANGUAGE_OPTIONS.map((o) => ({
+                label: t(`languages.${o.value}`),
+                value: o.value,
+              }))}
+              value={appLanguage || lang[0].value}
               onChange={(val) => {
-                const selectedOption = [
-                  { label: "English", value: "en" },
-                  { label: "French", value: "fr" },
-                  { label: "Spanish", value: "es" },
-                ].find((opt) => opt.value === val);
-
+                const selectedOption = LANGUAGE_OPTIONS.find(
+                  (opt) => opt.value === val
+                );
                 if (selectedOption) {
-                  setLang([selectedOption]); // For local display
-                  setAppLanguage(selectedOption.value); // Save to store
+                  setLang([{ ...selectedOption, label: t(`languages.${selectedOption.value}`) }]);
+                  setAppLanguage(selectedOption.value);
+                  i18n.changeLanguage(selectedOption.value);
                 }
               }}
-              title="List of Language"
+              title={t("settings.listOfLanguage")}
             />
           </View>
 
@@ -375,13 +377,13 @@ export default function SettingsScreen() {
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <ThemedText type="middleTitle" style={{ color: theme.text }}>
-                Dark Mode
+                {t("settings.darkMode")}
               </ThemedText>
               <ThemedText
                 type="subText"
                 style={[styles.rowSubtitle, { color: theme.subText }]}
               >
-                Switch between light and dark theme
+                {t("settings.darkModeDesc")}
               </ThemedText>
             </View>
             <Switch
@@ -401,14 +403,14 @@ export default function SettingsScreen() {
                 style={{ color: theme.text }}
                 readString="Change Font Size"
               >
-                Large Font
+                {t("settings.largeFont")}
               </ThemedText>
               <ThemedText
                 type="subText"
                 style={[styles.rowSubtitle, { color: theme.subText }]}
                 readString="Increase text size for better readability"
               >
-                Increase text size for better readability
+                {t("settings.largeFontDesc")}
               </ThemedText>
             </View>
             <Switch
@@ -422,13 +424,13 @@ export default function SettingsScreen() {
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <ThemedText type="middleTitle" style={{ color: theme.text }}>
-                High Contrast Mode
+                {t("settings.highContrastMode")}
               </ThemedText>
               <ThemedText
                 type="subText"
                 style={[styles.rowSubtitle, { color: theme.subText }]}
               >
-                Enhanced visibility for better reading
+                {t("settings.highContrastModeDesc")}
               </ThemedText>
             </View>
             <Switch
@@ -442,13 +444,13 @@ export default function SettingsScreen() {
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <ThemedText type="middleTitle" style={{ color: theme.text }}>
-                Voice Narration
+                {t("settings.voiceNarration")}
               </ThemedText>
               <ThemedText
                 type="subText"
                 style={[styles.rowSubtitle, { color: theme.subText }]}
               >
-                Read messages and content aloud
+                {t("settings.voiceNarrationDesc")}
               </ThemedText>
             </View>
 
@@ -474,7 +476,7 @@ export default function SettingsScreen() {
               type="middleTitle"
               style={[styles.cardTitle, { color: theme.text }]}
             >
-              Privacy & Security
+              {t("settings.privacyAndSecurity")}
             </ThemedText>
           </View>
 
@@ -494,9 +496,7 @@ export default function SettingsScreen() {
                 { color: theme.text, flex: 1, paddingVertical: 0 },
               ]}
             >
-              This app does not intend to collect PII or securing sensitive
-              personal data. All communications are for educational purposes
-              only.
+              {t("settings.privacyDescription")}
             </ThemedText>
           </View>
 
@@ -516,7 +516,7 @@ export default function SettingsScreen() {
                   paddingHorizontal: 10,
                 }}
               >
-                Family Member Permissions
+                {t("settings.familyMemberPermissions")}
               </ThemedText>
               <AntDesign name="right" size={16} color={theme.text} />
             </TouchableOpacity>
@@ -538,8 +538,7 @@ export default function SettingsScreen() {
                 paddingHorizontal: 10,
               }}
             >
-              {" "}
-              Data & Privacy Policy
+              {t("settings.dataAndPrivacyPolicy")}
             </ThemedText>
             <AntDesign name="right" size={16} color={theme.text} />
           </TouchableOpacity>
@@ -560,7 +559,7 @@ export default function SettingsScreen() {
                 paddingHorizontal: 10,
               }}
             >
-              Block/Unblock Contacts
+              {t("settings.blockUnblockContacts")}
             </ThemedText>
             <AntDesign name="right" size={16} color={theme.text} />
           </TouchableOpacity>
@@ -580,12 +579,12 @@ export default function SettingsScreen() {
                 type="middleTitle"
                 style={[styles.cardTitle, { color: theme.text }]}
               >
-                Account Management
+                {t("settings.accountManagement")}
               </ThemedText>
             </View>
 
             <TouchableOpacity
-              onPress={() => speak(`Add Family Member`)}
+              onPress={() => speak(t("settings.addFamilyMember"))}
               style={[
                 styles.dataSecurityLink,
                 { borderColor: theme.border, backgroundColor: theme.panel },
@@ -600,7 +599,7 @@ export default function SettingsScreen() {
                   paddingHorizontal: 10,
                 }}
               >
-                Add Family Member
+                {t("settings.addFamilyMember")}
               </ThemedText>
               <AntDesign name="right" size={16} color={theme.text} />
             </TouchableOpacity>
@@ -619,7 +618,7 @@ export default function SettingsScreen() {
                   paddingHorizontal: 10,
                 }}
               >
-                Manage Children
+                {t("settings.manageChildren")}
               </ThemedText>
               <AntDesign name="right" size={16} color={theme.text} />
             </TouchableOpacity>
@@ -638,7 +637,7 @@ export default function SettingsScreen() {
                   paddingHorizontal: 10,
                 }}
               >
-                Export Data
+                {t("settings.exportData")}
               </ThemedText>
               <AntDesign name="download" size={16} color={theme.text} />
             </TouchableOpacity>
@@ -663,10 +662,10 @@ export default function SettingsScreen() {
             type="middleTitle"
             style={[styles.cardTitle, { color: theme.text }]}
           >
-            Family Connect
+            {t("settings.familyConnect")}
           </ThemedText>
           <ThemedText type="subText" style={{ color: theme.subText }}>
-            Version 2.1.0
+            {t("settings.version")} 2.1.0
           </ThemedText>
           <View
             style={{
@@ -682,13 +681,13 @@ export default function SettingsScreen() {
               type="default"
               style={{ color: theme.subText, fontWeight: "600" }}
             >
-              Support
+              {t("common.support")}
             </ThemedText>
             <ThemedText
               type="default"
               style={{ color: theme.subText, fontWeight: "600" }}
             >
-              Terms of Service{" "}
+              {t("common.termsOfService")}{" "}
             </ThemedText>
           </View>
         </View>
@@ -727,7 +726,7 @@ export default function SettingsScreen() {
                 paddingHorizontal: 10,
               }}
             >
-              {logoutLoading ? "Logging out..." : "Logout"}
+              {logoutLoading ? t("common.loggingOut") : t("common.logout")}
             </ThemedText>
           </TouchableOpacity>
         </View>

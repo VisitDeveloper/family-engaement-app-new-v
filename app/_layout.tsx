@@ -1,3 +1,4 @@
+import "@/i18n";
 import { useStore } from "@/store";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as Linking from "expo-linking";

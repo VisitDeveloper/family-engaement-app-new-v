@@ -2,9 +2,11 @@ import HeaderInnerPage from "@/components/reptitive-component/header-inner-page"
 import { ThemedText } from "@/components/themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
+import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
 
 export default function DataPrivacyScreen() {
+    const { t } = useTranslation();
     const theme = useStore((state) => state.theme)
 
 
@@ -39,7 +41,7 @@ export default function DataPrivacyScreen() {
     return (
         <View style={styles.container}>
             <HeaderInnerPage
-                title="Data & Privacy Policy"
+                title={t("dataPrivacy.title")}
                 addstyles={{ marginBottom: 20 }}
             />
 

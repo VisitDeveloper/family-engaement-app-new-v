@@ -1,16 +1,9 @@
-/**
- * ترجمه با MyMemory API.
- * زبان‌ها: کد ISO دو حرفی (مثل en, fa). همیشه رشته به API فرستاده می‌شود تا از [object Object] جلوگیری شود.
- */
-
 import { getLocales } from "expo-localization";
 
 const MYMEMORY_URL = "https://api.mymemory.translated.net/get";
 
-/** کد زبان برای API (۲ حرف ISO یا مثلاً zh-cn). */
 export type LangCode = string;
 
-/** لیست زبان‌های پشتیبانی‌شده برای انتخاب کاربر (کد + برچسب). */
 export const SUPPORTED_LANGUAGES: { code: LangCode; label: string }[] = [
   { code: "en", label: "English" },
   { code: "es", label: "Español" },
@@ -22,7 +15,6 @@ export const SUPPORTED_LANGUAGES: { code: LangCode; label: string }[] = [
   { code: "ar", label: "العربية" },
 ];
 
-/** تشخیص زبان مبدأ از روی متن: اگر غالباً حروف عربی/فارسی باشد → fa، وگرنه en. */
 export function detectSourceLanguage(text: string): LangCode {
   const t = text.trim();
   if (!t) return "en";
@@ -38,7 +30,6 @@ export function detectSourceLanguage(text: string): LangCode {
   return count / total >= 0.3 ? "fa" : "en";
 }
 
-/** زبان هدف پیش‌فرض از دستگاه. */
 export function getDeviceTargetLang(): LangCode {
   try {
     const locales = getLocales();
@@ -57,7 +48,6 @@ export function getDeviceTargetLang(): LangCode {
   }
 }
 
-/** اطمینان از رشته بودن کد زبان برای API (جلوگیری از [object Object]). */
 function toLangCode(value: unknown): LangCode {
   if (typeof value === "string" && /^[a-z]{2}(-[a-z]{2})?$/i.test(value.trim())) {
     return value.trim().toLowerCase();
@@ -65,10 +55,6 @@ function toLangCode(value: unknown): LangCode {
   return "en";
 }
 
-/**
- * ترجمه متن با MyMemory.
- * sourceLang/targetLang حتماً باید رشته (کد زبان) باشند؛ در سرویس نرمالایز می‌شوند.
- */
 export async function translateText(
   text: string,
   options?: { sourceLang?: LangCode | undefined; targetLang?: LangCode | undefined }

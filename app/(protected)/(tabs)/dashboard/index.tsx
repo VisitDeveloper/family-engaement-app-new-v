@@ -10,6 +10,7 @@ import {
     FontAwesome6,
 } from "@expo/vector-icons";
 import { Redirect } from "expo-router";
+import { useTranslation } from "react-i18next";
 import {
     Platform,
     ScrollView,
@@ -19,6 +20,7 @@ import {
 } from "react-native";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { theme } = useStore((state) => state);
   const role = useStore((state) => state.role);
 
@@ -112,8 +114,8 @@ export default function Dashboard() {
       </View> */}
 
       <HeaderTabItem
-        title="Dashboard"
-        subTitle="Family engagement analytics"
+        title={t("tabs.dashboard")}
+        subTitle={t("tabs.dashboardSubTitle")}
         addstyles={[styles.headerWrap, { borderBottomColor: theme.border }]}
       />
 
@@ -192,7 +194,7 @@ export default function Dashboard() {
                 }}
               >
                 <AntDesign name="download" size={15} color={theme.tint} />
-                <Text style={{ color: theme.tint }}>Export</Text>
+                <Text style={{ color: theme.tint }}>{t("buttons.export")}</Text>
               </TouchableOpacity>
             </View>
 

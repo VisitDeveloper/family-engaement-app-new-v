@@ -13,6 +13,7 @@ import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -60,6 +61,7 @@ const convertToResourceItemProps = (
 };
 
 const ResourceLibrary = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const theme = useStore((state) => state.theme);
   const insets = useSafeAreaInsets();
@@ -288,8 +290,8 @@ const ResourceLibrary = () => {
   return (
     <View style={styles.container}>
       <HeaderTabItem
-        title="Resource Library"
-        subTitle="200+ books and activities"
+        title={t("tabs.resources")}
+        subTitle={t("tabs.resourcesSubTitle")}
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
       />
 
@@ -298,7 +300,7 @@ const ResourceLibrary = () => {
           query={query}
           onChangeQuery={setQuery}
           onDebouncedQuery={handleDebouncedQuery}
-          placeholder="Search Resources..."
+          placeholder={t("placeholders.searchResources")}
         />
       </View>
 
@@ -314,7 +316,13 @@ const ResourceLibrary = () => {
           paddingHorizontal: 10,
         }}
       >
-        {["All", "Book", "Activity", "Video", "Saved"].map((cat) => (
+        {[
+          { value: "All", labelKey: "resource.categoryAll" },
+          { value: "Book", labelKey: "resource.categoryBook" },
+          { value: "Activity", labelKey: "resource.categoryActivity" },
+          { value: "Video", labelKey: "resource.categoryVideo" },
+          { value: "Saved", labelKey: "resource.categorySaved" },
+        ].map(({ value: cat, labelKey }) => (
           <TouchableOpacity key={cat} onPress={() => handleCategoryChange(cat)}>
             <ThemedText
               type="subText"
@@ -330,7 +338,7 @@ const ResourceLibrary = () => {
                 borderRadius: 8,
               }}
             >
-              {cat}
+              {t(labelKey)}
             </ThemedText>
           </TouchableOpacity>
         ))}
@@ -370,7 +378,7 @@ const ResourceLibrary = () => {
               borderRadius: 8,
             }}
           >
-            <ThemedText style={{ color: "#fff" }}>Retry</ThemedText>
+            <ThemedText style={{ color: "#fff" }}>{t("buttons.retry")}</ThemedText>
           </TouchableOpacity>
         </View>
       ) : filteredResources.length === 0 ? (

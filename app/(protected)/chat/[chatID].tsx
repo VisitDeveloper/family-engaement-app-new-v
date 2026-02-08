@@ -15,11 +15,13 @@ import { Audio, ResizeMode, Video } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChatScreen() {
+    const { t } = useTranslation();
     const [input, setInput] = useState("");
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -505,9 +507,9 @@ export default function ChatScreen() {
             "Select Media",
             "Choose an option",
             [
-                { text: "Image", onPress: pickImage },
-                { text: "Video", onPress: pickVideo },
-                { text: "Cancel", style: "cancel" },
+                { text: t("buttons.image"), onPress: pickImage },
+                { text: t("buttons.video"), onPress: pickVideo },
+                { text: t("common.cancel"), style: "cancel" },
             ]
         );
     };
@@ -817,7 +819,6 @@ export default function ChatScreen() {
                     });
                 });
         }
-        // translateApplyKey: با هر Apply عوض می‌شود تا effect دوباره اجرا شود و ترجمه‌ها درست آپدیت شوند
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [translateMessages, translateApplyKey, translateSource, translateTarget, conversationId, messages.length]);
 
@@ -1160,14 +1161,14 @@ export default function ChatScreen() {
                             style={styles.editBarCancelButton}
                             onPress={handleCancelEdit}
                         >
-                            <Text style={{ color: theme.text, fontSize: 14 }}>Cancel</Text>
+                            <Text style={{ color: theme.text, fontSize: 14 }}>{t("common.cancel")}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.editBarSaveButton}
                             onPress={handleSaveEdit}
                             disabled={!editDraft.trim()}
                         >
-                            <Text style={{ color: "#fff", fontSize: 14 }}>Save</Text>
+                            <Text style={{ color: "#fff", fontSize: 14 }}>{t("common.save")}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -1363,14 +1364,14 @@ export default function ChatScreen() {
                         onPress={() => setShowTranslateLangModal(false)}
                     >
                         <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()} style={[styles.translateModalBox, { backgroundColor: theme.panel || theme.bg }]}>
-                            <Text style={[styles.translateModalTitle, { color: theme.text }]}>Translate messages</Text>
-                            <Text style={[styles.translateModalLabel, { color: theme.subText }]}>From (source)</Text>
+                            <Text style={[styles.translateModalTitle, { color: theme.text }]}>{t("translate.modalTitle")}</Text>
+                            <Text style={[styles.translateModalLabel, { color: theme.subText }]}>{t("translate.fromSource")}</Text>
                             <ScrollView style={styles.translateModalList} showsVerticalScrollIndicator={false}>
                                 <TouchableOpacity
                                     style={[styles.translateModalRow, translateSource === "auto" && { backgroundColor: theme.tint + "30" }]}
                                     onPress={() => setTranslateSource("auto")}
                                 >
-                                    <Text style={{ color: theme.text, fontSize: 16 }}>Auto (detect)</Text>
+                                    <Text style={{ color: theme.text, fontSize: 16 }}>{t("translate.autoDetect")}</Text>
                                     {translateSource === "auto" && <Ionicons name="checkmark-circle" size={22} color={theme.tint} />}
                                 </TouchableOpacity>
                                 {SUPPORTED_LANGUAGES.map((lang) => (
@@ -1384,7 +1385,7 @@ export default function ChatScreen() {
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-                            <Text style={[styles.translateModalLabel, { color: theme.subText, marginTop: 12 }]}>To (target)</Text>
+                            <Text style={[styles.translateModalLabel, { color: theme.subText, marginTop: 12 }]}>{t("translate.toTarget")}</Text>
                             <ScrollView style={styles.translateModalList} showsVerticalScrollIndicator={false}>
                                 {SUPPORTED_LANGUAGES.map((lang) => (
                                     <TouchableOpacity
@@ -1406,7 +1407,7 @@ export default function ChatScreen() {
                                             setShowTranslateLangModal(false);
                                         }}
                                     >
-                                        <Text style={{ color: theme.subText, fontSize: 14 }}>Turn off translation</Text>
+                                        <Text style={{ color: theme.subText, fontSize: 14 }}>{t("translate.turnOff")}</Text>
                                     </TouchableOpacity>
                                 )}
                                 <TouchableOpacity
@@ -1423,7 +1424,7 @@ export default function ChatScreen() {
                                         setShowTranslateLangModal(false);
                                     }}
                                 >
-                                    <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>Apply</Text>
+                                    <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{t("buttons.apply")}</Text>
                                 </TouchableOpacity>
                             </View>
                         </TouchableOpacity>
@@ -1441,7 +1442,7 @@ export default function ChatScreen() {
                             <TouchableOpacity onPress={() => setVideoModalUri(null)}>
                                 <Ionicons name="arrow-back" size={28} color="#fff" />
                             </TouchableOpacity>
-                            <Text style={{ color: "#fff", fontSize: 16 }}>Video</Text>
+                            <Text style={{ color: "#fff", fontSize: 16 }}>{t("buttons.video")}</Text>
                             <View style={{ width: 28 }} />
                         </View>
                         {videoModalUri && (

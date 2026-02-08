@@ -1,0 +1,221 @@
+{
+  "common": {
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "done": "Hecho",
+    "copiedToClipboard": "Copiado al portapapeles",
+    "loading": "Cargando",
+    "logout": "Cerrar sesión",
+    "loggingOut": "Cerrando sesión...",
+    "admin": "Admin",
+    "profile": "Perfil",
+    "support": "Soporte",
+    "termsOfService": "Términos de servicio"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "subTitle": "Gestiona tus preferencias y cuenta",
+    "notifications": "Notificaciones",
+    "pushNotifications": "Notificaciones push",
+    "pushNotificationsDesc": "Recibe notificaciones en tu dispositivo",
+    "emailNotifications": "Notificaciones por correo",
+    "emailNotificationsDesc": "Recibe actualizaciones por correo electrónico",
+    "textMessages": "Mensajes de texto",
+    "textMessagesDesc": "Alertas SMS para actualizaciones importantes",
+    "urgentAlerts": "Alertas urgentes",
+    "urgentAlertsDesc": "Transmisiones de emergencia y alertas de seguridad",
+    "alertTone": "Tono de alerta",
+    "listOfAlertTone": "Lista de tonos de alerta",
+    "languageAndAccessibility": "Idioma y accesibilidad",
+    "appLanguage": "Idioma de la aplicación",
+    "listOfLanguage": "Lista de idiomas",
+    "darkMode": "Modo oscuro",
+    "darkModeDesc": "Cambiar entre tema claro y oscuro",
+    "largeFont": "Fuente grande",
+    "largeFontDesc": "Aumentar el tamaño del texto para mejor legibilidad",
+    "highContrastMode": "Modo de alto contraste",
+    "highContrastModeDesc": "Mayor visibilidad para una mejor lectura",
+    "voiceNarration": "Narración por voz",
+    "voiceNarrationDesc": "Leer mensajes y contenido en voz alta",
+    "privacyAndSecurity": "Privacidad y seguridad",
+    "privacyDescription": "Esta aplicación no pretende recopilar datos personales identificables ni asegurar datos personales sensibles. Todas las comunicaciones son solo con fines educativos.",
+    "familyMemberPermissions": "Permisos de miembros de la familia",
+    "dataAndPrivacyPolicy": "Política de datos y privacidad",
+    "blockUnblockContacts": "Bloquear/Desbloquear contactos",
+    "accountManagement": "Gestión de cuenta",
+    "addFamilyMember": "Añadir miembro de la familia",
+    "manageChildren": "Gestionar hijos",
+    "exportData": "Exportar datos",
+    "familyConnect": "Family Connect",
+    "version": "Versión",
+    "logoutConfirmTitle": "Cerrar sesión",
+    "logoutConfirmMessage": "¿Estás seguro de que quieres cerrar sesión?"
+  },
+  "languages": {
+    "en": "English",
+    "fr": "Français",
+    "es": "Español"
+  },
+  "tabs": {
+    "messages": "Mensajes",
+    "messagesSubTitle": "Conversaciones y avisos importantes",
+    "timeline": "Línea de tiempo",
+    "timelineTitle": "Línea de tiempo de {{name}}",
+    "timelineSubTitle": "Recorrido de aprendizaje y recuerdos",
+    "timelineAllPosts": "Todas las publicaciones",
+    "timelineMedia": "Medios",
+    "timelineRecommended": "Recomendado",
+    "timelineSaved": "Guardados",
+    "resources": "Biblioteca de recursos",
+    "resourcesSubTitle": "200+ libros y actividades",
+    "dashboard": "Panel de control",
+    "dashboardSubTitle": "Análisis de participación familiar",
+    "dashboardSubTitleParent": "Resumen de tu participación familiar",
+    "tabBarMessages": "Mensajes",
+    "tabBarTimeline": "Línea",
+    "tabBarDashboard": "Panel",
+    "tabBarResources": "Recursos",
+    "newButton": "Nuevo"
+  },
+  "profile": {
+    "title": "Perfil y ajustes de cuenta",
+    "profileTitle": "Perfil"
+  },
+  "userProfile": {
+    "title": "Perfil"
+  },
+  "changePassword": {
+    "title": "Cambiar contraseña"
+  },
+  "dataPrivacy": {
+    "title": "Política de datos y privacidad"
+  },
+  "blocklist": {
+    "title": "Bloquear/Desbloquear contactos"
+  },
+  "newMessage": {
+    "title": "Nuevo mensaje"
+  },
+  "createGroup": {
+    "title": "Crear nuevo grupo",
+    "allClassrooms": "Todas las aulas",
+    "allContacts": "Todos los contactos"
+  },
+  "createPost": {
+    "newPost": "Nueva publicación",
+    "editPost": "Editar publicación",
+    "listOfClassrooms": "Lista de aulas",
+    "listOfPostVisibility": "Lista de visibilidad de publicaciones"
+  },
+  "createEvent": {
+    "createNewEvent": "Crear nuevo evento",
+    "editEvent": "Editar evento",
+    "listOfEventType": "Lista de tipos de evento",
+    "listOfRepetitions": "Lista de repeticiones"
+  },
+  "event": {
+    "schoolCalendar": "Calendario escolar",
+    "schoolCalendarDesc": "Próximos eventos y fechas importantes",
+    "eventDetails": "Detalles del evento"
+  },
+  "resource": {
+    "rateResource": "Valorar recurso",
+    "categoryAll": "Todos",
+    "categoryBook": "Libro",
+    "categoryActivity": "Actividad",
+    "categoryVideo": "Vídeo",
+    "categorySaved": "Guardados"
+  },
+  "feed": {
+    "backToTimeline": "Volver a la línea de tiempo"
+  },
+  "map": {
+    "selectedLocation": "Ubicación seleccionada"
+  },
+  "placeholders": {
+    "search": "Buscar...",
+    "searchConversations": "Buscar conversaciones...",
+    "searchResources": "Buscar recursos...",
+    "writeNewPost": "Escribe una nueva publicación ...",
+    "oldPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "confirmPassword": "Confirmar nueva contraseña",
+    "noEmailAvailable": "No hay correo disponible",
+    "addReply": "Añadir una respuesta...",
+    "addComment": "Añadir un comentario...",
+    "whatToTalkAbout": "¿De qué quieres hablar?",
+    "tagsWithComma": "Separa las etiquetas con coma (,)",
+    "eventName": "¿Cómo se llama el evento?",
+    "eventDuration": "30 min",
+    "editMessage": "Editar mensaje...",
+    "typeMessage": "Escribe un mensaje...",
+    "email": "Por favor introduce tu correo",
+    "password": "Por favor introduce tu contraseña",
+    "confirmPasswordLogin": "Por favor confirma tu contraseña",
+    "pollQuestion": "¿Qué piensas de DAP??",
+    "pollOptionLike": "Me gusta.",
+    "pollOptionDislike": "No me gusta.",
+    "pollOptionNoOpinion": "Sin opinión.",
+    "askAnything": "Pregúntame lo que quieras...",
+    "emergencyMessage": "Escribe tu mensaje de emergencia..."
+  },
+  "buttons": {
+    "retry": "Reintentar",
+    "emergency": "Emergencia",
+    "confirm": "Confirmar",
+    "apply": "Aplicar",
+    "video": "Vídeo",
+    "back": "Atrás",
+    "closePoll": "Cerrar encuesta",
+    "delete": "Eliminar",
+    "export": "Exportar",
+    "ok": "OK",
+    "going": "Asistiré",
+    "maybe": "Tal vez",
+    "notGoing": "No asistiré",
+    "rsvp": "Confirmar",
+    "image": "Imagen"
+  },
+  "emergency": {
+    "title": "Alerta de emergencia",
+    "subtitle": "Enviar notificaciones urgentes a todas las familias",
+    "alertDescription": "Las alertas de emergencia omiten la configuración normal de notificaciones y se envían inmediatamente a todos los destinatarios.",
+    "alertMessage": "Mensaje de alerta",
+    "quickTemplates": "Plantillas rápidas:",
+    "template1": "Confinamiento escolar - todos los estudiantes están seguros...",
+    "template2": "Alerta meteorológica - salida anticipada a las 14:00...",
+    "template3": "Emergencia médica resuelta - todos los estudiantes...",
+    "template4": "Retraso de transporte - autobuses con 30 min de retraso...",
+    "deliveryMethods": "Métodos de envío",
+    "pushNotifications": "Notificaciones push",
+    "pushSub": "Alertas móviles instantáneas",
+    "emailAlerts": "Alertas por correo",
+    "emailSub": "Enviar a correos registrados",
+    "smsMessages": "Mensajes SMS",
+    "smsSub": "Alertas por mensaje de texto",
+    "recipients": "Destinatarios",
+    "recipientsNote": "Esta alerta se enviará a los 5 miembros de la familia en todas las clases.",
+    "sendButton": "Enviar alerta de emergencia",
+    "charCount": "{{count}}/500 caracteres"
+  },
+  "translate": {
+    "modalTitle": "Traducir mensajes",
+    "fromSource": "De (origen)",
+    "toTarget": "A (destino)",
+    "autoDetect": "Auto (detectar)",
+    "turnOff": "Desactivar traducción"
+  },
+  "ai": {
+    "title": "Asistente de enseñanza IA",
+    "buttonLabel": "Asistente IA",
+    "subtitle": "Siempre listo para ayudar",
+    "greeting": "¡Hola! Soy tu asistente de enseñanza IA. Puedo ayudarte a interpretar informes de evaluación, sugerir actividades de aprendizaje y crear información personalizada para tus estudiantes. ¿Cómo puedo ayudarte hoy?",
+    "quickActionsTitle": "Acciones rápidas:",
+    "justNow": "Ahora mismo",
+    "quickInterpret": "Interpretar evaluación de lectura",
+    "quickMath": "Sugerir actividades de matemáticas",
+    "quickParent": "Generar comunicación con padres",
+    "quickGoals": "Crear objetivos de aprendizaje",
+    "uploadReport": "Subir informe de evaluación"
+  }
+}
