@@ -30,7 +30,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-/** تنها پیام سیستم در چت: سلام اولیه از طرف AI */
 const SYSTEM_GREETING = {
     id: 'system-greeting',
     type: 'system' as const,
@@ -64,7 +63,6 @@ const TeachingAssistantScreen = () => {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const router = useRouter();
 
-    /** تا قبل از اولین پیام کاربر، بخش‌های Quick actions و Upload نمایش داده می‌شوند */
     const showInitialSections = chatMessages.length === 0;
     const insets = useSafeAreaInsets();
     const theme = useStore(state => state.theme);
@@ -274,7 +272,6 @@ const TeachingAssistantScreen = () => {
                     showsHorizontalScrollIndicator={false}
                 />
 
-                {/* دو بخش Quick و Upload — پایین لیست، بالای باکس ارسال (فقط تا قبل از اولین پیام کاربر) */}
                 {showInitialSections && (
                     <View style={{ paddingHorizontal: 15, paddingVertical: 12, paddingBottom: 8 }}>
                         <View style={styles.quickActionsBlock}>

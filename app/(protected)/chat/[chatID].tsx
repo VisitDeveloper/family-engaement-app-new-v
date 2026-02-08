@@ -819,7 +819,6 @@ export default function ChatScreen() {
                     });
                 });
         }
-        // translateApplyKey: با هر Apply عوض می‌شود تا effect دوباره اجرا شود و ترجمه‌ها درست آپدیت شوند
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [translateMessages, translateApplyKey, translateSource, translateTarget, conversationId, messages.length]);
 
