@@ -243,18 +243,20 @@ const TeachingAssistantScreen = () => {
             >
                 {/* Header */}
                 <ThemedView style={[styles.header, { borderBottomColor: colorScheme === 'dark' ? Colors.dark.borderColor : Colors.light.borderColor }]}  >
-
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={20} color={colorScheme === 'dark' ? Colors.dark.text : Colors.light.text} style={{ paddingTop: 0 }} />
                     </TouchableOpacity>
                     <View style={styles.logoContainer}>
-                        <View style={{ backgroundColor: theme.tint, borderRadius: 25, width: 42, height: 42, justifyContent: "center", alignItems: "center" }}>
-                            <AiAssistantIcon size={24} color='#ffffff' />
+                        <View style={{ flexDirection: "row", gap: 12 }}>
+                            <View style={{ backgroundColor: theme.tint, borderRadius: 25, width: 42, height: 42, justifyContent: "center", alignItems: "center" }}>
+                                <AiAssistantIcon size={24} color='#ffffff' />
+                            </View>
+                            <View style={{ flexDirection: 'column', marginRight: 20 }}>
+                                <ThemedText type='subtitle' style={styles.title}>{t('ai.title')}</ThemedText>
+                                <ThemedText type='subText' style={[styles.subtitle, { color: colorScheme === 'dark' ? Colors.dark.text : Colors.light.text }]}>{t('ai.subtitle')}</ThemedText>
+                            </View>
                         </View>
-                        <View style={{ flexDirection: 'column', marginRight: 20 }}>
-                            <ThemedText type='subtitle' style={styles.title}>{t('ai.title')}</ThemedText>
-                            <ThemedText type='subText' style={[styles.subtitle, { color: colorScheme === 'dark' ? Colors.dark.text : Colors.light.text }]}>{t('ai.subtitle')}</ThemedText>
-                        </View>
+
                         <TouchableOpacity onPress={() => setShowTranslateLangModal(true)}>
                             <TranslateIcon size={24} color={translateMessages ? theme.tint : theme.text} />
                         </TouchableOpacity>
@@ -443,6 +445,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 10,
+        gap: 10,
         backgroundColor: 'transparent',
         borderBottomWidth: 1,
     },
@@ -462,7 +465,6 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         backgroundColor: Colors.light.tint,
-        marginLeft: 15,
         padding: 10,
         borderRadius: 25,
         color: '#fff',
