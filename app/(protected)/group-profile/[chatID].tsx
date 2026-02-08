@@ -133,7 +133,7 @@ export default function GroupProfileScreen() {
       backgroundColor: t.border,
     },
     itemAvatarWrap: { position: "relative" },
-    itemBody: { flex: 1 },
+    itemBody: { flex: 1, gap: 4 },
     itemName: { fontSize: 15, fontWeight: "500", color: t.text, marginBottom: 2 },
     itemMeta: { fontSize: 12, color: t.subText },
     adminTag: {
@@ -295,7 +295,7 @@ export default function GroupProfileScreen() {
                     )}
                   </View>
                   <View style={styles.itemBody}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                       <Text style={styles.itemName}>{displayName}</Text>
                       {isAdmin && (
                         <View style={styles.adminTag}>
