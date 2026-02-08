@@ -8,7 +8,6 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Switch, TextInput, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const EmergencyAlertScreen = () => {
     const { t } = useTranslation();
@@ -17,7 +16,6 @@ const EmergencyAlertScreen = () => {
     const [emailEnabled, setEmailEnabled] = useState(false);
     const [smsEnabled, setSmsEnabled] = useState(true);
     const router = useRouter();
-    const insets = useSafeAreaInsets();
     const theme = useStore(state => state.theme);
 
     const styles = useThemedStyles((theme) => ({
