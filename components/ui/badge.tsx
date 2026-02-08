@@ -5,19 +5,21 @@ import { ThemedText } from '../themed-text';
 
 
 interface BadgeProps {
-    title: "Admin" | "Group" 
+    title: string
+    variant?: 'Admin' | 'Group'
 }
 
 function Badge(props: BadgeProps) {
+    const v = props.variant ?? (props.title === 'Admin' || props.title?.toLowerCase() === 'admin' ? 'Admin' : 'Group');
     const styles = useThemedStyles((theme) => ({
         badge: {
-            backgroundColor: props.title === 'Admin' ? '#fdd835' : '#666',
+            backgroundColor: v === 'Admin' ? '#fdd835' : '#666',
             paddingHorizontal: 6,
             paddingVertical: 1,
             borderRadius: 6,
             marginLeft: 6,
         },
-        badgeText: { fontSize: 10, fontWeight: "600", color: props.title === 'Admin' ? '#333' : '#fff' },
+        badgeText: { fontSize: 10, fontWeight: "600", color: v === 'Admin' ? '#333' : '#fff' },
     }))
     return (
 

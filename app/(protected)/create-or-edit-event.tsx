@@ -3,7 +3,11 @@ import { ThemedText } from "@/components/themed-text";
 import Badge from "@/components/ui/badge";
 import DatePicker from "@/components/ui/date-picker";
 import Divider from "@/components/ui/divider";
+import { CheckboxIcon, CheckedboxIcon } from "@/components/ui/icons/common-icons";
+import { EventIcon } from "@/components/ui/icons/event-icons";
+import { UsersIcon } from "@/components/ui/icons/messages-icons";
 import MapPicker from "@/components/ui/map-picker";
+import SelectListBottomSheet from "@/components/ui/select-list-bottom-sheet";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useValidation } from "@/hooks/use-validation";
@@ -17,8 +21,8 @@ import { useStore } from "@/store";
 import { enumToOptions } from "@/utils/make-array-for-select-box";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -132,6 +136,7 @@ function CreateNewEvent() {
   const [selected, setSelected] = useState<string[]>([]);
   const [parents, setParents] = useState<Invitee[]>([]);
   const [loadingParents, setLoadingParents] = useState<boolean>(false);
+  const [contactsSheetVisible, setContactsSheetVisible] = useState<boolean>(false);
   const [loadingEvent, setLoadingEvent] = useState<boolean>(false);
 
   // Fetch parents from API
@@ -147,13 +152,13 @@ function CreateNewEvent() {
     } catch (error: any) {
       console.error("Error fetching parents:", error);
       Alert.alert(
-        "Error",
-        error.message || "Failed to load parents. Please try again."
+        t("common.error"),
+        error.message || t("createEvent.failedLoadParents")
       );
     } finally {
       setLoadingParents(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchParents();
@@ -169,7 +174,7 @@ function CreateNewEvent() {
 
       // Populate form fields with event data
       setEventTitle(eventData.title);
-      
+
       // Set event type - convert from lowercase API format to enum format
       const matchingType = firstElementArray.find(
         (opt) => opt.value.toLowerCase() === eventData.type.toLowerCase()
@@ -181,12 +186,12 @@ function CreateNewEvent() {
       setDescription(extractString(eventData.description));
       const locationString = extractString(eventData.location);
       setLocation(locationString);
-      
+
       // Set locationName from location if it's a string, otherwise use location string
       if (locationString) {
         setLocationName(locationString);
       }
-      
+
       if (eventData.locationLatitude) {
         setLocationLatitude(eventData.locationLatitude.toString());
       }
@@ -195,7 +200,7 @@ function CreateNewEvent() {
       }
 
       setRequestRSVP(eventData.requestRSVP || false);
-      
+
       // Parse dates
       if (eventData.startDate) {
         setStartDate(new Date(eventData.startDate));
@@ -208,8 +213,8 @@ function CreateNewEvent() {
 
       // Parse times if not all day
       if (!eventData.allDay && eventData.startTime) {
-        const startTimeStr = typeof eventData.startTime === "string" 
-          ? eventData.startTime 
+        const startTimeStr = typeof eventData.startTime === "string"
+          ? eventData.startTime
           : (eventData.startTime as any).time || (eventData.startTime as any).value || "";
         if (startTimeStr) {
           const [hours, minutes] = startTimeStr.split(":").map(Number);
@@ -232,8 +237,10 @@ function CreateNewEvent() {
       }
 
       setMultipleTimeSlots(eventData.multipleTimeSlots || false);
-      setRestrictNumberOfPeopleInASlot(eventData.slotRestriction || false);
-      
+      setRestrictNumberOfPeopleInASlot(
+        eventData.slotRestriction ?? (eventData as any).slot_restriction ?? false
+      );
+
       if (eventData.slotDuration) {
         const duration = typeof eventData.slotDuration === "number"
           ? eventData.slotDuration
@@ -241,8 +248,11 @@ function CreateNewEvent() {
         setSlotDuration(duration);
       }
 
-      if (eventData.maxParticipantsPerSlot) {
-        setCounter(eventData.maxParticipantsPerSlot);
+      const maxPerSlot =
+        eventData.maxParticipantsPerSlot ??
+        (eventData as any).max_participants_per_slot;
+      if (maxPerSlot != null && maxPerSlot > 0) {
+        setCounter(maxPerSlot);
       }
 
       setRepeat(eventData.repeat !== "none");
@@ -262,14 +272,14 @@ function CreateNewEvent() {
     } catch (error: any) {
       console.error("Error loading event:", error);
       Alert.alert(
-        "Error",
-        error.message || "Failed to load event. Please try again."
+        t("common.error"),
+        error.message || t("createEvent.failedLoadEvent")
       );
       router.back();
     } finally {
       setLoadingEvent(false);
     }
-  }, [eventId, router, firstElementArray, firstElementArrayOfRepeatType]);
+  }, [eventId, router, firstElementArray, firstElementArrayOfRepeatType, t]);
 
   useEffect(() => {
     if (isEditMode && eventId) {
@@ -301,13 +311,13 @@ function CreateNewEvent() {
     );
   };
 
-  const selectAllUsers = () => {
-    if (selected.length === parents.length) {
-      setSelected([]);
-    } else {
-      setSelected(parents.map((person) => person.id));
-    }
-  };
+  // const selectAllUsers = () => {
+  //   if (selected.length === parents.length) {
+  //     setSelected([]);
+  //   } else {
+  //     setSelected(parents.map((person) => person.id));
+  //   }
+  // };
 
   const { errors, validate } = useValidation({
     eventTitle: { required: true, minLength: 3 },
@@ -373,10 +383,12 @@ function CreateNewEvent() {
         endTime: !allDayEvent ? formatTime(endDateTime) : undefined,
         multipleTimeSlots: multipleTimeSlots || undefined,
         slotDuration: multipleTimeSlots ? slotDuration : undefined,
-        slotRestriction: restrictNumberOfPeopleInASlot || undefined,
-        maxParticipantsPerSlot: restrictNumberOfPeopleInASlot
-          ? counter
-          : undefined,
+        slotRestriction:
+          multipleTimeSlots ? restrictNumberOfPeopleInASlot : undefined,
+        maxParticipantsPerSlot:
+          multipleTimeSlots && restrictNumberOfPeopleInASlot
+            ? Math.max(1, counter)
+            : undefined,
         repeat: repeat ? (repeatType[0].value as RepeatType) : "none",
         requestRSVP: requestRSVP || undefined,
         // Events are visible to all group members by default
@@ -386,17 +398,17 @@ function CreateNewEvent() {
 
       if (isEditMode && eventId) {
         await eventService.update(eventId, eventData);
-        Alert.alert("Success", "Event updated successfully!", [
+        Alert.alert(t("common.success"), t("createEvent.eventUpdated"), [
           {
-            text: "OK",
+            text: t("common.ok"),
             onPress: () => router.back(),
           },
         ]);
       } else {
         await eventService.create(eventData);
-        Alert.alert("Success", "Event created successfully!", [
+        Alert.alert(t("common.success"), t("createEvent.eventCreated"), [
           {
-            text: "OK",
+            text: t("common.ok"),
             onPress: () => router.back(),
           },
         ]);
@@ -404,8 +416,8 @@ function CreateNewEvent() {
     } catch (error: any) {
       console.error(`Error ${isEditMode ? "updating" : "creating"} event:`, error);
       Alert.alert(
-        "Error",
-        error.message || `Failed to ${isEditMode ? "update" : "create"} event. Please try again.`
+        t("common.error"),
+        error.message || t("createEvent.failedCreateOrUpdate")
       );
     } finally {
       setLoading(false);
@@ -413,11 +425,13 @@ function CreateNewEvent() {
   };
 
   const styles = useThemedStyles((theme) => ({
-    container: { flex: 1, paddingHorizontal: 10, backgroundColor: theme.bg },
+    container: { flex: 1, paddingHorizontal: 0, backgroundColor: theme.bg },
     containerScrollView: {
+      padding: 10,
+      paddingVertical: 15,
       flex: 1,
       backgroundColor: theme.bg,
-      marginBottom: 30,
+      marginBottom: 15,
     },
     header: {
       paddingVertical: 15,
@@ -444,7 +458,7 @@ function CreateNewEvent() {
       marginBottom: 10,
       justifyContent: "space-between",
     },
-    sectionTitle: { marginTop: 5, color: theme.text, fontWeight: 500 },
+    sectionTitle: { color: theme.text, fontWeight: 500 },
     input: {
       padding: 10,
       marginBottom: 10,
@@ -455,8 +469,9 @@ function CreateNewEvent() {
     messageInput: {
       backgroundColor: theme.panel,
       borderRadius: 10,
-      padding: 5,
-
+      // padding: 5,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
       height: 100,
       textAlignVertical: "top",
       marginBottom: 10,
@@ -469,12 +484,15 @@ function CreateNewEvent() {
       paddingVertical: 8,
     },
     switchColumn: {
+      flex: 1,
+      flexShrink: 1,
+      minWidth: 0,
       flexDirection: "column",
       alignItems: "flex-start",
       justifyContent: "center",
     },
 
-    counterSetcion: {
+    counterSection: {
       flexDirection: "row",
       gap: 5,
       alignItems: "center",
@@ -507,12 +525,13 @@ function CreateNewEvent() {
 
     wrapperInviteesShows: {
       flexDirection: "row",
+      flexShrink: 0,
       gap: 5,
       alignItems: "center",
     },
     numberOfInvitees: {
       flexDirection: "row",
-      gap: 10,
+      gap: 4,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: 10,
@@ -523,15 +542,15 @@ function CreateNewEvent() {
 
     wrapperTime: {
       flexDirection: "row",
-      gap: 5,
+      gap: 16,
       alignItems: "center",
       justifyContent: "space-between",
-      paddingVertical: 20,
+      paddingVertical: 8,
     },
 
     time: {
       flexDirection: "row",
-      gap: 10,
+      gap: 0,
       alignItems: "flex-start",
       width: "50%",
     },
@@ -545,7 +564,7 @@ function CreateNewEvent() {
       alignItems: "center",
       justifyContent: "center",
     },
-    initials: { color: "#fff", fontWeight: "600" },
+    initials: { color: theme.text, fontWeight: "600" },
     name: { fontSize: 16, fontWeight: "600", color: theme.text },
     subtitle: { fontSize: 12, color: theme.subText },
 
@@ -588,7 +607,7 @@ function CreateNewEvent() {
     return (
       <View style={styles.container}>
         <HeaderInnerPage
-          title={isEditMode ? "Edit Event" : "Create New Event"}
+          title={isEditMode ? t("createEvent.editEvent") : t("createEvent.createNewEvent")}
           addstyles={{ marginBottom: 20 }}
         />
         <View
@@ -611,8 +630,7 @@ function CreateNewEvent() {
   return (
     <View style={styles.container}>
       <HeaderInnerPage
-        title={isEditMode ? "Edit Event" : "Create New Event"}
-        addstyles={{ marginBottom: 20 }}
+        title={isEditMode ? t("createEvent.editEvent") : t("createEvent.createNewEvent")}
       />
 
       <ScrollView
@@ -623,12 +641,12 @@ function CreateNewEvent() {
         {/* Contact */}
         <View style={styles.card}>
           <View style={styles.row}>
-            <ThemedText style={styles.sectionTitle}>Event Title</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t("createEvent.eventTitle")}</ThemedText>
           </View>
           <TextInput
             value={eventTitle}
             onChangeText={setEventTitle}
-            placeholder="What’s the event called?"
+            placeholder={t("placeholders.eventName")}
             placeholderTextColor={theme.subText}
             style={styles.input}
           />
@@ -639,7 +657,7 @@ function CreateNewEvent() {
           )}
 
           <View style={styles.row}>
-            <ThemedText style={styles.sectionTitle}> Event Type</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t("createEvent.eventType")}</ThemedText>
           </View>
           <SelectBox
             options={firstElementArray}
@@ -653,7 +671,7 @@ function CreateNewEvent() {
                 setEventType([selectedOption]);
               }
             }}
-            title="List of Event Type"
+            title={t("createEvent.listOfEventType")}
           />
           {errors.eventType && (
             <ThemedText type="subLittleText" style={styles.error}>
@@ -662,7 +680,7 @@ function CreateNewEvent() {
           )}
 
           <View style={[styles.row, { marginTop: 10 }]}>
-            <ThemedText style={styles.sectionTitle}> Description</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t("createEvent.description")}</ThemedText>
           </View>
 
           <TextInput
@@ -682,7 +700,7 @@ function CreateNewEvent() {
           <Divider />
 
           <View style={styles.row}>
-            <ThemedText style={styles.sectionTitle}>Location</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t("createEvent.location")}</ThemedText>
           </View>
           <TouchableOpacity
             style={[styles.input, styles.mapPickerButton]}
@@ -701,9 +719,9 @@ function CreateNewEvent() {
               >
                 {locationName || (locationLatitude && locationLongitude
                   ? `${parseFloat(locationLatitude).toFixed(6)}, ${parseFloat(
-                      locationLongitude
-                    ).toFixed(6)}`
-                  : "Tap to select location on map")}
+                    locationLongitude
+                  ).toFixed(6)}`
+                  : t("createEvent.tapToSelectLocationOnMap"))}
               </ThemedText>
               <Feather name="chevron-right" size={20} color={theme.subText} />
             </View>
@@ -717,7 +735,7 @@ function CreateNewEvent() {
 
           <View style={styles.row}>
             <View style={styles.switchColumn}>
-              <ThemedText style={styles.sectionTitle}>Request RSVP</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t("createEvent.requestRSVP")}</ThemedText>
               <ThemedText
                 type="subText"
                 style={[
@@ -725,7 +743,7 @@ function CreateNewEvent() {
                   { color: theme.subText, margin: 0 },
                 ]}
               >
-                Request Invitees for RSVP
+                {t("createEvent.requestInviteesForRSVP")}
               </ThemedText>
             </View>
 
@@ -740,9 +758,23 @@ function CreateNewEvent() {
         </View>
 
         <View style={styles.card}>
-          <View style={[styles.row, { marginBottom: 30 }]}>
-            <ThemedText style={styles.sectionTitle}>Start Date</ThemedText>
-            <DatePicker date={startDate} setDate={setStartDate} />
+          <View style={[styles.row, { marginBottom: 16, flexDirection: "column", alignItems: "flex-start" }]}>
+            <ThemedText style={styles.sectionTitle}>{t("createEvent.startDate")}</ThemedText>
+            <View style={{
+              paddingHorizontal: 12,
+              paddingVertical: 4,
+              marginBottom: 10,
+              borderRadius: 10,
+              width: "100%",
+              backgroundColor: theme.panel,
+              position: "relative"
+            }}>
+              <DatePicker date={startDate} setDate={setStartDate} />
+
+              <View style={{ position: "absolute", right: 12, top: 12 }}>
+                <EventIcon size={16} color={theme.subText} />
+              </View>
+            </View>
           </View>
           {errors.startDate && (
             <ThemedText type="subLittleText" style={styles.error}>
@@ -750,9 +782,24 @@ function CreateNewEvent() {
             </ThemedText>
           )}
 
-          <View style={styles.row}>
-            <ThemedText style={styles.sectionTitle}>End Date</ThemedText>
-            <DatePicker date={endDate} setDate={setEndDate} />
+          <View style={[styles.row, { flexDirection: "column", alignItems: "flex-start" }]}>
+            <ThemedText style={styles.sectionTitle}>{t("createEvent.endDate")}</ThemedText>
+
+            <View style={{
+              paddingHorizontal: 12,
+              paddingVertical: 4,
+              marginBottom: 10,
+              borderRadius: 10,
+              width: "100%",
+              backgroundColor: theme.panel,
+              position: "relative"
+            }}>
+              <DatePicker date={endDate} setDate={setEndDate} />
+
+              <View style={{ position: "absolute", right: 12, top: 12 }}>
+                <EventIcon size={16} color={theme.subText} />
+              </View>
+            </View>
           </View>
           {errors.endDate && (
             <ThemedText type="subLittleText" style={styles.error}>
@@ -764,32 +811,42 @@ function CreateNewEvent() {
 
           <View style={styles.row}>
             <View style={styles.switchColumn}>
-              <ThemedText style={styles.sectionTitle}>All Day Event</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t("createEvent.allDayEvent")}</ThemedText>
             </View>
             <Switch
               value={allDayEvent}
               onValueChange={setAllDayEvent}
               trackColor={{ false: "#ccc", true: "#a846c2" }}
               thumbColor={allDayEvent ? "#fff" : "#fff"}
-              style={{ marginTop: 10 }}
+            // style={{ marginTop: 10 }}
             />
           </View>
 
           {allDayEvent ? null : (
             <View style={styles.wrapperTime}>
-              <View style={{ flexDirection: "column", gap: 10 }}>
-                <View style={styles.time}>
+              <View style={{ flexDirection: "column", gap: 4, flex: 1 }}>
+                <View style={[styles.time, { flexDirection: "column", width: "100%" }]}>
                   <ThemedText
-                    style={[styles.sectionTitle, { marginBottom: 5 }]}
+                    style={[styles.sectionTitle]}
                   >
-                    Start Time
+                    {t("createEvent.startTime")}
                   </ThemedText>
-                  <DatePicker
-                    mode="time"
-                    disabled={allDayEvent}
-                    date={startDateTime}
-                    setDate={setStartDateTime}
-                  />
+                  <View style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 4,
+                    marginBottom: 10,
+                    borderRadius: 10,
+                    width: "100%",
+                    backgroundColor: theme.panel,
+                    position: "relative"
+                  }}>
+                    <DatePicker
+                      mode="time"
+                      disabled={allDayEvent}
+                      date={startDateTime}
+                      setDate={setStartDateTime}
+                    />
+                  </View>
                 </View>
                 {errors.startDateTime && (
                   <ThemedText type="subLittleText" style={styles.error}>
@@ -798,19 +855,29 @@ function CreateNewEvent() {
                 )}
               </View>
 
-              <View style={{ flexDirection: "column", gap: 10 }}>
-                <View style={styles.time}>
+              <View style={{ flexDirection: "column", gap: 4, flex: 1 }}>
+                <View style={[styles.time, { flexDirection: "column", width: "100%" }]}>
                   <ThemedText
-                    style={[styles.sectionTitle, { marginBottom: 5 }]}
+                    style={[styles.sectionTitle]}
                   >
-                    End Time
+                    {t("createEvent.endTime")}
                   </ThemedText>
-                  <DatePicker
-                    mode="time"
-                    disabled={allDayEvent}
-                    date={endDateTime}
-                    setDate={setEndDateTime}
-                  />
+                  <View style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 4,
+                    marginBottom: 10,
+                    borderRadius: 10,
+                    width: "100%",
+                    backgroundColor: theme.panel,
+                    position: "relative"
+                  }}>
+                    <DatePicker
+                      mode="time"
+                      disabled={allDayEvent}
+                      date={endDateTime}
+                      setDate={setEndDateTime}
+                    />
+                  </View>
                 </View>
                 {errors.endDateTime && (
                   <ThemedText type="subLittleText" style={styles.error}>
@@ -821,10 +888,10 @@ function CreateNewEvent() {
             </View>
           )}
 
-          <View style={[styles.row, { marginTop: 20 }]}>
+          <View style={[styles.row, { marginTop: 0 }]}>
             <View style={styles.switchColumn}>
               <ThemedText style={styles.sectionTitle}>
-                Multiple Time Slots
+                {t("createEvent.multipleTimeSlots")}
               </ThemedText>
             </View>
             <Switch
@@ -840,8 +907,7 @@ function CreateNewEvent() {
             <View>
               <View style={styles.row}>
                 <ThemedText style={styles.sectionTitle}>
-                  {" "}
-                  Slot Duration
+                  {t("createEvent.slotDuration")}
                 </ThemedText>
               </View>
 
@@ -878,7 +944,7 @@ function CreateNewEvent() {
               <View style={styles.row}>
                 <View style={styles.switchColumn}>
                   <ThemedText style={styles.sectionTitle}>
-                    Slot Restriction
+                    {t("createEvent.slotRestriction")}
                   </ThemedText>
                   <ThemedText
                     type="subText"
@@ -887,7 +953,7 @@ function CreateNewEvent() {
                       { color: theme.subText, margin: 0 },
                     ]}
                   >
-                    Restrict No. of People in a Slot
+                    {t("createEvent.restrictPeopleInSlot")}
                   </ThemedText>
                 </View>
 
@@ -900,7 +966,7 @@ function CreateNewEvent() {
                 />
               </View>
 
-              <View style={styles.counterSetcion}>
+              <View style={styles.counterSection}>
                 <View style={styles.counter}>
                   <ThemedText
                     type="subtitle"
@@ -912,7 +978,7 @@ function CreateNewEvent() {
 
                 <View style={styles.counterBtns}>
                   <TouchableOpacity
-                    disabled={restrictNumberOfPeopleInASlot}
+                    disabled={!restrictNumberOfPeopleInASlot}
                     onPress={() => decrementCounter()}
                     style={{ width: "45%" }}
                   >
@@ -921,7 +987,7 @@ function CreateNewEvent() {
                       style={[
                         styles.decrementBtn,
                         {
-                          color: restrictNumberOfPeopleInASlot
+                          color: !restrictNumberOfPeopleInASlot
                             ? theme.subText
                             : theme.text,
                         },
@@ -934,7 +1000,7 @@ function CreateNewEvent() {
                   <Divider horizontal={false} />
 
                   <TouchableOpacity
-                    disabled={restrictNumberOfPeopleInASlot}
+                    disabled={!restrictNumberOfPeopleInASlot}
                     onPress={() => incrementCounter()}
                     style={{ width: "45%" }}
                   >
@@ -943,7 +1009,7 @@ function CreateNewEvent() {
                       style={[
                         styles.incrementBtn,
                         {
-                          color: restrictNumberOfPeopleInASlot
+                          color: !restrictNumberOfPeopleInASlot
                             ? theme.subText
                             : theme.text,
                         },
@@ -961,7 +1027,7 @@ function CreateNewEvent() {
 
           <View style={[styles.row, { marginTop: 5 }]}>
             <View style={styles.switchColumn}>
-              <ThemedText style={styles.sectionTitle}>Repeat</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t("createEvent.repeat")}</ThemedText>
             </View>
 
             <Switch
@@ -986,7 +1052,7 @@ function CreateNewEvent() {
                 setRepeatType([selectedOption]);
               }
             }}
-            title="List of Repetitions"
+            title={t("createEvent.listOfRepetitions")}
           />
           {errors.repeatType && (
             <ThemedText type="subLittleText" style={styles.error}>
@@ -996,9 +1062,9 @@ function CreateNewEvent() {
         </View>
 
         <View style={styles.card}>
-          <View style={styles.row}>
+          <View style={[styles.row, { flexWrap: "wrap", gap: 8 }]}>
             <View style={styles.switchColumn}>
-              <ThemedText style={styles.sectionTitle}>Invitees (Optional)</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t("createEvent.inviteesOptional")}</ThemedText>
               <ThemedText
                 type="subText"
                 style={[
@@ -1006,12 +1072,12 @@ function CreateNewEvent() {
                   { color: theme.subText, margin: 0, fontSize: 12 },
                 ]}
               >
-                Events are visible to all group members by default. Select specific people only if needed.
+                {t("createEvent.inviteesHint")}
               </ThemedText>
             </View>
 
             <View style={styles.wrapperInviteesShows}>
-              {selected.length !== 0 && (
+              {/* {selected.length !== 0 && (
                 <TouchableOpacity
                   onPress={selectAllUsers}
                   style={[
@@ -1020,15 +1086,15 @@ function CreateNewEvent() {
                   ]}
                 >
                   <ThemedText type="subText" style={{ color: "#212121" }}>
-                    Select All
+                    {t("createEvent.selectAll")}
                   </ThemedText>
                   <Feather name={"check-square"} size={15} color={"#212121"} />
                 </TouchableOpacity>
-              )}
+              )} */}
 
               <View style={styles.numberOfInvitees}>
-                <Feather name="users" size={15} color={theme.text} />
-                <ThemedText style={styles.sectionTitle} type="middleTitle">
+                <UsersIcon size={15} color={theme.text} />
+                <ThemedText style={[styles.sectionTitle, { fontWeight: 400 }]} type="subText">
                   {selected.length}
                 </ThemedText>
               </View>
@@ -1051,7 +1117,7 @@ function CreateNewEvent() {
               >
                 <ActivityIndicator size="large" color={theme.tint} />
                 <ThemedText style={{ marginTop: 10, color: theme.subText }}>
-                  Loading parents...
+                  {t("createEvent.loadingParents")}
                 </ThemedText>
               </View>
             ) : parents.length === 0 ? (
@@ -1064,7 +1130,7 @@ function CreateNewEvent() {
                 }}
               >
                 <ThemedText style={{ color: theme.subText }}>
-                  No parents found
+                  {t("createEvent.noParentsFound")}
                 </ThemedText>
               </View>
             ) : (
@@ -1082,7 +1148,7 @@ function CreateNewEvent() {
                       />
                     ) : (
                       <View
-                        style={[styles.avatar, { backgroundColor: "#aaa" }]}
+                        style={[styles.avatar, { backgroundColor: theme.panel }]}
                       >
                         <ThemedText style={styles.initials}>
                           {person.initials}
@@ -1096,7 +1162,7 @@ function CreateNewEvent() {
                         <ThemedText style={styles.name}>
                           {person.name}
                         </ThemedText>
-                        {person.isAdmin && <Badge title="Admin" />}
+                        {person.isAdmin && <Badge variant="Admin" title={t("common.admin")} />}
                       </View>
                       <ThemedText style={styles.subtitle}>
                         {person.subtitle}
@@ -1104,20 +1170,28 @@ function CreateNewEvent() {
                     </View>
                   </View>
 
-                  <Feather
-                    name={
-                      selected.includes(person.id) ? "check-square" : "square"
-                    }
-                    size={22}
-                    color={selected.includes(person.id) ? theme.tint : "#bbb"}
-                  />
+
+                  {selected.includes(person.id) ? (
+                    <CheckedboxIcon
+                      size={22}
+                      color={theme.tint}
+                    />
+                  ) : (
+                    <CheckboxIcon
+                      size={22}
+                      color={theme.text}
+                    />
+                  )}
                 </TouchableOpacity>
               ))
             )}
           </ScrollView>
           <Divider />
-          <TouchableOpacity style={styles.seeAll}>
-            <ThemedText style={styles.seeAllText}>See All Contacts</ThemedText>
+          <TouchableOpacity
+            style={styles.seeAll}
+            onPress={() => setContactsSheetVisible(true)}
+          >
+            <ThemedText style={styles.seeAllText}>{t("createEvent.seeAllContacts")}</ThemedText>
           </TouchableOpacity>
         </View>
         <TouchableOpacity
@@ -1128,11 +1202,11 @@ function CreateNewEvent() {
           <ThemedText style={styles.buttonText}>
             {loading
               ? isEditMode
-                ? "Updating..."
-                : "Creating..."
+                ? t("createEvent.updating")
+                : t("createEvent.creating")
               : isEditMode
-              ? "Update Event"
-              : "Create Event"}
+                ? t("createEvent.updateEvent")
+                : t("createEvent.createEvent")}
           </ThemedText>
         </TouchableOpacity>
       </ScrollView>
@@ -1152,6 +1226,15 @@ function CreateNewEvent() {
         initialLongitude={
           locationLongitude ? parseFloat(locationLongitude) : null
         }
+      />
+      <SelectListBottomSheet
+        visible={contactsSheetVisible}
+        onClose={() => setContactsSheetVisible(false)}
+        mode="users"
+        items={parents}
+        selectedIds={selected}
+        onToggle={toggleSelect}
+        title={t("createEvent.seeAllContacts")}
       />
     </View>
   );

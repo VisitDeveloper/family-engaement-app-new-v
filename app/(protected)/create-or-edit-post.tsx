@@ -1,5 +1,6 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
+import { FileIcon, MediaIcon } from "@/components/ui/icons/messages-icons";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useValidation } from "@/hooks/use-validation";
@@ -9,12 +10,12 @@ import {
 } from "@/services/messaging.service";
 import { postService } from "@/services/post.service";
 import { useStore } from "@/store";
-import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -46,19 +47,16 @@ const CreateOrEditPost = () => {
   const [existingFiles, setExistingFiles] = useState<string[]>([]);
   const [loadingPost, setLoadingPost] = useState<boolean>(false);
   const hasLoadedFromParams = useRef(false);
-  const [visibility, setVisibility] = useState<OptionsList[]>([
-    {
-      label: "Everyone",
-      value: "everyone",
-    },
-    {
-      label: "Followers",
-      value: "followers",
-    },
-    {
-      label: "Private",
-      value: "private",
-    },
+  const visibilityOptions = useMemo(
+    () => [
+      { label: t("createPost.everyone"), value: "everyone" },
+      { label: t("createPost.followers"), value: "followers" },
+      { label: t("createPost.private"), value: "private" },
+    ],
+    [t]
+  );
+  const [visibility, setVisibility] = useState<OptionsList[]>(() => [
+    { label: "everyone", value: "everyone" },
   ]);
   const [classrooms, setClassrooms] = useState<OptionsList[]>([]);
   const [selectedClassroom, setSelectedClassroom] =
@@ -68,10 +66,11 @@ const CreateOrEditPost = () => {
   const isTeacher = user?.role === "teacher" || user?.role === "admin";
 
   const styles = useThemedStyles((t) => ({
-    container: { flex: 1, padding: 10, backgroundColor: t.bg },
+    container: { flex: 1, padding: 0, backgroundColor: t.bg },
     containerScrollBox: {
       flex: 1,
-      marginTop: 10,
+      padding: 10,
+      // marginTop: 10,
     },
 
     rateBox: {
@@ -116,11 +115,11 @@ const CreateOrEditPost = () => {
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: t.tint,
-      paddingVertical: 12,
+      paddingVertical: 8,
       borderRadius: 8,
       gap: 6,
       marginTop: 25,
-      marginBottom: 80,
+      marginBottom: 40,
     },
     readText: { color: "white", fontWeight: "600" },
 
@@ -130,9 +129,10 @@ const CreateOrEditPost = () => {
     messageInput: {
       backgroundColor: t.panel,
       borderRadius: 10,
-      padding: 5,
-      borderWidth: 1,
-      borderColor: t.border,
+      padding: 10,
+      paddingVertical: 8,
+      // borderWidth: 1,
+      // borderColor: t.border,
       height: 100,
       textAlignVertical: "top",
       marginBottom: 5,
@@ -142,7 +142,7 @@ const CreateOrEditPost = () => {
 
     uploadDataIcons: {
       flexDirection: "row",
-      gap: 15,
+      gap: 4,
     },
 
     tagsBox: {
@@ -158,11 +158,11 @@ const CreateOrEditPost = () => {
       backgroundColor: t.panel,
       borderRadius: 10,
       padding: 10,
-      borderWidth: 1,
+      // borderWidth: 1,
+      // borderColor: t.border,
       height: 40,
       display: "flex",
       alignItems: "center",
-      borderColor: t.border,
       textAlignVertical: "top",
       marginBottom: 5,
       color: t.text,
@@ -210,14 +210,14 @@ const CreateOrEditPost = () => {
       padding: 5,
     },
     uploadButton: {
-      padding: 10,
-      borderRadius: 8,
-      backgroundColor: t.panel,
-      borderWidth: 1,
-      borderColor: t.border,
+      paddingLeft: 10,
+      // borderRadius: 8,
+      // backgroundColor: t.panel,
+      // borderWidth: 1,
+      // borderColor: t.border,
       alignItems: "center",
       justifyContent: "center",
-      minWidth: 60,
+      // minWidth: 60,
     },
   }));
 
@@ -228,8 +228,8 @@ const CreateOrEditPost = () => {
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Permission Required",
-          "Sorry, we need camera roll permissions to select images!"
+          t("createPost.permissionRequired"),
+          t("createPost.needCameraRollPermission")
         );
         return;
       }
@@ -247,7 +247,7 @@ const CreateOrEditPost = () => {
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image. Please try again.");
+      Alert.alert(t("common.error"), t("createPost.failedPickImage"));
     }
   };
 
@@ -264,7 +264,7 @@ const CreateOrEditPost = () => {
       }
     } catch (error) {
       console.error("Error picking document:", error);
-      Alert.alert("Error", "Failed to pick document. Please try again.");
+      Alert.alert(t("common.error"), t("createPost.failedPickDocument"));
     }
   };
 
@@ -293,8 +293,8 @@ const CreateOrEditPost = () => {
             typeof classroom.name === "string"
               ? classroom.name
               : classroom.name && typeof classroom.name === "object"
-              ? (Object.values(classroom.name)[0] as string) || "Classroom"
-              : "Classroom";
+                ? (Object.values(classroom.name)[0] as string) || t("createPost.classroom")
+                : t("createPost.classroom");
           return {
             label: name,
             value: classroom.id,
@@ -304,11 +304,11 @@ const CreateOrEditPost = () => {
       setClassrooms(mappedClassrooms);
     } catch (error: any) {
       console.error("Error loading classrooms:", error);
-      Alert.alert("Error", "Failed to load classrooms. Please try again.");
+      Alert.alert(t("common.error"), t("createPost.failedLoadClassrooms"));
     } finally {
       setLoadingClassrooms(false);
     }
-  }, [isTeacher]);
+  }, [isTeacher, t]);
 
   useEffect(() => {
     loadClassrooms();
@@ -326,9 +326,8 @@ const CreateOrEditPost = () => {
       setExistingImages(post.images || []);
       setExistingFiles(post.files || []);
       setVisibility([
-        {
-          label:
-            post.visibility.charAt(0).toUpperCase() + post.visibility.slice(1),
+        visibilityOptions.find((o) => o.value === post.visibility) || {
+          label: post.visibility,
           value: post.visibility,
         },
       ]);
@@ -353,9 +352,9 @@ const CreateOrEditPost = () => {
               typeof classroomData.name === "string"
                 ? classroomData.name
                 : classroomData.name && typeof classroomData.name === "object"
-                ? (Object.values(classroomData.name)[0] as string) ||
-                  "Classroom"
-                : "Classroom";
+                  ? (Object.values(classroomData.name)[0] as string) ||
+                  t("createPost.classroom")
+                  : t("createPost.classroom");
             const classroomOption = {
               label: name,
               value: classroomData.id,
@@ -378,12 +377,12 @@ const CreateOrEditPost = () => {
       }
     } catch (error: any) {
       console.error("Error loading post:", error);
-      Alert.alert("Error", "Failed to load post data. Please try again.");
+      Alert.alert(t("common.error"), t("createPost.failedLoadPost"));
       router.back();
     } finally {
       setLoadingPost(false);
     }
-  }, [postId, router, classrooms, loadClassrooms]);
+  }, [postId, router, classrooms, loadClassrooms, visibilityOptions, t]);
 
   // Load post data if in edit mode
   useEffect(() => {
@@ -406,10 +405,8 @@ const CreateOrEditPost = () => {
       if (params.visibility) {
         const visibilityValue = params.visibility as string;
         setVisibility([
-          {
-            label:
-              visibilityValue.charAt(0).toUpperCase() +
-              visibilityValue.slice(1),
+          visibilityOptions.find((o) => o.value === visibilityValue) || {
+            label: visibilityValue,
             value: visibilityValue,
           },
         ]);
@@ -419,6 +416,7 @@ const CreateOrEditPost = () => {
     isEditMode,
     postId,
     loadPostData,
+    visibilityOptions,
     params.description,
     params.tags,
     params.recommended,
@@ -525,9 +523,9 @@ const CreateOrEditPost = () => {
       // Create or update post
       if (isEditMode && postId) {
         await postService.update(postId, postData);
-        Alert.alert("Success", "Post updated successfully!", [
+        Alert.alert(t("common.success"), t("createPost.postUpdated"), [
           {
-            text: "OK",
+            text: t("common.ok"),
             onPress: () => {
               router.back();
             },
@@ -535,9 +533,9 @@ const CreateOrEditPost = () => {
         ]);
       } else {
         await postService.create(postData);
-        Alert.alert("Success", "Post created successfully!", [
+        Alert.alert(t("common.success"), t("createPost.postCreated"), [
           {
-            text: "OK",
+            text: t("common.ok"),
             onPress: () => {
               router.back();
             },
@@ -546,11 +544,8 @@ const CreateOrEditPost = () => {
       }
     } catch (error: any) {
       const errorMessage =
-        error.message ||
-        (isEditMode
-          ? "Failed to update post. Please try again."
-          : "Failed to create post. Please try again.");
-      Alert.alert("Error", errorMessage);
+        error.message || t("createPost.failedUpdateOrCreate");
+      Alert.alert(t("common.error"), errorMessage);
       console.error(
         `Error ${isEditMode ? "updating" : "creating"} post:`,
         error
@@ -563,13 +558,13 @@ const CreateOrEditPost = () => {
   if (loadingPost) {
     return (
       <View style={styles.container}>
-        <HeaderInnerPage title={isEditMode ? "Edit Post" : "New Post"} />
+        <HeaderInnerPage title={isEditMode ? t("createPost.editPost") : t("createPost.newPost")} />
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
           <ActivityIndicator size="large" color={theme.tint} />
           <ThemedText type="subText" style={{ marginTop: 10 }}>
-            Loading post...
+            {t("createPost.loadingPost")}
           </ThemedText>
         </View>
       </View>
@@ -578,7 +573,7 @@ const CreateOrEditPost = () => {
 
   return (
     <View style={styles.container}>
-      <HeaderInnerPage title={isEditMode ? "Edit Post" : "New Post"} />
+      <HeaderInnerPage title={isEditMode ? t("createPost.editPost") : t("createPost.newPost")} />
 
       <ScrollView
         style={styles.containerScrollBox}
@@ -589,7 +584,7 @@ const CreateOrEditPost = () => {
             type="middleTitle"
             style={{ marginBottom: 10, fontWeight: 500 }}
           >
-            Description
+            {t("createPost.description")}
           </ThemedText>
 
           <TextInput
@@ -599,14 +594,14 @@ const CreateOrEditPost = () => {
             placeholder={t("placeholders.whatToTalkAbout")}
             placeholderTextColor={theme.subText}
             multiline
-            accessibilityLabel="Post description"
-            accessibilityHint="Enter the description for your post. Maximum 300 characters."
+            accessibilityLabel={t("createPost.description")}
+            accessibilityHint={t("createPost.postDescriptionHint")}
             maxLength={300}
           />
           <ThemedText
             type="subText"
             style={styles.charCount}
-          >{`${message.length}/300 characters`}</ThemedText>
+          >{t("createPost.charCount", { count: message.length })}</ThemedText>
           {errors.message && (
             <ThemedText type="error">{errors.message}</ThemedText>
           )}
@@ -617,10 +612,9 @@ const CreateOrEditPost = () => {
             onPress={pickImage}
             disabled={!!selectedFile}
           >
-            <FontAwesome
-              name="image"
-              size={25}
-              color={selectedFile ? theme.subText : theme.text}
+            <MediaIcon
+              size={20}
+              color={selectedFile ? theme.text : theme.subText}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -628,10 +622,9 @@ const CreateOrEditPost = () => {
             onPress={pickDocument}
             disabled={!!selectedImage}
           >
-            <Ionicons
-              name="document-text-outline"
-              size={25}
-              color={selectedImage ? theme.subText : theme.text}
+            <FileIcon
+              size={20}
+              color={selectedImage ? theme.text : theme.subText}
             />
           </TouchableOpacity>
         </View>
@@ -650,7 +643,7 @@ const CreateOrEditPost = () => {
                 type="error"
                 style={{ textAlign: "center", marginTop: 5 }}
               >
-                Remove Image
+                {t("createPost.removeImage")}
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -692,7 +685,7 @@ const CreateOrEditPost = () => {
                     type="error"
                     style={{ textAlign: "center", marginTop: 5 }}
                   >
-                    Remove Image
+                    {t("createPost.removeImage")}
                   </ThemedText>
                 </TouchableOpacity>
               </View>
@@ -738,9 +731,9 @@ const CreateOrEditPost = () => {
         <View style={styles.tagsBox}>
           <ThemedText
             type="middleTitle"
-            style={{ marginBottom: 10, fontWeight: 500 }}
+            style={{ marginBottom: 10, fontWeight: "500" }}
           >
-            Tags
+            {t("createPost.tags")}
           </ThemedText>
 
           <TextInput
@@ -762,12 +755,12 @@ const CreateOrEditPost = () => {
               <View style={styles.badge}>
                 <AntDesign name="star" size={12} color="#fff" />
               </View>
-              <ThemedText type="middleTitle" style={{ color: theme.text }}>
-                Recommended
+              <ThemedText type="text" style={{ color: theme.text, fontWeight: "500" }}>
+                {t("createPost.recommended")}
               </ThemedText>
             </View>
             <ThemedText type="subText" style={[styles.rowSubtitle, {}]}>
-              Is this post recommended by the author?
+              {t("createPost.recommendedHint")}
             </ThemedText>
           </View>
           <Switch
@@ -785,10 +778,10 @@ const CreateOrEditPost = () => {
                 style={{ flexDirection: "row", gap: 10, alignItems: "center" }}
               >
                 <ThemedText
-                  type="middleTitle"
-                  style={{ marginBottom: 10, fontWeight: 500 }}
+                  type="text"
+                  style={{ marginBottom: 10, fontWeight: "500" }}
                 >
-                  Select Classroom
+                  {t("createPost.selectClassroom")}
                 </ThemedText>
               </View>
               {/* <ThemedText type="subText" style={[styles.rowSubtitle, {}]}>
@@ -801,8 +794,8 @@ const CreateOrEditPost = () => {
             ) : (
               <SelectBox
                 options={[
-                  { label: "All Classrooms", value: "all" },
-                  { label: "No Classroom", value: "" },
+                  { label: t("createPost.allClassrooms"), value: "all" },
+                  { label: t("createPost.noClassroom"), value: "" },
                   ...classrooms,
                 ]}
                 value={
@@ -827,7 +820,7 @@ const CreateOrEditPost = () => {
                     }
                   }
                 }}
-                title="List of Classrooms"
+                title={t("createPost.listOfClassrooms")}
               />
             )}
           </View>
@@ -842,36 +835,28 @@ const CreateOrEditPost = () => {
                                 <AntDesign name="star" size={12} color="#fff" />
                             </View> */}
               <ThemedText
-                type="middleTitle"
-                style={{ marginBottom: 4, fontWeight: 500 }}
+                type="text"
+                style={{ marginBottom: 4, fontWeight: "500" }}
               >
-                Post Visibility
+                {t("createPost.postVisibility")}
               </ThemedText>
             </View>
             <ThemedText type="subText" style={[styles.rowSubtitle, {}]}>
-              Who can see this post?
+              {t("createPost.visibilityHint")}
             </ThemedText>
           </View>
 
           <SelectBox
-            options={[
-              { label: "Everyone", value: "everyone" },
-              { label: "Followers", value: "followers" },
-              { label: "Private", value: "private" },
-            ]}
-            value={visibility[0].label} // Only label for display in SelectBox
+            options={visibilityOptions}
+            value={visibility[0].value}
             onChange={(val) => {
-              const selectedOption = [
-                { label: "Everyone", value: "everyone" },
-                { label: "Followers", value: "followers" },
-                { label: "Private", value: "private" },
-              ].find((opt) => opt.value === val);
+              const selectedOption = visibilityOptions.find((opt) => opt.value === val);
 
               if (selectedOption) {
                 setVisibility([selectedOption]); // Save the entire option
               }
             }}
-            title="List of Post Visibility"
+            title={t("createPost.listOfPostVisibility")}
           />
           {errors.visibility && (
             <ThemedText style={{ color: "red" }}>
@@ -889,7 +874,7 @@ const CreateOrEditPost = () => {
             <ActivityIndicator color="white" />
           ) : (
             <ThemedText style={styles.readText}>
-              {isEditMode ? "Update Post" : "Create Post"}
+              {isEditMode ? t("createPost.submitUpdate") : t("createPost.submitCreate")}
             </ThemedText>
           )}
         </TouchableOpacity>
