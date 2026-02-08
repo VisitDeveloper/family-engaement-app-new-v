@@ -7,12 +7,14 @@ import { eventService } from "@/services/event.service";
 import { useStore } from "@/store"; // The same Zustand store that returns theme
 import { AntDesign, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 
 
 
 export default function ParentDashboard() {
+    const { t } = useTranslation();
     const { theme } = useStore(state => state);
     const role = useStore(state => state.role);
     const router = useRouter();
@@ -190,8 +192,8 @@ export default function ParentDashboard() {
 
             <View style={[styles.headerWrap, { borderBottomColor: theme.border }]}>
                 <HeaderTabItem
-                    title="Dashboard"
-                    subTitle="Your family engagement overview"
+                    title={t("tabs.dashboard")}
+                    subTitle={t("tabs.dashboardSubTitleParent")}
                 />
             </View>
 

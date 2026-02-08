@@ -17,6 +17,7 @@ import { useStore } from "@/store";
 import { enumToOptions } from "@/utils/make-array-for-select-box";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -77,6 +78,7 @@ const convertParentToInvitee = (parent: ParentDto): Invitee => {
 };
 
 function CreateNewEvent() {
+  const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -667,7 +669,7 @@ function CreateNewEvent() {
             style={styles.messageInput}
             value={description}
             onChangeText={setDescription}
-            placeholder="What do you want to talk about?"
+            placeholder={t("placeholders.whatToTalkAbout")}
             placeholderTextColor={theme.subText}
             multiline
           />
@@ -844,7 +846,7 @@ function CreateNewEvent() {
               </View>
 
               <TextInput
-                placeholder="30 min"
+                placeholder={t("placeholders.eventDuration")}
                 style={styles.input}
                 value={slotDuration.toString()}
                 onChangeText={(text) => {

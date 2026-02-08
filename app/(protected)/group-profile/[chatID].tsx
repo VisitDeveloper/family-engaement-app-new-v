@@ -9,6 +9,7 @@ import type { ConversationResponseDto } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import { useLocalSearchParams } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -38,6 +39,7 @@ function getParticipantDisplayName(p: { user?: { firstName?: string | null; last
 }
 
 export default function GroupProfileScreen() {
+  const { t } = useTranslation();
   const { chatID } = useLocalSearchParams<{ chatID: string }>();
   const [conversation, setConversation] = useState<ConversationResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -187,7 +189,7 @@ export default function GroupProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <HeaderInnerPage title="Profile" />
+      <HeaderInnerPage title={t("userProfile.title")} />
 
       <ScrollView
         style={styles.container}

@@ -13,6 +13,7 @@ import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -26,6 +27,7 @@ import {
 } from "react-native";
 
 const CreateOrEditPost = () => {
+  const { t } = useTranslation();
   const theme = useStore((s) => s.theme);
   const user = useStore((s) => s.user);
   const router = useRouter();
@@ -594,7 +596,7 @@ const CreateOrEditPost = () => {
             style={styles.messageInput}
             value={message}
             onChangeText={setMessage}
-            placeholder="What do you want to talk about?"
+            placeholder={t("placeholders.whatToTalkAbout")}
             placeholderTextColor={theme.subText}
             multiline
             accessibilityLabel="Post description"
@@ -745,7 +747,7 @@ const CreateOrEditPost = () => {
             style={styles.tagsInput}
             value={tags}
             onChangeText={setTags}
-            placeholder="Separate tags with comma (,)"
+            placeholder={t("placeholders.tagsWithComma")}
             placeholderTextColor={theme.subText}
             multiline
           />

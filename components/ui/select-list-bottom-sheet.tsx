@@ -10,6 +10,7 @@ import {
   BottomSheetModal,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Image,
   ListRenderItem,
@@ -57,6 +58,7 @@ export default function SelectListBottomSheet({
   onToggle,
   title,
 }: Props) {
+  const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -259,7 +261,7 @@ export default function SelectListBottomSheet({
           {title}
         </ThemedText>
         <TouchableOpacity onPress={onClose}>
-          <ThemedText style={styles.closeText}>Done</ThemedText>
+          <ThemedText style={styles.closeText}>{t("common.done")}</ThemedText>
         </TouchableOpacity>
       </View>
     ),

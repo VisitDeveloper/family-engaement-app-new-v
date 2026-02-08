@@ -19,6 +19,7 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -258,6 +259,7 @@ const kindChip = (k: EventKind) => {
 };
 
 const SchoolCalendarScreen = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useStore((s) => s.theme);
@@ -579,11 +581,11 @@ const SchoolCalendarScreen = () => {
       `Are you sure you want to delete "${eventTitle}"? This action cannot be undone.`,
       [
         {
-          text: "Cancel",
+          text: t("common.cancel"),
           style: "cancel",
         },
         {
-          text: "Delete",
+          text: t("buttons.delete"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -610,8 +612,8 @@ const SchoolCalendarScreen = () => {
   return (
     <ThemedView style={styles.container}>
       <HeaderThreeSections
-        title="School Calendar"
-        desc="Upcoming events and important dates"
+        title={t("event.schoolCalendar")}
+        desc={t("event.schoolCalendarDesc")}
         icon={
           <Ionicons name="add-circle-outline" size={24} color={theme.tint} />
         }
@@ -698,28 +700,28 @@ const SchoolCalendarScreen = () => {
             if (ev.requestRSVP && !ev.multipleTimeSlots) {
               if (currentRsvpStatus === "going") {
                 rsvpButtonDisplay = {
-                  text: "Going",
+                  text: t("buttons.going"),
                   icon: "check-circle",
                   color: "#16A34A",
                   bg: "#EAFCEF",
                 };
               } else if (currentRsvpStatus === "maybe") {
                 rsvpButtonDisplay = {
-                  text: "Maybe",
+                  text: t("buttons.maybe"),
                   icon: "help-circle",
                   color: "#F59E0B",
                   bg: "#FEF3C7",
                 };
               } else if (currentRsvpStatus === "not_going") {
                 rsvpButtonDisplay = {
-                  text: "Not Going",
+                  text: t("buttons.notGoing"),
                   icon: "x-circle",
                   color: "#DC2626",
                   bg: "#FEE2E2",
                 };
               } else {
                 rsvpButtonDisplay = {
-                  text: "RSVP",
+                  text: t("buttons.rsvp"),
                   icon: "question",
                   color: theme.subText,
                   bg: theme.panel,

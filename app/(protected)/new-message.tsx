@@ -7,6 +7,7 @@ import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -34,6 +35,7 @@ interface ContactItem {
 }
 
 export default function NewMessageScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const currentUser = useStore((state: any) => state.user);
   const currentUserId = currentUser?.id || null;
@@ -365,7 +367,7 @@ export default function NewMessageScreen() {
 
   return (
     <View style={styles.container}>
-      <HeaderInnerPage title="New Message" />
+      <HeaderInnerPage title={t("newMessage.title")} />
 
       {/* Groups */}
       <Text style={[styles.sectionTitle, { marginBottom: 4 }]}>Groups</Text>

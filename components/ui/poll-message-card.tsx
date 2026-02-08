@@ -2,6 +2,7 @@ import { messagingService, PollResponseDto, VotePollDto } from "@/services/messa
 import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -42,6 +43,7 @@ export default function PollMessageCard({
   onClosePoll,
   onEditPoll,
 }: PollMessageCardProps) {
+  const { t } = useTranslation();
   const currentUser = useStore((state: any) => state.user);
   const [poll, setPoll] = useState<PollResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,9 +100,9 @@ export default function PollMessageCard({
       "Close poll",
       "Are you sure you want to close this poll? No more votes will be accepted.",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Close poll",
+          text: t("buttons.closePoll"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -221,7 +223,7 @@ export default function PollMessageCard({
                 activeOpacity={0.9}
               >
                 <Feather name="chevron-left" size={16} color="#87189D" />
-                <Text style={styles.adminButtonText}>Back</Text>
+                <Text style={styles.adminButtonText}>{t("buttons.back")}</Text>
               </TouchableOpacity>
             </View>
           </>

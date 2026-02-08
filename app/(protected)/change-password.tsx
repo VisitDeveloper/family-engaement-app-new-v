@@ -12,6 +12,7 @@ import {
   Octicons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -23,6 +24,7 @@ import {
 } from "react-native";
 
 export default function ChangePassword() {
+  const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
   const router = useRouter();
   const setLoggedIn = useStore((s) => s.setLoggedIn);
@@ -195,7 +197,7 @@ export default function ChangePassword() {
   return (
     <View style={styles.container}>
       <HeaderInnerPage
-        title="Change Password"
+        title={t("changePassword.title")}
         addstyles={{ marginBottom: 0 }}
       />
 
@@ -220,7 +222,7 @@ export default function ChangePassword() {
             <ThemedText style={styles.label}>Old Password</ThemedText>
             <View style={{ position: "relative" }}>
               <TextInput
-                placeholder="Old Password"
+                placeholder={t("placeholders.oldPassword")}
                 secureTextEntry={oldPassClosed}
                 style={styles.input}
                 value={oldPassword}
@@ -254,7 +256,7 @@ export default function ChangePassword() {
             <ThemedText style={styles.label}>New Password</ThemedText>
             <View style={{ position: "relative" }}>
               <TextInput
-                placeholder="New Password"
+                placeholder={t("placeholders.newPassword")}
                 secureTextEntry={NewPassClosed}
                 style={styles.input}
                 value={newPassword}
@@ -288,7 +290,7 @@ export default function ChangePassword() {
             <ThemedText style={styles.label}>Retype New Password</ThemedText>
             <View style={{ position: "relative" }}>
               <TextInput
-                placeholder="Confirm New Password"
+                placeholder={t("placeholders.confirmPassword")}
                 secureTextEntry={RetypeNewClosed}
                 style={styles.input}
                 value={confirmPassword}

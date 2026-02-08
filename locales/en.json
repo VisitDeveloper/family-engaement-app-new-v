@@ -1,4 +1,221 @@
 {
-  "welcome": "Welcome",
-  "hello": "Hello World"
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "done": "Done",
+    "copiedToClipboard": "Copied to clipboard",
+    "loading": "Loading",
+    "logout": "Logout",
+    "loggingOut": "Logging out...",
+    "admin": "Admin",
+    "profile": "Profile",
+    "support": "Support",
+    "termsOfService": "Terms of Service"
+  },
+  "settings": {
+    "title": "Settings",
+    "subTitle": "Manage your app preferences and account",
+    "notifications": "Notifications",
+    "pushNotifications": "Push Notifications",
+    "pushNotificationsDesc": "Receive notifications on your device",
+    "emailNotifications": "Email Notifications",
+    "emailNotificationsDesc": "Get updates via email",
+    "textMessages": "Text Messages",
+    "textMessagesDesc": "SMS alerts for important updates",
+    "urgentAlerts": "Urgent Alerts",
+    "urgentAlertsDesc": "Emergency broadcasts & safety alerts",
+    "alertTone": "Alert Tone",
+    "listOfAlertTone": "List of Alert Tone",
+    "languageAndAccessibility": "Language & Accessibility",
+    "appLanguage": "App Language",
+    "listOfLanguage": "List of Language",
+    "darkMode": "Dark Mode",
+    "darkModeDesc": "Switch between light and dark theme",
+    "largeFont": "Large Font",
+    "largeFontDesc": "Increase text size for better readability",
+    "highContrastMode": "High Contrast Mode",
+    "highContrastModeDesc": "Enhanced visibility for better reading",
+    "voiceNarration": "Voice Narration",
+    "voiceNarrationDesc": "Read messages and content aloud",
+    "privacyAndSecurity": "Privacy & Security",
+    "privacyDescription": "This app does not intend to collect PII or securing sensitive personal data. All communications are for educational purposes only.",
+    "familyMemberPermissions": "Family Member Permissions",
+    "dataAndPrivacyPolicy": "Data & Privacy Policy",
+    "blockUnblockContacts": "Block/Unblock Contacts",
+    "accountManagement": "Account Management",
+    "addFamilyMember": "Add Family Member",
+    "manageChildren": "Manage Children",
+    "exportData": "Export Data",
+    "familyConnect": "Family Connect",
+    "version": "Version",
+    "logoutConfirmTitle": "Logout",
+    "logoutConfirmMessage": "Are you sure you want to logout?"
+  },
+  "languages": {
+    "en": "English",
+    "fr": "French",
+    "es": "Spanish"
+  },
+  "tabs": {
+    "messages": "Messages",
+    "messagesSubTitle": "Conversations and important notices",
+    "timeline": "Timeline",
+    "timelineTitle": "{{name}}'s Timeline",
+    "timelineSubTitle": "Learning journey & memories",
+    "timelineAllPosts": "All Posts",
+    "timelineMedia": "Media",
+    "timelineRecommended": "Recommended",
+    "timelineSaved": "Saved",
+    "resources": "Resource Library",
+    "resourcesSubTitle": "200+ books and activities",
+    "dashboard": "Dashboard",
+    "dashboardSubTitle": "Family engagement analytics",
+    "dashboardSubTitleParent": "Your family engagement overview",
+    "tabBarMessages": "Messages",
+    "tabBarTimeline": "Timeline",
+    "tabBarDashboard": "Dashboard",
+    "tabBarResources": "Resources",
+    "newButton": "New"
+  },
+  "profile": {
+    "title": "Profile & Account Settings",
+    "profileTitle": "Profile"
+  },
+  "userProfile": {
+    "title": "Profile"
+  },
+  "changePassword": {
+    "title": "Change Password"
+  },
+  "dataPrivacy": {
+    "title": "Data & Privacy Policy"
+  },
+  "blocklist": {
+    "title": "Block/Unblock Contacts"
+  },
+  "newMessage": {
+    "title": "New Message"
+  },
+  "createGroup": {
+    "title": "Create New Group",
+    "allClassrooms": "All Classrooms",
+    "allContacts": "All Contacts"
+  },
+  "createPost": {
+    "newPost": "New Post",
+    "editPost": "Edit Post",
+    "listOfClassrooms": "List of Classrooms",
+    "listOfPostVisibility": "List of Post Visibility"
+  },
+  "createEvent": {
+    "createNewEvent": "Create New Event",
+    "editEvent": "Edit Event",
+    "listOfEventType": "List of Event Type",
+    "listOfRepetitions": "List of Repetitions"
+  },
+  "event": {
+    "schoolCalendar": "School Calendar",
+    "schoolCalendarDesc": "Upcoming events and important dates",
+    "eventDetails": "Event Details"
+  },
+  "resource": {
+    "rateResource": "Rate Resource",
+    "categoryAll": "All",
+    "categoryBook": "Book",
+    "categoryActivity": "Activity",
+    "categoryVideo": "Video",
+    "categorySaved": "Saved"
+  },
+  "feed": {
+    "backToTimeline": "Back to Timeline"
+  },
+  "map": {
+    "selectedLocation": "Selected Location"
+  },
+  "placeholders": {
+    "search": "Search...",
+    "searchConversations": "Search Conversations...",
+    "searchResources": "Search Resources...",
+    "writeNewPost": "Write a new post ...",
+    "oldPassword": "Old Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "noEmailAvailable": "No email available",
+    "addReply": "Add a reply...",
+    "addComment": "Add a comment...",
+    "whatToTalkAbout": "What do you want to talk about?",
+    "tagsWithComma": "Separate tags with comma (,)",
+    "eventName": "What's the event called?",
+    "eventDuration": "30 min",
+    "editMessage": "Edit message...",
+    "typeMessage": "Type a message...",
+    "email": "Please insert your email",
+    "password": "Please insert your password",
+    "confirmPasswordLogin": "Please insert your confirm password",
+    "pollQuestion": "What are your thoughts on DAP??",
+    "pollOptionLike": "I like it.",
+    "pollOptionDislike": "I don't like it.",
+    "pollOptionNoOpinion": "No opinion.",
+    "askAnything": "Ask me anything...",
+    "emergencyMessage": "Enter your emergency message..."
+  },
+  "buttons": {
+    "retry": "Retry",
+    "emergency": "Emergency",
+    "confirm": "Confirm",
+    "apply": "Apply",
+    "video": "Video",
+    "back": "Back",
+    "closePoll": "Close poll",
+    "delete": "Delete",
+    "export": "Export",
+    "ok": "OK",
+    "going": "Going",
+    "maybe": "Maybe",
+    "notGoing": "Not Going",
+    "rsvp": "RSVP",
+    "image": "Image"
+  },
+  "emergency": {
+    "title": "Emergency Alert",
+    "subtitle": "Send urgent notifications to all families",
+    "alertDescription": "Emergency alerts will bypass normal notification settings and be delivered immediately to all recipients.",
+    "alertMessage": "Alert Message",
+    "quickTemplates": "Quick Templates:",
+    "template1": "School lockdown - all students are safe and s...",
+    "template2": "Weather alert - early dismissal at 2:00 PM du...",
+    "template3": "Medical emergency resolved - all students ar...",
+    "template4": "Transportation delay - buses running 30 minu...",
+    "deliveryMethods": "Delivery Methods",
+    "pushNotifications": "Push Notifications",
+    "pushSub": "Instant mobile alerts",
+    "emailAlerts": "Email Alerts",
+    "emailSub": "Send to registered email addresses",
+    "smsMessages": "SMS Messages",
+    "smsSub": "Text message alerts",
+    "recipients": "Recipients",
+    "recipientsNote": "This alert will be sent to all 5 family members across all classes.",
+    "sendButton": "Send Emergency Alert",
+    "charCount": "{{count}}/500 characters"
+  },
+  "translate": {
+    "modalTitle": "Translate messages",
+    "fromSource": "From (source)",
+    "toTarget": "To (target)",
+    "autoDetect": "Auto (detect)",
+    "turnOff": "Turn off translation"
+  },
+  "ai": {
+    "title": "AI Teaching Assistant",
+    "buttonLabel": "AI Assistant",
+    "subtitle": "Always ready to help",
+    "greeting": "Hi! I'm your AI Teaching Assistant. I can help you interpret assessment reports, suggest learning activities, and create personalized insights for your students. How can I help you today?",
+    "quickActionsTitle": "Quick actions:",
+    "justNow": "Just Now",
+    "quickInterpret": "Interpret reading assessment",
+    "quickMath": "Suggest math activities",
+    "quickParent": "Generate parent communication",
+    "quickGoals": "Create learning goals",
+    "uploadReport": "Upload Assessment Report"
+  }
 }
