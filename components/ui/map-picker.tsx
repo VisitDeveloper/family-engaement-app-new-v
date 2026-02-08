@@ -4,6 +4,7 @@ import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
     Alert,
@@ -37,6 +38,7 @@ export default function MapPicker({
   initialLatitude,
   initialLongitude,
 }: MapPickerProps) {
+  const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
   const [selectedLatitude, setSelectedLatitude] = useState<number | null>(
     initialLatitude || null
@@ -345,7 +347,7 @@ export default function MapPicker({
                   selectedLatitude === null || selectedLongitude === null
                 }
               >
-                <ThemedText style={styles.buttonText}>Confirm</ThemedText>
+                <ThemedText style={styles.buttonText}>{t("buttons.confirm")}</ThemedText>
               </TouchableOpacity>
             </View>
           </View>

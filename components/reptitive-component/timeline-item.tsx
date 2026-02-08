@@ -10,6 +10,7 @@ import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -58,6 +59,7 @@ export default function TimelineItem({
   showCommentInput = true,
   ...props
 }: ResourceItemProps) {
+  const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
   const user = useStore((state) => state.user);
   const router = useRouter();
@@ -765,11 +767,11 @@ export default function TimelineItem({
                         "Are you sure you want to delete this post? This action cannot be undone.",
                         [
                           {
-                            text: "Cancel",
+                            text: t("common.cancel"),
                             style: "cancel",
                           },
                           {
-                            text: "Delete",
+                            text: t("buttons.delete"),
                             style: "destructive",
                             onPress: () => {
                               if (props.onDelete) {

@@ -11,6 +11,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -174,6 +175,7 @@ const MessageItem = ({
 };
 
 export default function MessagesScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const theme = useStore((state: any) => state.theme);
@@ -458,11 +460,11 @@ export default function MessagesScreen() {
   return (
     <View style={styles.container}>
       <HeaderTabItem
-        title="Messages"
-        subTitle="Conversations and important notices"
+        title={t("tabs.messages")}
+        subTitle={t("tabs.messagesSubTitle")}
         buttonIcon={<NewIcon size={16} color="#ffffff" />}
         buttonLink="/new-message"
-        buttonTitle="New"
+        buttonTitle={t("tabs.newButton")}
         buttonRoles={["admin", "teacher", "parent"]}
         buttonVariant="primary"
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
@@ -473,7 +475,7 @@ export default function MessagesScreen() {
           query={query}
           onChangeQuery={setQuery}
           onDebouncedQuery={handleDebouncedQuery}
-          placeholder="Search Conversations..."
+          placeholder={t("placeholders.searchConversations")}
         />
       </View>
 
@@ -486,7 +488,7 @@ export default function MessagesScreen() {
             style={styles.filterBtn}
           >
             <AiAssistantIcon size={16} color={theme.tint} />
-            <Text>AI Assistant</Text>
+            <Text>{t("ai.buttonLabel")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -494,7 +496,7 @@ export default function MessagesScreen() {
             style={styles.filterBtn}
           >
             <EmergencyIcon size={16} color={theme.emergencyColor} />
-            <Text>Emergency</Text>
+            <Text>{t("buttons.emergency")}</Text>
           </TouchableOpacity>
 
         </View>

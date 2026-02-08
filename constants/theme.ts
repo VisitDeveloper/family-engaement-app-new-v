@@ -8,8 +8,8 @@ import { Platform } from 'react-native';
 const tintColorLight = '#a846c2';
 const tintColorDark = '#d17fe0'; // Slightly lighter than dark purple for dark mode
 
-const emergencyColor = '#f87171';
-const emergencyBackgroundColor = '#fdf1f1'
+const emergencyColor = '#E7000B';
+const emergencyBackgroundColor = '#FEF2F2'
 
 const star = '#efb000'
 

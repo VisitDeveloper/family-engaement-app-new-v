@@ -4,6 +4,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const groups = [
@@ -24,6 +25,7 @@ const contacts = [
 ];
 
 export default function NewMessageScreen() {
+    const { t } = useTranslation();
     const router = useRouter();
     const theme = useStore((state) => state.theme);
 
@@ -153,7 +155,7 @@ export default function NewMessageScreen() {
 
 
             <HeaderInnerPage
-                title="Block/Unblock Contacts"
+                title={t("blocklist.title")}
                 addstyles={{ marginBottom: 20 }}
             />
 

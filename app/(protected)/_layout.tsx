@@ -4,6 +4,7 @@ import { useStore } from "@/store";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import i18n from "i18next";
 import { useCallback, useEffect, useMemo } from "react";
 import { Appearance } from "react-native";
 import "react-native-reanimated";
@@ -20,6 +21,14 @@ export default function RootLayout() {
   const isHighContrast = useStore((state) => state.isHighContrast);
   const setColorScheme = useStore((state) => state.setColorScheme);
   const getAcceptLanguage = useStore((state) => state.getAcceptLanguage);
+  const appLanguage = useStore((state) => state.appLanguage);
+
+  // Sync stored language with i18n (after store rehydration)
+  useEffect(() => {
+    if (appLanguage && i18n.language !== appLanguage) {
+      i18n.changeLanguage(appLanguage);
+    }
+  }, [appLanguage]);
 
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {

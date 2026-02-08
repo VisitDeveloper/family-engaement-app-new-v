@@ -9,6 +9,7 @@ import { PostResponseDto, postService } from "@/services/post.service";
 import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
 import { usePathname, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -22,6 +23,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const FeedDetailScreen = () => {
+  const { t } = useTranslation();
   const param = usePathname();
   const router = useRouter();
   const pathID = param.split("/");
@@ -126,7 +128,7 @@ const FeedDetailScreen = () => {
   if (loading) {
     return (
       <View style={styles.container}>
-        <HeaderInnerPage title="Back to Timeline" />
+        <HeaderInnerPage title={t("feed.backToTimeline")} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.tint} />
           <ThemedText type="subText" style={{ marginTop: 10 }}>
@@ -140,7 +142,7 @@ const FeedDetailScreen = () => {
   if (error || !post) {
     return (
       <View style={styles.container}>
-        <HeaderInnerPage title="Back to Timeline" />
+        <HeaderInnerPage title={t("feed.backToTimeline")} />
         <View style={styles.errorContainer}>
           <ThemedText
             type="default"
@@ -157,7 +159,7 @@ const FeedDetailScreen = () => {
               borderRadius: 8,
             }}
           >
-            <ThemedText style={{ color: "#fff" }}>Retry</ThemedText>
+            <ThemedText style={{ color: "#fff" }}>{t("buttons.retry")}</ThemedText>
           </TouchableOpacity>
         </View>
       </View>
@@ -174,7 +176,7 @@ const FeedDetailScreen = () => {
 
   return (
     <View style={styles.container}>
-      <HeaderInnerPage title="Back to Timeline" />
+      <HeaderInnerPage title={t("feed.backToTimeline")} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

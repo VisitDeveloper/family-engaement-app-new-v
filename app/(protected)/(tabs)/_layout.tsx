@@ -6,12 +6,13 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useStore } from '@/store';
 import { Tabs } from 'expo-router';
 import { Platform, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const theme = useStore(state => state.theme);
   const role = useStore(state => state.role);
-  console.log('TabLayout render with role:', role);
   return (
     <View style={{ flex: 1, height: 80 }}>
 
@@ -80,14 +81,14 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: 'Messages',
+            title: t('tabs.tabBarMessages'),
             tabBarIcon: ({ color }) => <MessagesIcon color={color} size={24} />,
           }}
         />
         <Tabs.Screen
           name="timeline"
           options={{
-            title: 'Timeline',
+            title: t('tabs.tabBarTimeline'),
             tabBarIcon: ({ color }) => <TimelineIcon color={color} size={24} />,
           }}
         />
@@ -95,7 +96,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name={"dashboard"}
           options={{
-            title: 'Dashboard',
+            title: t('tabs.tabBarDashboard'),
             tabBarIcon: ({ color }) => <DashboardIcon color={color} size={24} />,
           }}
         />
@@ -103,7 +104,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="resources"
           options={{
-            title: 'Resources',
+            title: t('tabs.tabBarResources'),
             tabBarIcon: ({ color }) => <ResourcesIcon color={color} size={24} />,
           }}
         />

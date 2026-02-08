@@ -7,6 +7,7 @@ import { useStore } from "@/store";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,6 +20,7 @@ import {
 } from "react-native";
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
   const router = useRouter();
   const setUser = useStore((s) => s.setUser);
@@ -304,7 +306,7 @@ export default function ProfileScreen() {
     return (
       <View style={styles.container}>
         <HeaderInnerPage
-          title="Profile & Account Settings"
+          title={t("profile.title")}
           addstyles={{ marginBottom: 20 }}
         />
         <View style={{ padding: 20, alignItems: "center" }}>
@@ -323,7 +325,7 @@ export default function ProfileScreen() {
               borderRadius: 8,
             }}
           >
-            <ThemedText style={{ color: "#fff" }}>Retry</ThemedText>
+            <ThemedText style={{ color: "#fff" }}>{t("buttons.retry")}</ThemedText>
           </TouchableOpacity>
         </View>
       </View>
@@ -338,7 +340,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <HeaderInnerPage
-        title="Profile & Account Settings"
+        title={t("profile.title")}
         addstyles={{ marginBottom: 0 }}
       />
 
@@ -394,7 +396,7 @@ export default function ProfileScreen() {
             ]}
             value={profile?.email || ""}
             editable={false}
-            placeholder="No email available"
+            placeholder={t("placeholders.noEmailAvailable")}
             placeholderTextColor={theme.subText}
           />
           <ThemedText type="subText" style={styles.label}>

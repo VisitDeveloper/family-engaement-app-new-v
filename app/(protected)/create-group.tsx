@@ -11,6 +11,7 @@ import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -41,6 +42,7 @@ type Classroom = {
 };
 
 export default function CreateGroupScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const theme = useStore((state) => state.theme);
   const currentUser = useStore((state: any) => state.user);
@@ -350,7 +352,7 @@ export default function CreateGroupScreen() {
   return (
     <View style={styles.container}>
       <HeaderInnerPage
-        title="Create New Group"
+        title={t("createGroup.title")}
         addstyles={{ marginBottom: 0 }}
       />
 

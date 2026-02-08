@@ -9,6 +9,7 @@ import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -25,6 +26,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TimelineScreen = () => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const theme = useStore((state) => state.theme);
   const user = useStore((state) => state.user);
@@ -214,11 +216,10 @@ const TimelineScreen = () => {
   );
   const tabsData = useMemo(
     () => [
-      { label: "All Posts", filter: "all" as const },
-      { label: "Media", filter: "media" as const },
-      // { label: "Reports", filter: "reports" as const },
-      { label: "Recommended", filter: "recommended" as const },
-      { label: "Saved", filter: "saved" as const },
+      { labelKey: "tabs.timelineAllPosts", filter: "all" as const },
+      { labelKey: "tabs.timelineMedia", filter: "media" as const },
+      { labelKey: "tabs.timelineRecommended", filter: "recommended" as const },
+      { labelKey: "tabs.timelineSaved", filter: "saved" as const },
     ],
     []
   );
@@ -295,7 +296,7 @@ const TimelineScreen = () => {
         type="subText"
         style={{ color: activeTab === index ? "#fff" : theme.text }}
       >
-        {item.label}
+        {t(item.labelKey)}
       </ThemedText>
     </TouchableOpacity>
   );
@@ -306,11 +307,11 @@ const TimelineScreen = () => {
 
       <View style={{ paddingHorizontal: 10 }}>
         <HeaderTabItem
-          title={`${user?.firstName}'s Timeline`}
-          subTitle="Learning journey & memories"
+          title={t("tabs.timelineTitle", { name: user?.firstName || "" })}
+          subTitle={t("tabs.timelineSubTitle")}
           buttonIcon={<Feather name="calendar" size={16} color={theme.tint} />}
           buttonLink="/event"
-          buttonTitle="School Calendar"
+          buttonTitle={t("event.schoolCalendar")}
           buttonRoles={["admin", "teacher", "parent"]}
         />
       </View>
@@ -354,7 +355,7 @@ const TimelineScreen = () => {
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Write a new post ..."
+                  placeholder={t("placeholders.writeNewPost")}
                   placeholderTextColor="#8E8E93"
                   multiline={false}
                   editable={false}
@@ -413,7 +414,7 @@ const TimelineScreen = () => {
                 borderRadius: 8,
               }}
             >
-              <ThemedText style={{ color: "#fff" }}>Retry</ThemedText>
+              <ThemedText style={{ color: "#fff" }}>{t("buttons.retry")}</ThemedText>
             </TouchableOpacity>
           </View>
         ) : posts.length === 0 ? (
