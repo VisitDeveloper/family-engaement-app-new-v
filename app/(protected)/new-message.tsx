@@ -161,7 +161,7 @@ export default function NewMessageScreen() {
       setGroups(mappedGroups);
     } catch (error: any) {
       console.error("Error loading groups:", error);
-      Alert.alert("Error", error.message || "Failed to load groups");
+      Alert.alert(t("common.error"), error.message || t("newMessage.failedLoadGroups"));
     } finally {
       setLoadingGroups(false);
     }
@@ -248,7 +248,7 @@ export default function NewMessageScreen() {
       } catch (error: any) {
         console.error("Error loading contacts:", error);
         if (!append) {
-          Alert.alert("Error", error.message || "Failed to load contacts");
+          Alert.alert(t("common.error"), error.message || t("newMessage.failedLoadContacts"));
         }
       } finally {
         setLoadingContacts(false);

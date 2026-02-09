@@ -85,10 +85,55 @@
     "profileTitle": "Perfil"
   },
   "userProfile": {
-    "title": "Perfil"
+    "title": "Perfil",
+    "failedLoadProfile": "Error al cargar el perfil. Inténtalo de nuevo.",
+    "sessionExpired": "Sesión expirada",
+    "sessionExpiredMessage": "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.",
+    "permissionRequired": "Permiso requerido",
+    "cameraRollPermissionMessage": "Lo sentimos, necesitamos permisos para actualizar tu foto de perfil.",
+    "profilePictureUpdatedSuccess": "¡Foto de perfil actualizada correctamente!",
+    "failedUpdateProfilePicture": "Error al actualizar la foto de perfil. Inténtalo de nuevo.",
+    "user": "Usuario",
+    "parentPrefix": "Padre - ",
+    "teacher": "Maestro",
+    "switchProfile": "Cambiar perfil",
+    "contact": "Contacto",
+    "email": "Correo electrónico",
+    "phone": "Teléfono",
+    "noPhoneNumberAvailable": "No hay número de teléfono disponible",
+    "managePasswords": "Gestionar contraseñas"
+  },
+  "switchProfile": {
+    "title": "Cambiar perfil",
+    "failedLoadProfiles": "Error al cargar los perfiles. Inténtalo de nuevo.",
+    "profileSwitchedSuccess": "¡Perfil cambiado correctamente!",
+    "failedSwitchProfile": "Error al cambiar el perfil. Inténtalo de nuevo.",
+    "parentPrefix": "Padre - ",
+    "teacherPrefix": "Maestro - ",
+    "teacher": "Maestro",
+    "parent": "Padre",
+    "tapToSwitch": "Toca para cambiar",
+    "currentlyActive": "Actualmente activo"
   },
   "changePassword": {
-    "title": "Cambiar contraseña"
+    "title": "Cambiar contraseña",
+    "passwordChangedSuccess": "¡Contraseña cambiada correctamente!",
+    "failedChangePassword": "Error al cambiar la contraseña. Inténtalo de nuevo.",
+    "sessionExpiredMessageNewPassword": "Tu sesión ha expirado. Por favor, inicia sesión de nuevo con tu nueva contraseña.",
+    "managePassword": "Gestionar contraseña",
+    "oldPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "retypeNewPassword": "Vuelve a escribir la nueva contraseña",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "passwordMismatchMessage": "La nueva contraseña y la confirmación no coinciden",
+    "passwordRequirements": {
+      "minLength": "Debe tener al menos 8 caracteres.",
+      "hasUpperLower": "Debe incluir una mezcla de mayúsculas y minúsculas.",
+      "hasNumber": "Debe incluir números.",
+      "hasSpecial": "Debe incluir caracteres especiales.",
+      "noPersonalInfo": "No debe incluir tu nombre, fecha de nacimiento u otra información fácilmente disponible."
+    },
+    "changePasswordButton": "Cambiar contraseña"
   },
   "dataPrivacy": {
     "title": "Política de datos y privacidad"
@@ -273,7 +318,27 @@
     "categorySaved": "Guardados"
   },
   "feed": {
-    "backToTimeline": "Volver a la línea de tiempo"
+    "backToTimeline": "Volver a la línea de tiempo",
+    "postDeletedSuccess": "Publicación eliminada correctamente",
+    "failedDeletePost": "Error al eliminar la publicación"
+  },
+  "timeline": {
+    "postDeletedSuccess": "Publicación eliminada correctamente",
+    "failedDeletePost": "Error al eliminar la publicación"
+  },
+  "newMessage": {
+    "title": "Nuevo mensaje",
+    "failedLoadGroups": "Error al cargar los grupos",
+    "failedLoadContacts": "Error al cargar los contactos"
+  },
+  "createGroup": {
+    "title": "Crear nuevo grupo",
+    "allClassrooms": "Todas las aulas",
+    "allContacts": "Todos los contactos",
+    "failedLoadContacts": "Error al cargar los contactos",
+    "failedPickImage": "Error al elegir imagen. Inténtalo de nuevo.",
+    "pleaseEnterGroupName": "Por favor introduce un nombre de grupo",
+    "failedCreateGroup": "Error al crear el grupo"
   },
   "map": {
     "selectedLocation": "Ubicación seleccionada"

@@ -133,7 +133,7 @@ export default function ChangePassword() {
 
     // Check new password match
     if (newPassword !== confirmPassword) {
-      setError("New password and confirm password do not match");
+      setError(t("changePassword.passwordMismatchMessage"));
       return;
     }
 
@@ -153,9 +153,9 @@ export default function ChangePassword() {
 
       console.log("response", response);
 
-      Alert.alert("Success", "Password changed successfully!", [
+      Alert.alert(t("common.success"), t("changePassword.passwordChangedSuccess"), [
         {
-          text: "OK",
+          text: t("common.ok"),
           onPress: () => {
             router.back();
           },
@@ -164,21 +164,20 @@ export default function ChangePassword() {
     } catch (err) {
       const apiError = err as ApiError;
       let errorMessage =
-        apiError.message || "Failed to change password. Please try again.";
+        apiError.message || t("changePassword.failedChangePassword");
 
       // If error is 401 or 403, token is invalid and we need to login again
       if (apiError.status === 401 || apiError.status === 403) {
-        errorMessage =
-          "Your session has expired. Please login again with your new password.";
+        errorMessage = t("changePassword.sessionExpiredMessageNewPassword");
 
         // Clear state and redirect to login page
         setLoggedIn(false);
         setUser(null);
         setRole(null);
 
-        Alert.alert("Session Expired", errorMessage, [
+        Alert.alert(t("userProfile.sessionExpired"), errorMessage, [
           {
-            text: "OK",
+            text: t("common.ok"),
             onPress: () => {
               router.replace("/(auth)/login");
             },
@@ -188,7 +187,7 @@ export default function ChangePassword() {
       }
 
       setError(errorMessage);
-      Alert.alert("Error", errorMessage);
+      Alert.alert(t("common.error"), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -214,12 +213,12 @@ export default function ChangePassword() {
               type="subtitle"
               style={{ color: theme.text, marginLeft: 18 }}
             >
-              Manage Password
+              {t("changePassword.managePassword")}
             </ThemedText>
           </View>
 
           <View style={styles.inputSection}>
-            <ThemedText style={styles.label}>Old Password</ThemedText>
+            <ThemedText style={styles.label}>{t("changePassword.oldPassword")}</ThemedText>
             <View style={{ position: "relative" }}>
               <TextInput
                 placeholder={t("placeholders.oldPassword")}
@@ -253,7 +252,7 @@ export default function ChangePassword() {
           </View>
 
           <View style={styles.inputSection}>
-            <ThemedText style={styles.label}>New Password</ThemedText>
+            <ThemedText style={styles.label}>{t("changePassword.newPassword")}</ThemedText>
             <View style={{ position: "relative" }}>
               <TextInput
                 placeholder={t("placeholders.newPassword")}
@@ -287,7 +286,7 @@ export default function ChangePassword() {
           </View>
 
           <View style={styles.inputSection}>
-            <ThemedText style={styles.label}>Retype New Password</ThemedText>
+            <ThemedText style={styles.label}>{t("changePassword.retypeNewPassword")}</ThemedText>
             <View style={{ position: "relative" }}>
               <TextInput
                 placeholder={t("placeholders.confirmPassword")}
@@ -350,7 +349,7 @@ export default function ChangePassword() {
                 marginLeft: 10,
               }}
             >
-              Must be at least 8 characters.
+              {t("changePassword.passwordRequirements.minLength")}
             </ThemedText>
           </View>
           <View style={styles.desc}>
@@ -383,7 +382,7 @@ export default function ChangePassword() {
                 marginLeft: 10,
               }}
             >
-              Must include a mix of uppercase and lowercase letters.
+              {t("changePassword.passwordRequirements.hasUpperLower")}
             </ThemedText>
           </View>
           <View style={styles.desc}>
@@ -416,7 +415,7 @@ export default function ChangePassword() {
                 marginLeft: 10,
               }}
             >
-              Must include numbers.
+              {t("changePassword.passwordRequirements.hasNumber")}
             </ThemedText>
           </View>
           <View style={styles.desc}>
@@ -449,7 +448,7 @@ export default function ChangePassword() {
                 marginLeft: 10,
               }}
             >
-              Must include special characters.
+              {t("changePassword.passwordRequirements.hasSpecial")}
             </ThemedText>
           </View>
           <View style={styles.desc}>
@@ -462,8 +461,7 @@ export default function ChangePassword() {
               type="subText"
               style={{ color: theme.passDesc, marginLeft: 10 }}
             >
-              Must not include your name, birthday, or any other readily
-              available information.
+              {t("changePassword.passwordRequirements.noPersonalInfo")}
             </ThemedText>
           </View>
 
@@ -474,7 +472,7 @@ export default function ChangePassword() {
                 type="subText"
                 style={{ color: theme.emergencyColor, marginLeft: 10 }}
               >
-                Password Mismatch
+                {t("changePassword.passwordMismatch")}
               </ThemedText>
             </View>
           )}
@@ -503,7 +501,7 @@ export default function ChangePassword() {
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <ThemedText style={{ color: "#fff" }}>Change Password</ThemedText>
+            <ThemedText style={{ color: "#fff" }}>{t("changePassword.changePasswordButton")}</ThemedText>
           )}
         </TouchableOpacity>
       </ScrollView>

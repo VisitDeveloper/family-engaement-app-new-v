@@ -25,6 +25,7 @@ import { SvgXml } from "react-native-svg";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 import CommentsBottomSheet from "../ui/comments-bottom-sheet";
+import { DownloadIcon } from "../ui/icons/settings-icons";
 
 // Placeholder when post image fails to load
 const imageErrorPlaceholderSvg = `<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -984,12 +985,11 @@ export default function TimelineItem({
                         : fileName}
                     </ThemedText>
                   </View>
-                  <Ionicons
-                    name="download-outline"
+                  <DownloadIcon
                     size={20}
-                    color={theme.subText}
-                    accessibilityElementsHidden={true}
-                    importantForAccessibility="no"
+                    color={theme.tint}
+                  // accessibilityElementsHidden={true}
+                  // importantForAccessibility="no"
                   />
                 </TouchableOpacity>
               );

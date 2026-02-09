@@ -149,17 +149,17 @@ export default function ProfileScreen() {
     } catch (err) {
       const apiError = err as ApiError;
       const errorMessage =
-        apiError.message || "Failed to load profile. Please try again.";
+        apiError.message || t("userProfile.failedLoadProfile");
       setError(errorMessage);
 
       // If error is 401 or 403, token is invalid
       if (apiError.status === 401 || apiError.status === 403) {
         Alert.alert(
-          "Session Expired",
-          "Your session has expired. Please login again.",
+          t("userProfile.sessionExpired"),
+          t("userProfile.sessionExpiredMessage"),
           [
             {
-              text: "OK",
+              text: t("common.ok"),
               onPress: () => {
                 router.replace("/(auth)/login");
               },
@@ -170,7 +170,7 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false);
     }
-  }, [role, setUser, router]);
+  }, [setUser, router, t]);
 
   useEffect(() => {
     fetchProfile();
@@ -183,8 +183,8 @@ export default function ProfileScreen() {
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Permission Required",
-          "Sorry, we need camera roll permissions to update your profile picture!"
+          t("userProfile.permissionRequired"),
+          t("userProfile.cameraRollPermissionMessage")
         );
         return;
       }
@@ -259,22 +259,22 @@ export default function ProfileScreen() {
       // This ensures everything is updated everywhere
       await fetchProfile();
 
-      Alert.alert("Success", "Profile picture updated successfully!");
+      Alert.alert(t("common.success"), t("userProfile.profilePictureUpdatedSuccess"));
     } catch (err) {
       const apiError = err as ApiError;
       const errorMessage =
         apiError.message ||
-        "Failed to update profile picture. Please try again.";
-      Alert.alert("Error", errorMessage);
+        t("userProfile.failedUpdateProfilePicture");
+      Alert.alert(t("common.error"), errorMessage);
 
       // If error is 401 or 403, token is invalid
       if (apiError.status === 401 || apiError.status === 403) {
         Alert.alert(
-          "Session Expired",
-          "Your session has expired. Please login again.",
+          t("userProfile.sessionExpired"),
+          t("userProfile.sessionExpiredMessage"),
           [
             {
-              text: "OK",
+              text: t("common.ok"),
               onPress: () => {
                 router.replace("/(auth)/login");
               },
@@ -285,7 +285,7 @@ export default function ProfileScreen() {
     } finally {
       setUploading(false);
     }
-  }, [profile, setUser, router, fetchProfile]);
+  }, [profile, setUser, router, fetchProfile, t]);
 
   if (loading) {
     return (
@@ -333,7 +333,7 @@ export default function ProfileScreen() {
   const displayName =
     profile?.name || profile?.firstName || profile?.lastName
       ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
-      : profile?.email?.split("@")[0] || "User";
+      : profile?.email?.split("@")[0] || t("userProfile.user");
 
   return (
     <View style={styles.container}>
@@ -368,8 +368,37 @@ export default function ProfileScreen() {
             {displayName}
           </ThemedText>
           <ThemedText type="subText" style={styles.subText}>
-            {profile?.childName ? profile.childName : ""}
+            {profile?.role === "parent" && profile.childName
+              ? `${t("userProfile.parentPrefix")}${profile.childName}`
+              : profile?.role === "teacher"
+                ? t("userProfile.teacher")
+                : ""}
           </ThemedText>
+          <View style={[styles.tagsContainer, { borderBottomColor: theme.border, borderBottomWidth: 1, paddingBottom: 10 }]}>
+            {profile?.subjects && profile.subjects.length > 0 && (
+              <View style={styles.tag}>
+                <ThemedText style={styles.tagText}>
+                  {profile.subjects[0]}
+                </ThemedText>
+              </View>
+            )}
+            {/* TODO: Add classroom tag when classroom data is available from API */}
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push("/switch-profile")}
+            style={[
+              styles.changeBtn,
+              { borderColor: theme.border, marginTop: 12 },
+            ]}
+          >
+            <ThemedText
+              type="middleTitle"
+              style={{ color: theme.text, fontWeight: "500" }}
+            >
+              {t("userProfile.switchProfile")}
+            </ThemedText>
+            <Feather name="chevron-right" size={18} color={theme.text} />
+          </TouchableOpacity>
         </View>
 
         {/* Contact */}
@@ -377,11 +406,11 @@ export default function ProfileScreen() {
           <View style={styles.row}>
             <PhoneIcon size={18} color={theme.text} />
             <ThemedText type="middleTitle" style={styles.sectionTitle}>
-              Contact
+              {t("userProfile.contact")}
             </ThemedText>
           </View>
           <ThemedText type="subText" style={styles.label}>
-            Email
+            {t("userProfile.email")}
           </ThemedText>
           <TextInput
             style={[
@@ -398,7 +427,7 @@ export default function ProfileScreen() {
             placeholderTextColor={theme.subText}
           />
           <ThemedText type="subText" style={styles.label}>
-            Phone
+            {t("userProfile.phone")}
           </ThemedText>
           <View
             style={[
@@ -422,7 +451,7 @@ export default function ProfileScreen() {
               </>
             ) : (
               <ThemedText style={{ color: theme.subText }}>
-                No phone number available
+                {t("userProfile.noPhoneNumberAvailable")}
               </ThemedText>
             )}
           </View>
@@ -433,7 +462,7 @@ export default function ProfileScreen() {
           <View style={styles.row}>
             <PasswordIcon size={20} color={theme.text} />
             <ThemedText type="middleTitle" style={styles.sectionTitle}>
-              Manage Passwords
+              {t("userProfile.managePasswords")}
             </ThemedText>
           </View>
           <TouchableOpacity
@@ -444,7 +473,7 @@ export default function ProfileScreen() {
               type="middleTitle"
               style={{ color: theme.text, fontWeight: "500" }}
             >
-              Change Password
+              {t("changePassword.title")}
             </ThemedText>
             <Feather name="chevron-right" size={18} color={theme.text} />
           </TouchableOpacity>

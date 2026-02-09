@@ -261,9 +261,9 @@ const TimelineScreen = () => {
         setPosts(response.posts);
       } catch (err: any) {
         const errorMessage =
-          err.message || "Failed to load posts. Please try again.";
+          err.message || t("common.error");
         setError(errorMessage);
-        Alert.alert("Error", errorMessage);
+        Alert.alert(t("common.error"), errorMessage);
         console.error("Error fetching posts:", err);
       } finally {
         setLoading(false);
@@ -560,10 +560,10 @@ const TimelineScreen = () => {
                     onDelete={async () => {
                       try {
                         await postService.delete(post.id);
-                        Alert.alert("Success", "Post deleted successfully");
+                        Alert.alert(t("common.success"), t("timeline.postDeletedSuccess"));
                         fetchPosts(tabsData[activeTab].filter);
                       } catch (error: any) {
-                        Alert.alert("Error", error.message || "Failed to delete post");
+                        Alert.alert(t("common.error"), error.message || t("timeline.failedDeletePost"));
                         console.error("Error deleting post:", error);
                       }
                     }}

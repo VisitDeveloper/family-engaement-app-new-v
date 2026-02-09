@@ -64,9 +64,9 @@ const FeedDetailScreen = () => {
       setPost(postData);
     } catch (err: any) {
       const errorMessage =
-        err.message || "Failed to load post. Please try again.";
+        err.message || t("common.error");
       setError(errorMessage);
-      Alert.alert("Error", errorMessage);
+      Alert.alert(t("common.error"), errorMessage);
       console.error("Error fetching post:", err);
     } finally {
       setLoading(false);
@@ -242,10 +242,10 @@ const FeedDetailScreen = () => {
           onDelete={async () => {
             try {
               await postService.delete(post.id);
-              Alert.alert("Success", "Post deleted successfully");
+              Alert.alert(t("common.success"), t("feed.postDeletedSuccess"));
               router.back();
             } catch (error: any) {
-              Alert.alert("Error", error.message || "Failed to delete post");
+              Alert.alert(t("common.error"), error.message || t("feed.failedDeletePost"));
               console.error("Error deleting post:", error);
             }
           }}

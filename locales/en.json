@@ -85,10 +85,55 @@
     "profileTitle": "Profile"
   },
   "userProfile": {
-    "title": "Profile"
+    "title": "Profile",
+    "failedLoadProfile": "Failed to load profile. Please try again.",
+    "sessionExpired": "Session Expired",
+    "sessionExpiredMessage": "Your session has expired. Please login again.",
+    "permissionRequired": "Permission Required",
+    "cameraRollPermissionMessage": "Sorry, we need camera roll permissions to update your profile picture!",
+    "profilePictureUpdatedSuccess": "Profile picture updated successfully!",
+    "failedUpdateProfilePicture": "Failed to update profile picture. Please try again.",
+    "user": "User",
+    "parentPrefix": "Parent - ",
+    "teacher": "Teacher",
+    "switchProfile": "Switch Profile",
+    "contact": "Contact",
+    "email": "Email",
+    "phone": "Phone",
+    "noPhoneNumberAvailable": "No phone number available",
+    "managePasswords": "Manage Passwords"
+  },
+  "switchProfile": {
+    "title": "Switch Profile",
+    "failedLoadProfiles": "Failed to load profiles. Please try again.",
+    "profileSwitchedSuccess": "Profile switched successfully!",
+    "failedSwitchProfile": "Failed to switch profile. Please try again.",
+    "parentPrefix": "Parent - ",
+    "teacherPrefix": "Teacher - ",
+    "teacher": "Teacher",
+    "parent": "Parent",
+    "tapToSwitch": "Tap to Switch",
+    "currentlyActive": "Currently Active"
   },
   "changePassword": {
-    "title": "Change Password"
+    "title": "Change Password",
+    "passwordChangedSuccess": "Password changed successfully!",
+    "failedChangePassword": "Failed to change password. Please try again.",
+    "sessionExpiredMessageNewPassword": "Your session has expired. Please login again with your new password.",
+    "managePassword": "Manage Password",
+    "oldPassword": "Old Password",
+    "newPassword": "New Password",
+    "retypeNewPassword": "Retype New Password",
+    "passwordMismatch": "Password Mismatch",
+    "passwordMismatchMessage": "New password and confirm password do not match",
+    "passwordRequirements": {
+      "minLength": "Must be at least 8 characters.",
+      "hasUpperLower": "Must include a mix of uppercase and lowercase letters.",
+      "hasNumber": "Must include numbers.",
+      "hasSpecial": "Must include special characters.",
+      "noPersonalInfo": "Must not include your name, birthday, or any other readily available information."
+    },
+    "changePasswordButton": "Change Password"
   },
   "dataPrivacy": {
     "title": "Data & Privacy Policy"
@@ -273,7 +318,27 @@
     "categorySaved": "Saved"
   },
   "feed": {
-    "backToTimeline": "Back to Timeline"
+    "backToTimeline": "Back to Timeline",
+    "postDeletedSuccess": "Post deleted successfully",
+    "failedDeletePost": "Failed to delete post"
+  },
+  "timeline": {
+    "postDeletedSuccess": "Post deleted successfully",
+    "failedDeletePost": "Failed to delete post"
+  },
+  "newMessage": {
+    "title": "New Message",
+    "failedLoadGroups": "Failed to load groups",
+    "failedLoadContacts": "Failed to load contacts"
+  },
+  "createGroup": {
+    "title": "Create New Group",
+    "allClassrooms": "All Classrooms",
+    "allContacts": "All Contacts",
+    "failedLoadContacts": "Failed to load contacts",
+    "failedPickImage": "Failed to pick image. Please try again.",
+    "pleaseEnterGroupName": "Please enter a group name",
+    "failedCreateGroup": "Failed to create group"
   },
   "map": {
     "selectedLocation": "Selected Location"

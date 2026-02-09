@@ -85,10 +85,55 @@
     "profileTitle": "Profil"
   },
   "userProfile": {
-    "title": "Profil"
+    "title": "Profil",
+    "failedLoadProfile": "Échec du chargement du profil. Veuillez réessayer.",
+    "sessionExpired": "Session expirée",
+    "sessionExpiredMessage": "Votre session a expiré. Veuillez vous reconnecter.",
+    "permissionRequired": "Autorisation requise",
+    "cameraRollPermissionMessage": "Désolé, nous avons besoin des autorisations pour mettre à jour votre photo de profil !",
+    "profilePictureUpdatedSuccess": "Photo de profil mise à jour avec succès !",
+    "failedUpdateProfilePicture": "Échec de la mise à jour de la photo de profil. Veuillez réessayer.",
+    "user": "Utilisateur",
+    "parentPrefix": "Parent - ",
+    "teacher": "Enseignant",
+    "switchProfile": "Changer de profil",
+    "contact": "Contact",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "noPhoneNumberAvailable": "Aucun numéro de téléphone disponible",
+    "managePasswords": "Gérer les mots de passe"
+  },
+  "switchProfile": {
+    "title": "Changer de profil",
+    "failedLoadProfiles": "Échec du chargement des profils. Veuillez réessayer.",
+    "profileSwitchedSuccess": "Profil changé avec succès !",
+    "failedSwitchProfile": "Échec du changement de profil. Veuillez réessayer.",
+    "parentPrefix": "Parent - ",
+    "teacherPrefix": "Enseignant - ",
+    "teacher": "Enseignant",
+    "parent": "Parent",
+    "tapToSwitch": "Appuyez pour changer",
+    "currentlyActive": "Actuellement actif"
   },
   "changePassword": {
-    "title": "Changer le mot de passe"
+    "title": "Changer le mot de passe",
+    "passwordChangedSuccess": "Mot de passe modifié avec succès !",
+    "failedChangePassword": "Échec de la modification du mot de passe. Veuillez réessayer.",
+    "sessionExpiredMessageNewPassword": "Votre session a expiré. Veuillez vous reconnecter avec votre nouveau mot de passe.",
+    "managePassword": "Gérer le mot de passe",
+    "oldPassword": "Ancien mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "retypeNewPassword": "Retapez le nouveau mot de passe",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "passwordMismatchMessage": "Le nouveau mot de passe et la confirmation ne correspondent pas",
+    "passwordRequirements": {
+      "minLength": "Doit contenir au moins 8 caractères.",
+      "hasUpperLower": "Doit contenir un mélange de majuscules et de minuscules.",
+      "hasNumber": "Doit contenir des chiffres.",
+      "hasSpecial": "Doit contenir des caractères spéciaux.",
+      "noPersonalInfo": "Ne doit pas contenir votre nom, date de naissance ou toute autre information facilement disponible."
+    },
+    "changePasswordButton": "Changer le mot de passe"
   },
   "dataPrivacy": {
     "title": "Politique de données et de confidentialité"
@@ -273,7 +318,27 @@
     "categorySaved": "Enregistrés"
   },
   "feed": {
-    "backToTimeline": "Retour au fil d'actualité"
+    "backToTimeline": "Retour au fil d'actualité",
+    "postDeletedSuccess": "Publication supprimée avec succès",
+    "failedDeletePost": "Échec de la suppression de la publication"
+  },
+  "timeline": {
+    "postDeletedSuccess": "Publication supprimée avec succès",
+    "failedDeletePost": "Échec de la suppression de la publication"
+  },
+  "newMessage": {
+    "title": "Nouveau message",
+    "failedLoadGroups": "Échec du chargement des groupes",
+    "failedLoadContacts": "Échec du chargement des contacts"
+  },
+  "createGroup": {
+    "title": "Créer un nouveau groupe",
+    "allClassrooms": "Toutes les classes",
+    "allContacts": "Tous les contacts",
+    "failedLoadContacts": "Échec du chargement des contacts",
+    "failedPickImage": "Échec de la sélection de l'image. Veuillez réessayer.",
+    "pleaseEnterGroupName": "Veuillez entrer un nom de groupe",
+    "failedCreateGroup": "Échec de la création du groupe"
   },
   "map": {
     "selectedLocation": "Emplacement sélectionné"
