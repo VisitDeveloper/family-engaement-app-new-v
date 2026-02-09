@@ -94,7 +94,16 @@
     "title": "Política de datos y privacidad"
   },
   "blocklist": {
-    "title": "Bloquear/Desbloquear contactos"
+    "title": "Bloquear/Desbloquear contactos",
+    "blockedContacts": "Contactos bloqueados",
+    "allowedContacts": "Contactos permitidos",
+    "blocked": "Bloqueado",
+    "noBlockedContacts": "No hay contactos bloqueados",
+    "noAllowedContacts": "No hay contactos permitidos",
+    "selectContact": "Seleccionar contacto para bloquear",
+    "selectContactToAllow": "Seleccionar contacto para permitir",
+    "scrollForMore": "Desplázate para más",
+    "noContactsFound": "No se encontraron contactos"
   },
   "newMessage": {
     "title": "Nuevo mensaje"

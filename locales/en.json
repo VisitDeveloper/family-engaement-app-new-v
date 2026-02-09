@@ -94,7 +94,16 @@
     "title": "Data & Privacy Policy"
   },
   "blocklist": {
-    "title": "Block/Unblock Contacts"
+    "title": "Block/Unblock Contacts",
+    "blockedContacts": "Blocked Contacts",
+    "allowedContacts": "Allowed Contacts",
+    "blocked": "Blocked",
+    "noBlockedContacts": "No blocked contacts",
+    "noAllowedContacts": "No allowed contacts",
+    "selectContact": "Select Contact to Block",
+    "selectContactToAllow": "Select Contact to Allow",
+    "scrollForMore": "Scroll for more",
+    "noContactsFound": "No contacts found"
   },
   "newMessage": {
     "title": "New Message"

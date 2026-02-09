@@ -1,14 +1,15 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
+import { PasswordIcon, PhoneIcon } from "@/components/ui/icons/settings-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
 import { authService, UserProfile } from "@/services/auth.service";
 import { useStore } from "@/store";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -139,8 +140,7 @@ export default function ProfileScreen() {
           ...profileData,
           name:
             profileData.firstName || profileData.lastName
-              ? `${profileData.firstName || ""} ${
-                  profileData.lastName || ""
+              ? `${profileData.firstName || ""} ${profileData.lastName || ""
                 }`.trim()
               : profileData.email?.split("@")[0] || "",
         };
@@ -230,8 +230,7 @@ export default function ProfileScreen() {
           ...profileData,
           name:
             profileData.firstName || profileData.lastName
-              ? `${profileData.firstName || ""} ${
-                  profileData.lastName || ""
+              ? `${profileData.firstName || ""} ${profileData.lastName || ""
                 }`.trim()
               : profileData.email?.split("@")[0] || "",
         };
@@ -249,8 +248,7 @@ export default function ProfileScreen() {
           ...updatedProfile,
           name:
             updatedProfile.firstName || updatedProfile.lastName
-              ? `${updatedProfile.firstName || ""} ${
-                  updatedProfile.lastName || ""
+              ? `${updatedProfile.firstName || ""} ${updatedProfile.lastName || ""
                 }`.trim()
               : updatedProfile.email?.split("@")[0] || "",
         };
@@ -377,7 +375,7 @@ export default function ProfileScreen() {
         {/* Contact */}
         <View style={styles.card}>
           <View style={styles.row}>
-            <Feather name="phone" size={18} color={theme.text} />
+            <PhoneIcon size={18} color={theme.text} />
             <ThemedText type="middleTitle" style={styles.sectionTitle}>
               Contact
             </ThemedText>
@@ -433,7 +431,7 @@ export default function ProfileScreen() {
         {/* Manage Password */}
         <View style={styles.card}>
           <View style={styles.row}>
-            <MaterialIcons name="lock-outline" size={20} color={theme.text} />
+            <PasswordIcon size={20} color={theme.text} />
             <ThemedText type="middleTitle" style={styles.sectionTitle}>
               Manage Passwords
             </ThemedText>

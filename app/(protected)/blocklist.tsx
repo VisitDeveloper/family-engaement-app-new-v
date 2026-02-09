@@ -1,50 +1,36 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
+import BlocklistContactBottomSheet from "@/components/ui/blocklist-contact-bottom-sheet";
+import { UserAllowIcon, UserBlockIcon } from "@/components/ui/icons/settings-icons";
+import { useBlocklist } from "@/hooks/use-blocklist";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import type { UserListItemDto } from "@/types";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
-const groups = [
-    { id: "5b", name: "Room 5B Class Updates", type: "group", image: "https://randomuser.me/api/portraits/men/32.jpg" },
-    { id: "4a", name: "Room 4A Class Updates", type: "group", image: "https://randomuser.me/api/portraits/men/32.jpg" },
-    { id: "4b", name: "Room 4B Class Updates", type: "group", image: "https://randomuser.me/api/portraits/men/32.jpg" },
-    { id: "4c", name: "Room 4C Class Updates", type: "group", image: "https://randomuser.me/api/portraits/men/32.jpg" },
-    { id: "4d", name: "Room 4D Class Updates", type: "group", image: "https://randomuser.me/api/portraits/men/32.jpg" },
-    { id: "4e", name: "Room 4E Class Updates", type: "group", image: "https://randomuser.me/api/portraits/men/32.jpg" },
-    { id: "4f", name: "Room 4F Class Updates", type: "group", image: "https://randomuser.me/api/portraits/men/32.jpg" },
-];
-
-const contacts = [
-    { id: "1", name: "Principal Johnson", role: "Admin", lastSeen: "8:00 PM", image: "https://randomuser.me/api/portraits/men/32.jpg" },
-    { id: "2", name: "Ms. Alvarez", lastSeen: "2:15 PM", initials: "MA" },
-    { id: "3", name: "Mr. Rodriguez - Art", lastSeen: "Yesterday", initials: "MR" },
-    { id: "4", name: "Mr. Carlos", lastSeen: "2 days ago", image: "https://randomuser.me/api/portraits/men/45.jpg" },
-];
-
-export default function NewMessageScreen() {
+export default function BlocklistScreen() {
     const { t } = useTranslation();
-    const router = useRouter();
     const theme = useStore((state) => state.theme);
+    const [showBlockSheet, setShowBlockSheet] = useState(false);
+    const [showAllowSheet, setShowAllowSheet] = useState(false);
+    const {
+        blockedUsers,
+        allowedUsers,
+        loading,
+        error,
+        refreshLists,
+        blockUser,
+        unblockUser,
+        allowUser,
+        removeFromAllowList,
+    } = useBlocklist();
 
     const styles = useThemedStyles((t) => ({
         container: {
             flex: 1,
             backgroundColor: t.bg
-        },
-        header: {
-            flexDirection: "row",
-            alignItems: "center",
-            padding: 16,
-            borderBottomWidth: 1,
-
-        },
-        headerTitle: {
-            marginLeft: 12,
-            fontWeight: "600",
-            color: t.text
         },
         sectionTitle: {
             paddingHorizontal: 16,
@@ -53,124 +39,302 @@ export default function NewMessageScreen() {
             fontWeight: "600",
             color: t.text
         },
-        row: {
+        sectionHeader: {
             flexDirection: "row",
             alignItems: "center",
-            paddingVertical: 8,
-            paddingHorizontal: 12,
-            minHeight: 60, // Minimum height for item
-            maxHeight: 80, // Maximum height to control stretching
+            justifyContent: "space-between",
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: 8,
         },
-        actionIcon: {
-            width: 48,
-            height: 48,
-            borderRadius: 24,
-            backgroundColor: "#f4e9f7",
+        sectionTitleText: {
+            fontWeight: "600",
+            color: t.text
+        },
+        contactItem: {
+            flexDirection: "row",
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            borderBottomWidth: 1,
+            borderBottomColor: t.border,
         },
-        itemName: {
-            marginLeft: 12,
-            fontSize: 16,
-            fontWeight: "500",
-            color: theme.text
+        contactLeft: {
+            flexDirection: "row",
+            alignItems: "center",
+            flex: 1,
         },
         avatar: {
             width: 48,
             height: 48,
             borderRadius: 24,
+            marginRight: 12,
         },
         avatarPlaceholder: {
             width: 48,
             height: 48,
             borderRadius: 24,
-            backgroundColor: "#ccc",
-            alignItems: "center",
+            backgroundColor: t.panel,
             justifyContent: "center",
+            alignItems: "center",
+            marginRight: 12,
         },
-        avatarInitials: {
-            fontSize: 16,
+        avatarText: {
+            fontSize: 18,
             fontWeight: "600",
-            color: "#333",
+            color: t.text,
         },
-        itemContent: {
-            marginLeft: 12,
+        contactInfo: {
             flex: 1,
         },
-        itemHeader: {
-            flexDirection: "row",
-            alignItems: "center",
+        contactName: {
+            fontSize: 16,
+            fontWeight: "500",
+            color: t.text,
+            marginBottom: 4,
         },
-        roleBadge: {
-            marginLeft: 8,
+        blockedBadge: {
+            backgroundColor: "#FFEDD4",
             paddingHorizontal: 8,
             paddingVertical: 2,
-            fontSize: 12,
-            backgroundColor: "#fde68a",
-            color: "#92400e",
-            borderRadius: 6,
-            overflow: "hidden",
+            borderRadius: 4,
+            alignSelf: "flex-start",
         },
-        lastSeen: {
+        blockedBadgeText: {
+            color: "#9F2D00",
             fontSize: 12,
+            fontWeight: "400",
+        },
+        actionButton: {
+            padding: 8,
+        },
+        iconButton: {
+            width: 40,
+            height: 40,
+            justifyContent: "center",
+            alignItems: "center",
+            position: "relative",
+        },
+        centerContainer: {
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        errorText: {
+            color: "#F44336",
+            fontSize: 16,
+            paddingHorizontal: 16,
+        },
+        emptyText: {
             color: t.subText,
-            marginTop: 2,
+            fontSize: 14,
+            paddingHorizontal: 16,
+            fontStyle: "italic",
+            paddingTop: 8,
         },
     }) as const);
 
-    const renderItem = ({ item }: any) => {
-        if (item.type === "action") {
+    const renderAvatar = (user: UserListItemDto) => {
+        if (user.profilePicture) {
             return (
-                <TouchableOpacity style={styles.row}>
-                    <View style={styles.actionIcon}>
-                        <Ionicons name={item.icon} size={24} color="#a846c2" />
-                    </View>
-                    <Text style={styles.itemName}>{item.name}</Text>
-                </TouchableOpacity>
+                <Image
+                    source={{ uri: user.profilePicture }}
+                    style={styles.avatar}
+                />
             );
         }
 
+        // Fallback to initials
+        const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
         return (
-            <TouchableOpacity style={styles.row}>
-                {item.image ? (
-                    <Image source={{ uri: item.image }} style={styles.avatar} />
-                ) : (
-                    <View style={styles.avatarPlaceholder}>
-                        <Text style={styles.avatarInitials}>{item.initials}</Text>
-                    </View>
-                )}
-                <View style={styles.itemContent}>
-                    <View style={styles.itemHeader}>
-                        <Text style={styles.itemName}>{item.name}</Text>
-                        {item.role && <Text style={styles.roleBadge}>{item.role}</Text>}
-                    </View>
-                    {item.lastSeen && <Text style={styles.lastSeen}>Last Seen: {item.lastSeen}</Text>}
-                </View>
-            </TouchableOpacity>
+            <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>{initials || '?'}</Text>
+            </View>
         );
     };
 
+    const renderContactItem = (
+        user: UserListItemDto,
+        type: 'blocked' | 'allowed',
+        onAction: () => void
+    ) => {
+        const displayName = user.firstName && user.lastName
+            ? `${user.firstName} ${user.lastName}`
+            : user.firstName || user.lastName || user.email;
+
+        return (
+            <View style={styles.contactItem}>
+                <View style={styles.contactLeft}>
+                    {renderAvatar(user)}
+                    <View style={styles.contactInfo}>
+                        <Text style={styles.contactName}>{displayName}</Text>
+                        {type === 'blocked' && (
+                            <View style={styles.blockedBadge}>
+                                <Text style={styles.blockedBadgeText}>{t("blocklist.blocked")}</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={onAction}
+                    activeOpacity={0.7}
+                >
+                    {type === 'blocked' ? (
+                        // Green person icon with checkmark overlay (unblock)
+                        <View style={[styles.iconButton]}>
+                            <UserAllowIcon size={16} color="#467A39" />
+                        </View>
+                    ) : (
+                        // Red person icon with minus overlay (block)
+                        <View style={[styles.iconButton]}>
+                            <UserBlockIcon size={16} color="#E7000B" />
+                        </View>
+                    )}
+                </TouchableOpacity>
+            </View>
+        );
+    };
+
+    if (loading && blockedUsers.length === 0 && allowedUsers.length === 0) {
+        return (
+            <View style={styles.container}>
+                <HeaderInnerPage
+                    title={t("blocklist.title")}
+                    addstyles={{ marginBottom: 20 }}
+                />
+                <View style={styles.centerContainer}>
+                    <ActivityIndicator size="large" color={theme.text} />
+                </View>
+            </View>
+        );
+    }
+
+    if (error && blockedUsers.length === 0 && allowedUsers.length === 0) {
+        return (
+            <View style={styles.container}>
+                <HeaderInnerPage
+                    title={t("blocklist.title")}
+                    addstyles={{ marginBottom: 20 }}
+                />
+                <View style={styles.centerContainer}>
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity
+                        onPress={refreshLists}
+                        style={{ marginTop: 16, padding: 12, backgroundColor: theme.text, borderRadius: 8 }}
+                    >
+                        <Text style={{ color: theme.bg }}>{t("buttons.retry")}</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
+
+    const handleBlockFromSheet = async (userId: string) => {
+        await blockUser(userId);
+        await refreshLists();
+    };
+
+    const handleUnblockFromSheet = async (userId: string) => {
+        await unblockUser(userId);
+        await refreshLists();
+    };
+
+    const handleAllowFromSheet = async (userId: string) => {
+        await allowUser(userId);
+        await refreshLists();
+    };
+
+    const blockedUserIds = blockedUsers.map((u) => u.id);
+    const allowedUserIds = allowedUsers.map((u) => u.id);
+
     return (
-        <View style={[styles.container, { backgroundColor: theme.bg }]}>
-
-
+        <View style={styles.container}>
             <HeaderInnerPage
                 title={t("blocklist.title")}
                 addstyles={{ marginBottom: 20 }}
             />
 
-            {/* Groups */}
-            <ThemedText type="middleTitle" style={styles.sectionTitle}>Block Contacts</ThemedText>
-            <FlatList
-                data={groups}
-                keyExtractor={(item) => item.id} renderItem={renderItem}
-                showsVerticalScrollIndicator={false}
-                showsHorizontalScrollIndicator={false} />
+            <ScrollView
+                style={{ flex: 1 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={loading}
+                        onRefresh={refreshLists}
+                    />
+                }
+            >
+                {/* Blocked Contacts Section */}
+                <View>
+                    <View style={styles.sectionHeader}>
+                        <ThemedText type="middleTitle" style={styles.sectionTitleText}>
+                            {t("blocklist.blockedContacts")}
+                        </ThemedText>
+                        <TouchableOpacity
+                            onPress={() => setShowBlockSheet(true)}
+                            style={{
+                                padding: 8,
+                            }}
+                        >
+                            <UserBlockIcon size={24} color={theme.text} />
+                        </TouchableOpacity>
+                    </View>
+                    {blockedUsers.length === 0 ? (
+                        <Text style={styles.emptyText}>{t("blocklist.noBlockedContacts")}</Text>
+                    ) : (
+                        blockedUsers.map((user) =>
+                            renderContactItem(user, 'blocked', () => unblockUser(user.id))
+                        )
+                    )}
+                </View>
 
+                {/* Allowed Contacts Section */}
+                <View>
+                    <View style={styles.sectionHeader}>
+                        <ThemedText type="middleTitle" style={styles.sectionTitleText}>
+                            {t("blocklist.allowedContacts")}
+                        </ThemedText>
+                        <TouchableOpacity
+                            onPress={() => setShowAllowSheet(true)}
+                            style={{
+                                padding: 8,
+                            }}
+                        >
+                            <UserAllowIcon size={24} color={theme.text} />
+                        </TouchableOpacity>
+                    </View>
+                    {allowedUsers.length === 0 ? (
+                        <Text style={styles.emptyText}>{t("blocklist.noAllowedContacts")}</Text>
+                    ) : (
+                        allowedUsers.map((user) =>
+                            renderContactItem(user, 'allowed', () => removeFromAllowList(user.id))
+                        )
+                    )}
+                </View>
+            </ScrollView>
+
+            <BlocklistContactBottomSheet
+                visible={showBlockSheet}
+                mode="block"
+                onClose={() => setShowBlockSheet(false)}
+                onBlock={handleBlockFromSheet}
+                onAllow={handleAllowFromSheet}
+                onUnblock={handleUnblockFromSheet}
+                blockedUserIds={blockedUserIds}
+                allowedUserIds={allowedUserIds}
+            />
+
+            <BlocklistContactBottomSheet
+                visible={showAllowSheet}
+                mode="allow"
+                onClose={() => setShowAllowSheet(false)}
+                onBlock={handleBlockFromSheet}
+                onAllow={handleAllowFromSheet}
+                onUnblock={handleUnblockFromSheet}
+                blockedUserIds={blockedUserIds}
+                allowedUserIds={allowedUserIds}
+            />
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-
-});

@@ -1,5 +1,6 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
+import { PasswordIcon } from "@/components/ui/icons/settings-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useValidation } from "@/hooks/use-validation";
 import { ApiError } from "@/services/api";
@@ -7,13 +8,12 @@ import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
 import {
   AntDesign,
-  Ionicons,
   MaterialCommunityIcons,
   Octicons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -209,7 +209,7 @@ export default function ChangePassword() {
         {/* Contact */}
         <View style={styles.card}>
           <View style={styles.row}>
-            <Ionicons name="key-outline" size={24} color={theme.text} />
+            <PasswordIcon size={24} color={theme.text} />
             <ThemedText
               type="subtitle"
               style={{ color: theme.text, marginLeft: 18 }}
@@ -326,16 +326,16 @@ export default function ChangePassword() {
                 passwordRequirements.minLength === true
                   ? "check"
                   : passwordRequirements.minLength === false
-                  ? "close"
-                  : "check"
+                    ? "close"
+                    : "check"
               }
               size={16}
               color={
                 passwordRequirements.minLength === null
                   ? theme.subText
                   : passwordRequirements.minLength === true
-                  ? "#4caf50"
-                  : theme.emergencyColor
+                    ? "#4caf50"
+                    : theme.emergencyColor
               }
             />
             <ThemedText
@@ -345,8 +345,8 @@ export default function ChangePassword() {
                   passwordRequirements.minLength === null
                     ? theme.subText
                     : passwordRequirements.minLength === true
-                    ? "#4caf50"
-                    : theme.emergencyColor,
+                      ? "#4caf50"
+                      : theme.emergencyColor,
                 marginLeft: 10,
               }}
             >
@@ -359,16 +359,16 @@ export default function ChangePassword() {
                 passwordRequirements.hasUpperLower === true
                   ? "check"
                   : passwordRequirements.hasUpperLower === false
-                  ? "close"
-                  : "check"
+                    ? "close"
+                    : "check"
               }
               size={16}
               color={
                 passwordRequirements.hasUpperLower === null
                   ? theme.subText
                   : passwordRequirements.hasUpperLower === true
-                  ? "#4caf50"
-                  : theme.emergencyColor
+                    ? "#4caf50"
+                    : theme.emergencyColor
               }
             />
             <ThemedText
@@ -378,8 +378,8 @@ export default function ChangePassword() {
                   passwordRequirements.hasUpperLower === null
                     ? theme.subText
                     : passwordRequirements.hasUpperLower === true
-                    ? "#4caf50"
-                    : theme.emergencyColor,
+                      ? "#4caf50"
+                      : theme.emergencyColor,
                 marginLeft: 10,
               }}
             >
@@ -392,16 +392,16 @@ export default function ChangePassword() {
                 passwordRequirements.hasNumber === true
                   ? "check"
                   : passwordRequirements.hasNumber === false
-                  ? "close"
-                  : "check"
+                    ? "close"
+                    : "check"
               }
               size={16}
               color={
                 passwordRequirements.hasNumber === null
                   ? theme.subText
                   : passwordRequirements.hasNumber === true
-                  ? "#4caf50"
-                  : theme.emergencyColor
+                    ? "#4caf50"
+                    : theme.emergencyColor
               }
             />
             <ThemedText
@@ -411,8 +411,8 @@ export default function ChangePassword() {
                   passwordRequirements.hasNumber === null
                     ? theme.subText
                     : passwordRequirements.hasNumber === true
-                    ? "#4caf50"
-                    : theme.emergencyColor,
+                      ? "#4caf50"
+                      : theme.emergencyColor,
                 marginLeft: 10,
               }}
             >
@@ -425,16 +425,16 @@ export default function ChangePassword() {
                 passwordRequirements.hasSpecial === true
                   ? "check"
                   : passwordRequirements.hasSpecial === false
-                  ? "close"
-                  : "check"
+                    ? "close"
+                    : "check"
               }
               size={16}
               color={
                 passwordRequirements.hasSpecial === null
                   ? theme.subText
                   : passwordRequirements.hasSpecial === true
-                  ? "#4caf50"
-                  : theme.emergencyColor
+                    ? "#4caf50"
+                    : theme.emergencyColor
               }
             />
             <ThemedText
@@ -444,8 +444,8 @@ export default function ChangePassword() {
                   passwordRequirements.hasSpecial === null
                     ? theme.subText
                     : passwordRequirements.hasSpecial === true
-                    ? "#4caf50"
-                    : theme.emergencyColor,
+                      ? "#4caf50"
+                      : theme.emergencyColor,
                 marginLeft: 10,
               }}
             >
