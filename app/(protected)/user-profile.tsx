@@ -1,14 +1,15 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
+import { PasswordIcon, PhoneIcon } from "@/components/ui/icons/settings-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
 import { authService, UserProfile } from "@/services/auth.service";
 import { useStore } from "@/store";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -139,8 +140,7 @@ export default function ProfileScreen() {
           ...profileData,
           name:
             profileData.firstName || profileData.lastName
-              ? `${profileData.firstName || ""} ${
-                  profileData.lastName || ""
+              ? `${profileData.firstName || ""} ${profileData.lastName || ""
                 }`.trim()
               : profileData.email?.split("@")[0] || "",
         };
@@ -149,17 +149,17 @@ export default function ProfileScreen() {
     } catch (err) {
       const apiError = err as ApiError;
       const errorMessage =
-        apiError.message || "Failed to load profile. Please try again.";
+        apiError.message || t("userProfile.failedLoadProfile");
       setError(errorMessage);
 
       // If error is 401 or 403, token is invalid
       if (apiError.status === 401 || apiError.status === 403) {
         Alert.alert(
-          "Session Expired",
-          "Your session has expired. Please login again.",
+          t("userProfile.sessionExpired"),
+          t("userProfile.sessionExpiredMessage"),
           [
             {
-              text: "OK",
+              text: t("common.ok"),
               onPress: () => {
                 router.replace("/(auth)/login");
               },
@@ -170,7 +170,7 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false);
     }
-  }, [role, setUser, router]);
+  }, [setUser, router, t]);
 
   useEffect(() => {
     fetchProfile();
@@ -183,8 +183,8 @@ export default function ProfileScreen() {
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Permission Required",
-          "Sorry, we need camera roll permissions to update your profile picture!"
+          t("userProfile.permissionRequired"),
+          t("userProfile.cameraRollPermissionMessage")
         );
         return;
       }
@@ -230,8 +230,7 @@ export default function ProfileScreen() {
           ...profileData,
           name:
             profileData.firstName || profileData.lastName
-              ? `${profileData.firstName || ""} ${
-                  profileData.lastName || ""
+              ? `${profileData.firstName || ""} ${profileData.lastName || ""
                 }`.trim()
               : profileData.email?.split("@")[0] || "",
         };
@@ -249,8 +248,7 @@ export default function ProfileScreen() {
           ...updatedProfile,
           name:
             updatedProfile.firstName || updatedProfile.lastName
-              ? `${updatedProfile.firstName || ""} ${
-                  updatedProfile.lastName || ""
+              ? `${updatedProfile.firstName || ""} ${updatedProfile.lastName || ""
                 }`.trim()
               : updatedProfile.email?.split("@")[0] || "",
         };
@@ -261,22 +259,22 @@ export default function ProfileScreen() {
       // This ensures everything is updated everywhere
       await fetchProfile();
 
-      Alert.alert("Success", "Profile picture updated successfully!");
+      Alert.alert(t("common.success"), t("userProfile.profilePictureUpdatedSuccess"));
     } catch (err) {
       const apiError = err as ApiError;
       const errorMessage =
         apiError.message ||
-        "Failed to update profile picture. Please try again.";
-      Alert.alert("Error", errorMessage);
+        t("userProfile.failedUpdateProfilePicture");
+      Alert.alert(t("common.error"), errorMessage);
 
       // If error is 401 or 403, token is invalid
       if (apiError.status === 401 || apiError.status === 403) {
         Alert.alert(
-          "Session Expired",
-          "Your session has expired. Please login again.",
+          t("userProfile.sessionExpired"),
+          t("userProfile.sessionExpiredMessage"),
           [
             {
-              text: "OK",
+              text: t("common.ok"),
               onPress: () => {
                 router.replace("/(auth)/login");
               },
@@ -287,7 +285,7 @@ export default function ProfileScreen() {
     } finally {
       setUploading(false);
     }
-  }, [profile, setUser, router, fetchProfile]);
+  }, [profile, setUser, router, fetchProfile, t]);
 
   if (loading) {
     return (
@@ -335,7 +333,7 @@ export default function ProfileScreen() {
   const displayName =
     profile?.name || profile?.firstName || profile?.lastName
       ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
-      : profile?.email?.split("@")[0] || "User";
+      : profile?.email?.split("@")[0] || t("userProfile.user");
 
   return (
     <View style={styles.container}>
@@ -370,20 +368,49 @@ export default function ProfileScreen() {
             {displayName}
           </ThemedText>
           <ThemedText type="subText" style={styles.subText}>
-            {profile?.childName ? profile.childName : ""}
+            {profile?.role === "parent" && profile.childName
+              ? `${t("userProfile.parentPrefix")}${profile.childName}`
+              : profile?.role === "teacher"
+                ? t("userProfile.teacher")
+                : ""}
           </ThemedText>
+          <View style={[styles.tagsContainer, { borderBottomColor: theme.border, borderBottomWidth: 1, paddingBottom: 10 }]}>
+            {profile?.subjects && profile.subjects.length > 0 && (
+              <View style={styles.tag}>
+                <ThemedText style={styles.tagText}>
+                  {profile.subjects[0]}
+                </ThemedText>
+              </View>
+            )}
+            {/* TODO: Add classroom tag when classroom data is available from API */}
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push("/switch-profile")}
+            style={[
+              styles.changeBtn,
+              { borderColor: theme.border, marginTop: 12 },
+            ]}
+          >
+            <ThemedText
+              type="middleTitle"
+              style={{ color: theme.text, fontWeight: "500" }}
+            >
+              {t("userProfile.switchProfile")}
+            </ThemedText>
+            <Feather name="chevron-right" size={18} color={theme.text} />
+          </TouchableOpacity>
         </View>
 
         {/* Contact */}
         <View style={styles.card}>
           <View style={styles.row}>
-            <Feather name="phone" size={18} color={theme.text} />
+            <PhoneIcon size={18} color={theme.text} />
             <ThemedText type="middleTitle" style={styles.sectionTitle}>
-              Contact
+              {t("userProfile.contact")}
             </ThemedText>
           </View>
           <ThemedText type="subText" style={styles.label}>
-            Email
+            {t("userProfile.email")}
           </ThemedText>
           <TextInput
             style={[
@@ -400,7 +427,7 @@ export default function ProfileScreen() {
             placeholderTextColor={theme.subText}
           />
           <ThemedText type="subText" style={styles.label}>
-            Phone
+            {t("userProfile.phone")}
           </ThemedText>
           <View
             style={[
@@ -424,7 +451,7 @@ export default function ProfileScreen() {
               </>
             ) : (
               <ThemedText style={{ color: theme.subText }}>
-                No phone number available
+                {t("userProfile.noPhoneNumberAvailable")}
               </ThemedText>
             )}
           </View>
@@ -433,9 +460,9 @@ export default function ProfileScreen() {
         {/* Manage Password */}
         <View style={styles.card}>
           <View style={styles.row}>
-            <MaterialIcons name="lock-outline" size={20} color={theme.text} />
+            <PasswordIcon size={20} color={theme.text} />
             <ThemedText type="middleTitle" style={styles.sectionTitle}>
-              Manage Passwords
+              {t("userProfile.managePasswords")}
             </ThemedText>
           </View>
           <TouchableOpacity
@@ -446,7 +473,7 @@ export default function ProfileScreen() {
               type="middleTitle"
               style={{ color: theme.text, fontWeight: "500" }}
             >
-              Change Password
+              {t("changePassword.title")}
             </ThemedText>
             <Feather name="chevron-right" size={18} color={theme.text} />
           </TouchableOpacity>

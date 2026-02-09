@@ -1,6 +1,7 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { CheckMarkCircleFillIcon, QuestionMarkCircleFillIcon, XMarkCircleFillIcon } from "@/components/ui/icons/event-icons";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import {
@@ -18,6 +19,7 @@ import {
 } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -30,29 +32,16 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// Helper function to format date
-const formatDate = (dateString: string): string => {
+// Helper function to format date (uses t for month names)
+const formatDate = (dateString: string, t: (key: string) => string): string => {
   const date = new Date(dateString);
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  return `${months[date.getMonth()]} ${date.getDate()}`;
+  const monthKey = `event.monthShort${date.getMonth()}` as const;
+  return `${t(monthKey)} ${date.getDate()}`;
 };
 
 // Helper function to format time string (HH:mm:ss or HH:mm) to readable format
-const formatTimeString = (timeString: string): string => {
-  if (!timeString) return "All Day";
+const formatTimeString = (timeString: string, allDayLabel: string): string => {
+  if (!timeString) return allDayLabel;
 
   const timeMatch = timeString.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
   if (timeMatch) {
@@ -67,9 +56,9 @@ const formatTimeString = (timeString: string): string => {
 };
 
 // Helper function to format time range
-const formatTimeRange = (startTime: string, endTime: string): string => {
-  const start = formatTimeString(startTime);
-  const end = formatTimeString(endTime);
+const formatTimeRange = (startTime: string, endTime: string, allDayLabel: string): string => {
+  const start = formatTimeString(startTime, allDayLabel);
+  const end = formatTimeString(endTime, allDayLabel);
   return `${start} - ${end}`;
 };
 
@@ -92,8 +81,8 @@ const extractString = (
 };
 
 // Helper function to format last seen time
-const formatLastSeen = (dateString?: string | null): string => {
-  if (!dateString) return "Never";
+const formatLastSeen = (dateString: string | null | undefined, t: (key: string) => string): string => {
+  if (!dateString) return t("event.never");
 
   try {
     const date = new Date(dateString);
@@ -103,7 +92,7 @@ const formatLastSeen = (dateString?: string | null): string => {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "Just now";
+    if (diffMins < 1) return t("event.justNow");
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) {
       const hours = date.getHours();
@@ -112,12 +101,12 @@ const formatLastSeen = (dateString?: string | null): string => {
       const displayHours = hours % 12 || 12;
       return `${displayHours}:${String(minutes).padStart(2, "0")} ${ampm}`;
     }
-    if (diffDays === 1) return "Yesterday";
+    if (diffDays === 1) return t("event.yesterday");
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     return `${Math.floor(diffDays / 30)} months ago`;
   } catch {
-    return "Unknown";
+    return t("event.unknown");
   }
 };
 
@@ -139,39 +128,39 @@ const mapEventTypeToKind = (type: string): EventKind => {
   }
 };
 
-const kindChip = (k: EventKind) => {
+const kindChip = (k: EventKind, t: (key: string) => string) => {
   switch (k) {
     case "Conference":
       return {
-        label: "Conference",
+        label: t("event.kindConference"),
         bg: "#E6F0FF",
         text: "#1D4ED8",
         icon: <Feather name="users" size={15} color="#1D4ED8" />,
       };
     case "Fieldtrip":
       return {
-        label: "Fieldtrip",
+        label: t("event.kindFieldtrip"),
         bg: "#F3E8FF",
         text: "#7C3AED",
         icon: <FontAwesome6 name="bus" size={15} color="#7C3AED" />,
       };
     case "Event":
       return {
-        label: "Event",
+        label: t("event.kindEvent"),
         bg: "#EAFCEF",
         text: "#16A34A",
         icon: <MaterialIcons name="event-note" size={15} color="#16A34A" />,
       };
     case "Holiday":
       return {
-        label: "Holiday",
+        label: t("event.kindHoliday"),
         bg: "#FEE2E2",
         text: "#DC2626",
         icon: <AntDesign name="gift" size={15} color="#DC2626" />,
       };
     default:
       return {
-        label: "Event",
+        label: t("event.kindEvent"),
         bg: "#EAFCEF",
         text: "#16A34A",
         icon: <MaterialIcons name="event-note" size={15} color="#16A34A" />,
@@ -180,6 +169,7 @@ const kindChip = (k: EventKind) => {
 };
 
 const EventDetailScreen = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useStore((s) => s.theme);
@@ -195,6 +185,7 @@ const EventDetailScreen = () => {
   );
   const [rsvpStatus, setRsvpStatus] = useState<RSVPStatus>("pending");
   const [submitting, setSubmitting] = useState(false);
+  const [showAllInvitees, setShowAllInvitees] = useState(false);
 
   // Get current user's RSVP status from invitees
   const currentUserInvitee = event?.invitees?.find((invitee) => {
@@ -209,8 +200,8 @@ const EventDetailScreen = () => {
         rawStatus === "accepted"
           ? "going"
           : rawStatus === "declined"
-          ? "not_going"
-          : (rawStatus as RSVPStatus);
+            ? "not_going"
+            : (rawStatus as RSVPStatus);
       setRsvpStatus(normalizedStatus);
       setSelectedTimeSlotId(currentUserInvitee.selectedTimeSlotId || null);
     }
@@ -226,14 +217,14 @@ const EventDetailScreen = () => {
       setEvent(eventData);
     } catch (err: any) {
       const errorMessage =
-        err.message || "Failed to load event. Please try again.";
+        err.message || t("createEvent.failedLoadEvent");
       setError(errorMessage);
-      Alert.alert("Error", errorMessage);
+      Alert.alert(t("common.error"), errorMessage);
       console.error("Error fetching event:", err);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, t]);
 
   useEffect(() => {
     fetchEvent();
@@ -251,17 +242,17 @@ const EventDetailScreen = () => {
       }
       const statusText =
         status === "going"
-          ? "Going"
+          ? t("buttons.going")
           : status === "maybe"
-          ? "Maybe"
-          : "Not Going";
-      Alert.alert("Success", `RSVP updated to ${statusText}`);
+            ? t("buttons.maybe")
+            : t("buttons.notGoing");
+      Alert.alert(t("common.success"), t("event.rsvpUpdated", { status: statusText }));
       // Refresh event data
       await fetchEvent();
     } catch (err: any) {
       Alert.alert(
-        "Error",
-        err.message || "Failed to update RSVP. Please try again."
+        t("common.error"),
+        err.message || t("event.failedUpdateRsvp")
       );
       console.error("Error updating RSVP:", err);
     } finally {
@@ -288,7 +279,7 @@ const EventDetailScreen = () => {
       const lat = event.locationLatitude;
       const lng = event.locationLongitude;
       const locationName = encodeURIComponent(
-        extractString(event.location) || "Location"
+        extractString(event.location) || t("event.locationLabel")
       );
 
       if (Platform.OS === "ios") {
@@ -304,17 +295,14 @@ const EventDetailScreen = () => {
         if (canOpen) {
           await Linking.openURL(url);
         } else {
-          Alert.alert("Error", "Unable to open maps application.");
+          Alert.alert(t("common.error"), t("event.mapsError"));
         }
       } catch (error) {
         console.error("Error opening maps:", error);
-        Alert.alert("Error", "Failed to open maps. Please try again.");
+        Alert.alert(t("common.error"), t("event.mapsFailed"));
       }
     } else {
-      Alert.alert(
-        "No Location",
-        "Location information is not available for this event."
-      );
+      Alert.alert(t("event.noLocation"), t("event.noLocationDesc"));
     }
   };
 
@@ -399,15 +387,16 @@ const EventDetailScreen = () => {
     rsvpBadges: {
       flexDirection: "row",
       gap: 8,
-      marginBottom: 16,
+      // marginBottom: 16,
     },
     rsvpBadge: {
       flexDirection: "row",
       alignItems: "center",
       gap: 4,
       paddingHorizontal: 10,
-      paddingVertical: 6,
+      paddingVertical: 2,
       borderRadius: 8,
+      backgroundColor: t.panel,
     },
     inviteeItem: {
       flexDirection: "row",
@@ -483,7 +472,7 @@ const EventDetailScreen = () => {
         >
           <ActivityIndicator size="large" color={theme.tint} />
           <ThemedText style={{ marginTop: 10, color: theme.subText }}>
-            Loading event...
+            {t("event.loadingEvent")}
           </ThemedText>
         </View>
       </ThemedView>
@@ -502,7 +491,7 @@ const EventDetailScreen = () => {
           }}
         >
           <ThemedText style={{ color: theme.text, textAlign: "center" }}>
-            {error || "Event not found"}
+            {error || t("event.eventNotFound")}
           </ThemedText>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -513,7 +502,7 @@ const EventDetailScreen = () => {
               backgroundColor: theme.tint,
             }}
           >
-            <ThemedText style={{ color: "#fff" }}>Go Back</ThemedText>
+            <ThemedText style={{ color: "#fff" }}>{t("event.goBack")}</ThemedText>
           </TouchableOpacity>
         </View>
       </ThemedView>
@@ -521,47 +510,51 @@ const EventDetailScreen = () => {
   }
 
   const kind = mapEventTypeToKind(event.type);
-  const chip = kindChip(kind);
-  const dateText = formatDate(event.startDate);
+  const chip = kindChip(kind, t);
+  const dateText = formatDate(event.startDate, t);
   const timeText = event.allDay
-    ? "All Day"
+    ? t("event.allDay")
     : formatTimeRange(
-        typeof event.startTime === "string" ? event.startTime : "",
-        typeof event.endTime === "string" ? event.endTime : ""
-      );
+      typeof event.startTime === "string" ? event.startTime : "",
+      typeof event.endTime === "string" ? event.endTime : "",
+      t("event.allDay")
+    );
   const locationText = extractString(event.location);
   const descriptionText = extractString(event.description);
 
   // Format repeat text
   const repeatText =
     event.repeat === "none"
-      ? "No"
+      ? t("event.repeatNone")
       : event.repeat === "daily"
-      ? "Yes, Daily"
-      : event.repeat === "weekly"
-      ? "Yes, Weekly"
-      : event.repeat === "monthly"
-      ? "Yes, Monthly"
-      : event.repeat === "yearly"
-      ? "Yes, Yearly"
-      : "No";
+        ? t("event.repeatDaily")
+        : event.repeat === "weekly"
+          ? t("event.repeatWeekly")
+          : event.repeat === "monthly"
+            ? t("event.repeatMonthly")
+            : event.repeat === "yearly"
+              ? t("event.repeatYearly")
+              : t("event.repeatNone");
 
   // Format slot duration
   const slotDurationText = event.slotDuration
     ? typeof event.slotDuration === "number"
       ? `${event.slotDuration} min`
       : `${(event.slotDuration as any).value || event.slotDuration} min`
-    : "N/A";
+    : t("event.nA");
 
-  // Get invitees to display (limit to first few, show "See All" if more)
-  const displayedInvitees = event.invitees?.slice(0, 5) || [];
+  // Get invitees to display (limit to first few unless "See All" was tapped)
+  const inviteeLimit = showAllInvitees ? undefined : 5;
+  const displayedInvitees = inviteeLimit
+    ? (event.invitees?.slice(0, inviteeLimit) || [])
+    : (event.invitees || []);
   const hasMoreInvitees = (event.invitees?.length || 0) > 5;
 
   return (
     <ThemedView style={styles.container}>
       <HeaderInnerPage
         title={event.title}
-        subTitle="Event Details"
+        subTitle={t("event.eventDetails")}
         addstyles={{ marginBottom: 0 }}
       />
 
@@ -572,22 +565,22 @@ const EventDetailScreen = () => {
         {/* Event Details Card */}
         <ThemedView style={styles.card}>
           <View style={styles.cardHeader}>
-            <ThemedText style={styles.cardTitle}>Event Details</ThemedText>
+            <ThemedText style={styles.cardTitle}>{t("event.eventDetails")}</ThemedText>
           </View>
 
           <View style={styles.detailRow}>
-            <ThemedText style={styles.detailLabel}>Event Title</ThemedText>
+            <ThemedText style={styles.detailLabel}>{t("createEvent.eventTitle")}</ThemedText>
             <ThemedText style={styles.detailValue}>{event.title}</ThemedText>
           </View>
 
           <View style={styles.detailRow}>
-            <ThemedText style={styles.detailLabel}>Event Type</ThemedText>
+            <ThemedText style={styles.detailLabel}>{t("createEvent.eventType")}</ThemedText>
             <ThemedText style={styles.detailValue}>{chip.label}</ThemedText>
           </View>
 
           {!!descriptionText && (
             <View style={styles.detailRow}>
-              <ThemedText style={styles.detailLabel}>Description</ThemedText>
+              <ThemedText style={styles.detailLabel}>{t("createEvent.description")}</ThemedText>
               <ThemedText style={styles.detailValue}>
                 {descriptionText}
               </ThemedText>
@@ -596,7 +589,7 @@ const EventDetailScreen = () => {
 
           {!!locationText && (
             <View style={styles.detailRow}>
-              <ThemedText style={styles.detailLabel}>Location</ThemedText>
+              <ThemedText style={styles.detailLabel}>{t("createEvent.location")}</ThemedText>
               <TouchableOpacity
                 onPress={handleOpenLocation}
                 style={{ flex: 1 }}
@@ -609,9 +602,9 @@ const EventDetailScreen = () => {
           )}
 
           <View style={styles.detailRow}>
-            <ThemedText style={styles.detailLabel}>Request RSVP</ThemedText>
+            <ThemedText style={styles.detailLabel}>{t("createEvent.requestRSVP")}</ThemedText>
             <ThemedText style={styles.detailValue}>
-              {event.requestRSVP ? "Yes" : "No"}
+              {event.requestRSVP ? t("event.yes") : t("event.no")}
             </ThemedText>
           </View>
         </ThemedView>
@@ -619,16 +612,16 @@ const EventDetailScreen = () => {
         {/* Date and Time Card */}
         <ThemedView style={styles.card}>
           <View style={styles.cardHeader}>
-            <ThemedText style={styles.cardTitle}>Date and Time</ThemedText>
+            <ThemedText style={styles.cardTitle}>{t("event.dateAndTime")}</ThemedText>
           </View>
 
           <View style={styles.detailRow}>
-            <ThemedText style={styles.detailLabel}>Dates</ThemedText>
+            <ThemedText style={styles.detailLabel}>{t("event.dates")}</ThemedText>
             <ThemedText style={styles.detailValue}>{dateText}</ThemedText>
           </View>
 
           <View style={styles.detailRow}>
-            <ThemedText style={styles.detailLabel}>Time Duration</ThemedText>
+            <ThemedText style={styles.detailLabel}>{t("event.timeDuration")}</ThemedText>
             <ThemedText style={styles.detailValue}>{timeText}</ThemedText>
           </View>
 
@@ -636,20 +629,20 @@ const EventDetailScreen = () => {
             <>
               <View style={styles.detailRow}>
                 <ThemedText style={styles.detailLabel}>
-                  Multiple Time Slots:
+                  {t("event.multipleTimeSlotsLabel")}
                 </ThemedText>
                 <ThemedText style={styles.detailValue}>
-                  Yes, {slotDurationText}
+                  {t("event.yes")}, {slotDurationText}
                 </ThemedText>
               </View>
 
               {event.slotRestriction && (
                 <View style={styles.detailRow}>
                   <ThemedText style={styles.detailLabel}>
-                    Slot Restrictions:
+                    {t("event.slotRestrictionsLabel")}
                   </ThemedText>
                   <ThemedText style={styles.detailValue}>
-                    Yes, {event.maxParticipantsPerSlot || "N/A"}
+                    {t("event.yes")}, {event.maxParticipantsPerSlot || t("event.nA")}
                   </ThemedText>
                 </View>
               )}
@@ -657,7 +650,7 @@ const EventDetailScreen = () => {
           )}
 
           <View style={styles.detailRow}>
-            <ThemedText style={styles.detailLabel}>Repeat</ThemedText>
+            <ThemedText style={styles.detailLabel}>{t("createEvent.repeat")}</ThemedText>
             <ThemedText style={styles.detailValue}>{repeatText}</ThemedText>
           </View>
         </ThemedView>
@@ -665,37 +658,39 @@ const EventDetailScreen = () => {
         {/* Invitees Card */}
         {event.requestRSVP && event.invitees && event.invitees.length > 0 && (
           <ThemedView style={styles.card}>
-            <View style={styles.cardHeader}>
-              <ThemedText style={styles.cardTitle}>Invitees</ThemedText>
+            <View style={[styles.cardHeader, { alignItems: "center" }]}>
+              <ThemedText style={styles.cardTitle}>{t("event.invitees")}</ThemedText>
+
+              {/* RSVP Status Badges */}
+              <View style={styles.rsvpBadges}>
+                <View style={styles.rsvpBadge}>
+                  <CheckMarkCircleFillIcon size={14} color="#467A39" />
+                  <ThemedText
+                    style={{ fontSize: 12, fontWeight: "500" }}
+                  >
+                    {rsvpCounts.going}
+                  </ThemedText>
+                </View>
+                <View style={styles.rsvpBadge}>
+                  <XMarkCircleFillIcon size={14} color="#E7000B" />
+                  <ThemedText
+                    style={{ fontSize: 12, fontWeight: "500" }}
+                  >
+                    {rsvpCounts.notGoing}
+                  </ThemedText>
+                </View>
+                <View style={styles.rsvpBadge}>
+                  <QuestionMarkCircleFillIcon size={14} color="#EDB95E" />
+                  <ThemedText
+                    style={{ fontSize: 12, fontWeight: "500" }}
+                  >
+                    {rsvpCounts.pending}
+                  </ThemedText>
+                </View>
+              </View>
             </View>
 
-            {/* RSVP Status Badges */}
-            <View style={styles.rsvpBadges}>
-              <View style={[styles.rsvpBadge, { backgroundColor: "#EAFCEF" }]}>
-                <Feather name="check" size={14} color="#16A34A" />
-                <ThemedText
-                  style={{ color: "#16A34A", fontSize: 12, fontWeight: "500" }}
-                >
-                  {rsvpCounts.going}
-                </ThemedText>
-              </View>
-              <View style={[styles.rsvpBadge, { backgroundColor: "#FEE2E2" }]}>
-                <Feather name="x" size={14} color="#DC2626" />
-                <ThemedText
-                  style={{ color: "#DC2626", fontSize: 12, fontWeight: "500" }}
-                >
-                  {rsvpCounts.notGoing}
-                </ThemedText>
-              </View>
-              <View style={[styles.rsvpBadge, { backgroundColor: "#FEF3C7" }]}>
-                <Feather name="help-circle" size={14} color="#F59E0B" />
-                <ThemedText
-                  style={{ color: "#F59E0B", fontSize: 12, fontWeight: "500" }}
-                >
-                  {rsvpCounts.pending}
-                </ThemedText>
-              </View>
-            </View>
+
 
             {/* Invitees List */}
             {displayedInvitees.map((invitee) => {
@@ -704,7 +699,7 @@ const EventDetailScreen = () => {
               const fullName =
                 `${firstName} ${lastName}`.trim() ||
                 invitee.email?.split("@")[0] ||
-                "Unknown";
+                t("event.unknown");
               const initials =
                 firstName && lastName
                   ? `${firstName[0]}${lastName[0]}`.toUpperCase()
@@ -715,18 +710,18 @@ const EventDetailScreen = () => {
               let rsvpIcon = null;
               if (rsvpStatus === "going" || rsvpStatus === "accepted") {
                 rsvpIcon = (
-                  <Feather name="check-circle" size={20} color="#16A34A" />
+                  <CheckMarkCircleFillIcon color="#467A39" size={20} />
                 );
               } else if (
                 rsvpStatus === "not_going" ||
                 rsvpStatus === "declined"
               ) {
                 rsvpIcon = (
-                  <Feather name="x-circle" size={20} color="#DC2626" />
+                  <XMarkCircleFillIcon size={20} color="#E7000B" />
                 );
               } else {
                 rsvpIcon = (
-                  <Feather name="help-circle" size={20} color="#F59E0B" />
+                  <QuestionMarkCircleFillIcon size={20} color="#EDB95E" />
                 );
               }
 
@@ -755,7 +750,7 @@ const EventDetailScreen = () => {
                       {isAdmin && (
                         <View style={styles.roleBadge}>
                           <ThemedText style={styles.roleBadgeText}>
-                            Admin
+                            {t("common.admin")}
                           </ThemedText>
                         </View>
                       )}
@@ -770,11 +765,17 @@ const EventDetailScreen = () => {
             })}
 
             {hasMoreInvitees && (
-              <TouchableOpacity>
-                <ThemedText style={styles.seeAllLink}>
-                  See All Invitees
-                </ThemedText>
-              </TouchableOpacity>
+              <View style={{ borderTopWidth: 1, borderColor: theme.border }}>
+                <TouchableOpacity
+                  style={{ justifyContent: "center", alignItems: "center", paddingTop: 8 }}
+                  onPress={() => setShowAllInvitees((prev) => !prev)}
+                  activeOpacity={0.7}
+                >
+                  <ThemedText style={styles.seeAllLink}>
+                    {showAllInvitees ? t("event.showLess") : t("event.seeAllInvitees")}
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
             )}
           </ThemedView>
         )}
@@ -788,7 +789,7 @@ const EventDetailScreen = () => {
                 type="defaultSemiBold"
                 style={{ marginBottom: 12, color: theme.text }}
               >
-                Choose Time Slot
+                {t("event.chooseTimeSlot")}
               </ThemedText>
 
               {event.timeSlots.map((slot: TimeSlotDto) => {
@@ -819,19 +820,19 @@ const EventDetailScreen = () => {
                       type="defaultSemiBold"
                       style={{ color: theme.text, marginBottom: 4 }}
                     >
-                      {formatTimeRange(slot.startTime, slot.endTime)}
+                      {formatTimeRange(slot.startTime, slot.endTime, t("event.allDay"))}
                     </ThemedText>
                     {slotsLeft !== null && (
                       <ThemedText
                         type="subText"
                         style={{ color: theme.subText }}
                       >
-                        {slotsLeft} of {slot.maxParticipants} slots left
+                        {t("event.slotsLeft", { count: slotsLeft, max: slot.maxParticipants })}
                       </ThemedText>
                     )}
                     {isFull && (
                       <ThemedText type="subText" style={{ color: "#DC2626" }}>
-                        Full
+                        {t("event.full")}
                       </ThemedText>
                     )}
                   </TouchableOpacity>
@@ -847,7 +848,7 @@ const EventDetailScreen = () => {
               type="defaultSemiBold"
               style={{ marginBottom: 12, color: theme.text }}
             >
-              RSVP
+              {t("buttons.rsvp")}
             </ThemedText>
 
             <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
@@ -869,19 +870,19 @@ const EventDetailScreen = () => {
                 onPress={() => handleRSVP("going")}
                 disabled={submitting}
               >
-                <Feather
-                  name="check-circle"
+                <CheckMarkCircleFillIcon
                   size={20}
                   color={rsvpStatus === "going" ? "#16A34A" : theme.subText}
                 />
                 <ThemedText
                   style={{
+                    fontSize: 14,
                     marginTop: 4,
                     color: rsvpStatus === "going" ? "#16A34A" : theme.subText,
                     fontWeight: rsvpStatus === "going" ? "600" : "400",
                   }}
                 >
-                  Going
+                  {t("buttons.going")}
                 </ThemedText>
               </TouchableOpacity>
 
@@ -903,19 +904,19 @@ const EventDetailScreen = () => {
                 onPress={() => handleRSVP("maybe")}
                 disabled={submitting}
               >
-                <Feather
-                  name="help-circle"
+                <QuestionMarkCircleFillIcon
                   size={20}
                   color={rsvpStatus === "maybe" ? "#F59E0B" : theme.subText}
                 />
                 <ThemedText
                   style={{
+                    fontSize: 14,
                     marginTop: 4,
                     color: rsvpStatus === "maybe" ? "#F59E0B" : theme.subText,
                     fontWeight: rsvpStatus === "maybe" ? "600" : "400",
                   }}
                 >
-                  Maybe
+                  {t("buttons.maybe")}
                 </ThemedText>
               </TouchableOpacity>
 
@@ -937,20 +938,20 @@ const EventDetailScreen = () => {
                 onPress={() => handleRSVP("not_going")}
                 disabled={submitting}
               >
-                <Feather
-                  name="x-circle"
+                <XMarkCircleFillIcon
                   size={20}
                   color={rsvpStatus === "not_going" ? "#DC2626" : theme.subText}
                 />
                 <ThemedText
                   style={{
+                    fontSize: 14,
                     marginTop: 4,
                     color:
                       rsvpStatus === "not_going" ? "#DC2626" : theme.subText,
                     fontWeight: rsvpStatus === "not_going" ? "600" : "400",
                   }}
                 >
-                  Not Going
+                  {t("buttons.notGoing")}
                 </ThemedText>
               </TouchableOpacity>
             </View>

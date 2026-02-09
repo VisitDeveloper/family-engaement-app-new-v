@@ -1,13 +1,12 @@
 import RoleGuard from "@/components/check-permisions";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
-import { AiAssistantIcon, EmergencyIcon, NewIcon } from "@/components/ui/icons/messages-icons";
+import { AiAssistantIcon, AnnouncementIcon, EmergencyIcon, FileIcon, MediaIcon, NewIcon, PollIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
 import {
   ConversationResponseDto,
   messagingService,
 } from "@/services/messaging.service";
 import { useStore } from "@/store";
-import { Feather, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -64,17 +63,17 @@ const FileTypeIcon = ({
 }) => {
   switch (type) {
     case "image":
-      return <Feather name="image" size={size} color={color} />;
+      return <MediaIcon size={size} color={color} />;
     case "video":
-      return <Feather name="video" size={size} color={color} />;
+      return <MediaIcon size={size} color={color} />;
     case "audio":
-      return <Feather name="music" size={size} color={color} />;
+      return <VoiceIcon size={size} color={color} />;
     case "file":
-      return <Ionicons name="document-text" size={size} color={color} />;
+      return <FileIcon size={size} color={color} />;
     case "poll":
-      return <Ionicons name="bar-chart" size={size} color={color} />;
+      return <PollIcon size={size} color={color} />;
     case "announcement":
-      return <Feather name="bell" size={size} color={color} />;
+      return <AnnouncementIcon size={size} color={color} />;
     default:
       return null;
   }
@@ -103,14 +102,13 @@ const MessageItem = ({
       ? "Photo"
       : item.lastMessageType === "video"
         ? "Video"
-        : item.lastMessageFileName ||
-        (item.lastMessageType === "audio"
+        : item.lastMessageType === "audio"
           ? "Voice"
           : item.lastMessageType === "file"
             ? "File"
             : item.lastMessageType === "poll"
               ? "Poll"
-              : null);
+              : null;
   const showThumbnail = isMediaWithThumbnail && thumbnailUri;
   const showFileRow =
     item.lastMessageType === "image" ||
@@ -138,7 +136,7 @@ const MessageItem = ({
             <Text style={styles.messageName}>{item.name}</Text>
             <Text style={styles.messageTime}>{item.time}</Text>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 0, marginTop: 4 }}>
             {showThumbnail && (
               <Image
                 source={{ uri: thumbnailUri! }}
@@ -149,7 +147,7 @@ const MessageItem = ({
               <View style={styles.lastMessageIconWrap}>
                 <FileTypeIcon
                   type={item.lastMessageType!}
-                  size={18}
+                  size={12}
                   color={theme.subText}
                 />
               </View>
@@ -257,7 +255,7 @@ export default function MessagesScreen() {
               : last?.type === "audio"
                 ? "Voice"
                 : last?.type === "file"
-                  ? last.originalFilename || last.fileName || "File"
+                  ? "File"
                   : "";
       const time = last
         ? formatTime(last.createdAt)

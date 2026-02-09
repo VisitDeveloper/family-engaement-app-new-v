@@ -187,7 +187,7 @@ export default function CreateGroupScreen() {
       setData(mappedContacts);
     } catch (error: any) {
       console.error("Error loading contacts:", error);
-      Alert.alert("Error", error.message || "Failed to load contacts");
+      Alert.alert(t("common.error"), error.message || t("createGroup.failedLoadContacts"));
     } finally {
       setLoadingContacts(false);
     }
@@ -297,13 +297,13 @@ export default function CreateGroupScreen() {
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image. Please try again.");
+      Alert.alert(t("common.error"), t("createGroup.failedPickImage"));
     }
   };
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
-      Alert.alert("Error", "Please enter a group name");
+      Alert.alert(t("common.error"), t("createGroup.pleaseEnterGroupName"));
       return;
     }
 
@@ -343,7 +343,7 @@ export default function CreateGroupScreen() {
       });
     } catch (error: any) {
       console.error("Error creating group:", error);
-      Alert.alert("Error", error.message || "Failed to create group");
+      Alert.alert(t("common.error"), error.message || t("createGroup.failedCreateGroup"));
     } finally {
       setCreating(false);
     }

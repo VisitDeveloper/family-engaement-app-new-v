@@ -1,20 +1,19 @@
 import RoleGuard from "@/components/check-permisions";
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
+import { UsersIcon } from "@/components/ui/icons/messages-icons";
+import { BellIcon, DownloadIcon, ExclamationMarkTriangleIcon, GlobeIcon, LockIcon, ShieldIcon } from "@/components/ui/icons/settings-icons";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
-import { Colors } from "@/constants/theme";
+import i18n from "@/i18n";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
 import {
   AntDesign,
-  Feather,
-  Ionicons,
-  MaterialIcons,
+  Ionicons
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import i18n from "@/i18n";
-import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -92,33 +91,33 @@ export default function SettingsScreen() {
         },
         {
           text: t("common.logout"),
-        style: "destructive",
-        onPress: async () => {
-          setLogoutLoading(true);
-          try {
-            // Call logout service to clear token
-            await authService.logout();
+          style: "destructive",
+          onPress: async () => {
+            setLogoutLoading(true);
+            try {
+              // Call logout service to clear token
+              await authService.logout();
 
-            // Clear state
-            setLoggedIn(false);
-            setRole(null);
-            setUser(null);
+              // Clear state
+              setLoggedIn(false);
+              setRole(null);
+              setUser(null);
 
-            // Redirect to login page
-            router.replace("/(auth)/login");
-          } catch (error) {
-            console.error("Logout error:", error);
-            // Even if an error occurs, clear the state
-            setLoggedIn(false);
-            setRole(null);
-            setUser(null);
-            router.replace("/(auth)/login");
-          } finally {
-            setLogoutLoading(false);
-          }
+              // Redirect to login page
+              router.replace("/(auth)/login");
+            } catch (error) {
+              console.error("Logout error:", error);
+              // Even if an error occurs, clear the state
+              setLoggedIn(false);
+              setRole(null);
+              setUser(null);
+              router.replace("/(auth)/login");
+            } finally {
+              setLogoutLoading(false);
+            }
+          },
         },
-      },
-    ]);
+      ]);
   };
 
   return (
@@ -188,7 +187,7 @@ export default function SettingsScreen() {
           ]}
         >
           <View style={styles.cardHeader}>
-            <Feather name="bell" size={20} color={theme.text} />
+            <BellIcon size={20} color={theme.text} />
             <ThemedText
               type="middleTitle"
               style={[styles.cardTitle, { color: theme.text }]}
@@ -266,8 +265,8 @@ export default function SettingsScreen() {
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <MaterialIcons
-                  name="error-outline"
+                <ExclamationMarkTriangleIcon
+                  // name="error-outline"
                   size={18}
                   color={theme.emergencyColor}
                 />
@@ -333,7 +332,7 @@ export default function SettingsScreen() {
           ]}
         >
           <View style={[styles.cardHeaderSmall]}>
-            <Feather name="globe" size={20} color={theme.text} />
+            <GlobeIcon size={20} color={theme.text} />
             <ThemedText
               type="middleTitle"
               style={[styles.cardTitle, { color: theme.text }]}
@@ -471,7 +470,7 @@ export default function SettingsScreen() {
           ]}
         >
           <View style={[styles.cardHeaderSmall]}>
-            <MaterialIcons name="security" size={20} color={theme.text} />
+            <ShieldIcon size={20} color={theme.text} />
             <ThemedText
               type="middleTitle"
               style={[styles.cardTitle, { color: theme.text }]}
@@ -483,11 +482,10 @@ export default function SettingsScreen() {
           <View
             style={[styles.dataSecuritySection, { borderColor: theme.border }]}
           >
-            <AntDesign
-              name="lock"
+            <LockIcon
               size={16}
               color={theme.text}
-              style={{ paddingTop: 2 }}
+            // style={{ paddingTop: 2 }}
             />
             <ThemedText
               type="subText"
@@ -574,7 +572,7 @@ export default function SettingsScreen() {
             ]}
           >
             <View style={[styles.cardHeaderSmall]}>
-              <Feather name="users" size={20} color={theme.text} />
+              <UsersIcon size={20} color={theme.text} />
               <ThemedText
                 type="middleTitle"
                 style={[styles.cardTitle, { color: theme.text }]}
@@ -639,7 +637,7 @@ export default function SettingsScreen() {
               >
                 {t("settings.exportData")}
               </ThemedText>
-              <AntDesign name="download" size={16} color={theme.text} />
+              <DownloadIcon size={16} color={theme.text} />
             </TouchableOpacity>
           </View>
         </RoleGuard>
@@ -696,7 +694,7 @@ export default function SettingsScreen() {
           <TouchableOpacity
             style={{
               gap: 10,
-              borderColor: Colors.light.tint,
+              borderColor: theme.emergencyBackground,
               marginTop: 20,
               flexDirection: "row",
               alignItems: "center",
@@ -705,9 +703,7 @@ export default function SettingsScreen() {
               borderWidth: 1,
               // borderColor: theme.emergencyColor,
               borderRadius: 10,
-              backgroundColor: logoutLoading
-                ? theme.subText
-                : Colors.light.tint,
+              backgroundColor: theme.emergencyColor,
               opacity: logoutLoading ? 0.6 : 1,
             }}
             onPress={handleLogout}
@@ -716,7 +712,8 @@ export default function SettingsScreen() {
             {logoutLoading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <MaterialIcons name="logout" size={20} color="#fff" />
+              <></>
+              // <MaterialIcons name="logout" size={20} color="#fff" />
             )}
             <ThemedText
               type="text"

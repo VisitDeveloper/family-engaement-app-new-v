@@ -2,6 +2,7 @@
 import HeaderThreeSections from "@/components/reptitive-component/header-three-sections";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { CheckMarkCircleFillIcon, QuestionMarkCircleFillIcon, XMarkCircleFillIcon } from "@/components/ui/icons/event-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import {
   EventResponseDto,
@@ -19,8 +20,8 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -34,24 +35,11 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// Helper function to format date
-const formatDate = (dateString: string): string => {
+// Helper function to format date (uses t for month names)
+const formatDate = (dateString: string, t: (key: string) => string): string => {
   const date = new Date(dateString);
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  return `${months[date.getMonth()]} ${date.getDate()}`;
+  const monthKey = `event.monthShort${date.getMonth()}` as const;
+  return `${t(monthKey)} ${date.getDate()}`;
 };
 
 // Helper function to extract string from time field (can be object or string)
@@ -74,8 +62,8 @@ const extractTimeString = (
 };
 
 // Helper function to format time string (HH:mm:ss or HH:mm) to readable format
-const formatTimeString = (timeString: string): string => {
-  if (!timeString) return "All Day";
+const formatTimeString = (timeString: string, allDayLabel: string): string => {
+  if (!timeString) return allDayLabel;
 
   // Handle time string format like "15:00:00" or "15:00"
   const timeMatch = timeString.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
@@ -105,30 +93,32 @@ const formatTimeString = (timeString: string): string => {
 
 // Helper function to format time
 const formatTime = (
-  time: Record<string, any> | string | null | undefined
+  time: Record<string, any> | string | null | undefined,
+  allDayLabel: string
 ): string => {
   const timeString = extractTimeString(time);
-  if (!timeString) return "All Day";
-  return formatTimeString(timeString);
+  if (!timeString) return allDayLabel;
+  return formatTimeString(timeString, allDayLabel);
 };
 
 // Helper function to format time range
 const formatTimeRange = (
   startTime: Record<string, any> | string | null | undefined,
   endTime: Record<string, any> | string | null | undefined,
-  allDay: boolean
+  allDay: boolean,
+  allDayLabel: string
 ): string => {
-  if (allDay) return "All Day";
-  const start = formatTime(startTime);
-  const end = formatTime(endTime);
-  if (start === "All Day" || end === "All Day") return "All Day";
+  if (allDay) return allDayLabel;
+  const start = formatTime(startTime, allDayLabel);
+  const end = formatTime(endTime, allDayLabel);
+  if (start === allDayLabel || end === allDayLabel) return allDayLabel;
   return `${start} - ${end}`;
 };
 
 // Helper function to format time slot range (for time slots which are always strings)
-const formatTimeSlotRange = (startTime: string, endTime: string): string => {
-  const start = formatTimeString(startTime);
-  const end = formatTimeString(endTime);
+const formatTimeSlotRange = (startTime: string, endTime: string, allDayLabel: string): string => {
+  const start = formatTimeString(startTime, allDayLabel);
+  const end = formatTimeString(endTime, allDayLabel);
   return `${start} - ${end}`;
 };
 
@@ -152,7 +142,7 @@ const extractString = (
 };
 
 // Helper function to open location in maps
-const openLocationInMaps = async (event: EventResponseDto) => {
+const openLocationInMaps = async (event: EventResponseDto, t: (key: string) => string) => {
   let url: string | null = null;
 
   // Prefer platform-specific maps, fallback to coordinates or location text
@@ -169,7 +159,7 @@ const openLocationInMaps = async (event: EventResponseDto) => {
     const lat = event.locationLatitude;
     const lng = event.locationLongitude;
     const locationName = encodeURIComponent(
-      extractString(event.location) || "Location"
+      extractString(event.location) || t("event.locationLabel")
     );
 
     if (Platform.OS === "ios") {
@@ -185,17 +175,14 @@ const openLocationInMaps = async (event: EventResponseDto) => {
       if (canOpen) {
         await Linking.openURL(url);
       } else {
-        Alert.alert("Error", "Unable to open maps application.");
+        Alert.alert(t("common.error"), t("event.mapsError"));
       }
     } catch (error) {
       console.error("Error opening maps:", error);
-      Alert.alert("Error", "Failed to open maps. Please try again.");
+      Alert.alert(t("common.error"), t("event.mapsFailed"));
     }
   } else {
-    Alert.alert(
-      "No Location",
-      "Location information is not available for this event."
-    );
+    Alert.alert(t("event.noLocation"), t("event.noLocationDesc"));
   }
 };
 
@@ -218,39 +205,39 @@ const mapEventTypeToKind = (type: string): EventKind => {
   }
 };
 
-const kindChip = (k: EventKind) => {
+const kindChip = (k: EventKind, t: (key: string) => string) => {
   switch (k) {
     case "Conference":
       return {
-        label: "Conference",
+        label: t("event.kindConference"),
         bg: "#E6F0FF",
         text: "#1D4ED8",
         icon: <Feather name="users" size={15} color="#1D4ED8" />,
-      }; // Blue
+      };
     case "Fieldtrip":
       return {
-        label: "Fieldtrip",
+        label: t("event.kindFieldtrip"),
         bg: "#F3E8FF",
         text: "#7C3AED",
         icon: <FontAwesome6 name="bus" size={15} color="#7C3AED" />,
-      }; // Purple
+      };
     case "Event":
       return {
-        label: "Event",
+        label: t("event.kindEvent"),
         bg: "#EAFCEF",
         text: "#16A34A",
         icon: <MaterialIcons name="event-note" size={15} color="#16A34A" />,
-      }; // Green
+      };
     case "Holiday":
       return {
-        label: "Holiday",
+        label: t("event.kindHoliday"),
         bg: "#FEE2E2",
         text: "#DC2626",
         icon: <AntDesign name="gift" size={15} color="#DC2626" />,
-      }; // Red
+      };
     default:
       return {
-        label: "Event",
+        label: t("event.kindEvent"),
         bg: "#EAFCEF",
         text: "#16A34A",
         icon: <MaterialIcons name="event-note" size={15} color="#16A34A" />,
@@ -283,7 +270,7 @@ const SchoolCalendarScreen = () => {
   const currentUser = useStore((s) => s.user);
   const isAdmin = currentUser?.role === "admin";
   const isTeacher = currentUser?.role === "teacher";
-  
+
   // Helper function to check if user can edit/delete an event
   const canEditDeleteEvent = (event: EventResponseDto): boolean => {
     if (isAdmin) return true; // Admins can edit/delete any event
@@ -296,21 +283,21 @@ const SchoolCalendarScreen = () => {
 
   const monthTitle = useMemo(() => {
     const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+      t("event.month0"),
+      t("event.month1"),
+      t("event.month2"),
+      t("event.month3"),
+      t("event.month4"),
+      t("event.month5"),
+      t("event.month6"),
+      t("event.month7"),
+      t("event.month8"),
+      t("event.month9"),
+      t("event.month10"),
+      t("event.month11"),
     ];
     return `${months[monthIndex]} ${year}`;
-  }, [monthIndex, year]);
+  }, [monthIndex, year, t]);
 
   // Fetch events
   const fetchEvents = useCallback(async () => {
@@ -332,14 +319,14 @@ const SchoolCalendarScreen = () => {
       setEvents(response.events);
     } catch (err: any) {
       const errorMessage =
-        err.message || "Failed to load events. Please try again.";
+        err.message || t("event.failedLoadEvents");
       setError(errorMessage);
-      Alert.alert("Error", errorMessage);
+      Alert.alert(t("common.error"), errorMessage);
       console.error("Error fetching events:", err);
     } finally {
       setLoading(false);
     }
-  }, [monthIndex, year]);
+  }, [monthIndex, year, t]);
 
   useEffect(() => {
     fetchEvents();
@@ -533,11 +520,11 @@ const SchoolCalendarScreen = () => {
       await eventService.rsvp(eventId, status, timeSlotId);
       const statusText =
         status === "going"
-          ? "Going"
+          ? t("buttons.going")
           : status === "maybe"
-          ? "Maybe"
-          : "Not Going";
-      Alert.alert("Success", `RSVP updated to ${statusText}`);
+            ? t("buttons.maybe")
+            : t("buttons.notGoing");
+      Alert.alert(t("common.success"), t("event.rsvpUpdated", { status: statusText }));
       // Refresh events
       await fetchEvents();
       // Close modal if time slot was selected
@@ -546,8 +533,8 @@ const SchoolCalendarScreen = () => {
       }
     } catch (err: any) {
       Alert.alert(
-        "Error",
-        err.message || "Failed to update RSVP. Please try again."
+        t("common.error"),
+        err.message || t("event.failedUpdateRsvp")
       );
       console.error("Error updating RSVP:", err);
     } finally {
@@ -577,8 +564,8 @@ const SchoolCalendarScreen = () => {
   const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
     setOpenDropdownEventId(null);
     Alert.alert(
-      "Delete Event",
-      `Are you sure you want to delete "${eventTitle}"? This action cannot be undone.`,
+      t("event.deleteEvent"),
+      t("event.deleteEventConfirm", { title: eventTitle }),
       [
         {
           text: t("common.cancel"),
@@ -591,14 +578,14 @@ const SchoolCalendarScreen = () => {
             try {
               setDeletingEventId(eventId);
               await eventService.delete(eventId);
-              Alert.alert("Success", "Event deleted successfully!");
+              Alert.alert(t("common.success"), t("event.eventDeleted"));
               // Refresh events
               await fetchEvents();
             } catch (error: any) {
               console.error("Error deleting event:", error);
               Alert.alert(
-                "Error",
-                error.message || "Failed to delete event. Please try again."
+                t("common.error"),
+                error.message || t("event.failedDeleteEvent")
               );
             } finally {
               setDeletingEventId(null);
@@ -645,7 +632,7 @@ const SchoolCalendarScreen = () => {
         {loading ? (
           <View style={styles.endmessage}>
             <ThemedText type="subtitle" style={{ color: theme.text }}>
-              Loading events...
+              {t("event.loadingEvents")}
             </ThemedText>
           </View>
         ) : error ? (
@@ -658,21 +645,22 @@ const SchoolCalendarScreen = () => {
           <View style={styles.endmessage}>
             <FontAwesome name="calendar" size={24} color={theme.subText} />
             <ThemedText type="subtitle" style={{ color: theme.text }}>
-              No events found
+              {t("event.noEventsFound")}
             </ThemedText>
             <ThemedText type="subText" style={{ color: theme.subText }}>
-              Check back later for new events and announcements.
+              {t("event.checkBackLater")}
             </ThemedText>
           </View>
         ) : (
           events.map((ev) => {
             const kind = mapEventTypeToKind(ev.type);
-            const chip = kindChip(kind);
-            const dateText = formatDate(ev.startDate);
+            const chip = kindChip(kind, t);
+            const dateText = formatDate(ev.startDate, t);
             const timeText = formatTimeRange(
               ev.startTime,
               ev.endTime,
-              ev.allDay
+              ev.allDay,
+              t("event.allDay")
             );
             const locationText = extractString(ev.location);
             const descriptionText = extractString(ev.description);
@@ -689,8 +677,8 @@ const SchoolCalendarScreen = () => {
               rawStatus === "accepted"
                 ? "going"
                 : rawStatus === "declined"
-                ? "not_going"
-                : (rawStatus as RSVPStatus);
+                  ? "not_going"
+                  : (rawStatus as RSVPStatus);
 
             const isSubmittingEvent = submitting === ev.id;
             const isRsvpExpanded = expandedRsvpEventId === ev.id;
@@ -786,7 +774,7 @@ const SchoolCalendarScreen = () => {
                                 type="subText"
                                 style={{ color: theme.text }}
                               >
-                                Edit
+                                {t("event.edit")}
                               </ThemedText>
                             </TouchableOpacity>
                             <View
@@ -816,7 +804,7 @@ const SchoolCalendarScreen = () => {
                                   color: deletingEventId === ev.id ? theme.subText : "#DC2626",
                                 }}
                               >
-                                Delete
+                                {t("buttons.delete")}
                               </ThemedText>
                             </TouchableOpacity>
                           </Pressable>
@@ -859,7 +847,7 @@ const SchoolCalendarScreen = () => {
                           styles.metaItem,
                           { flex: 1, flexShrink: 1, minWidth: 0 },
                         ]}
-                        onPress={() => openLocationInMaps(ev)}
+                        onPress={() => openLocationInMaps(ev, t)}
                         activeOpacity={0.7}
                       >
                         <Feather name="map-pin" size={16} color={theme.tint} />
@@ -915,7 +903,7 @@ const SchoolCalendarScreen = () => {
                               marginLeft: 8,
                             }}
                           >
-                            Choose Time Slot
+                            {t("event.chooseTimeSlot")}
                           </ThemedText>
                         </>
                       )}
@@ -1003,8 +991,7 @@ const SchoolCalendarScreen = () => {
                                 }}
                                 disabled={isSubmittingEvent}
                               >
-                                <Feather
-                                  name="check-circle"
+                                <CheckMarkCircleFillIcon
                                   size={18}
                                   color={
                                     currentRsvpStatus === "going"
@@ -1025,7 +1012,7 @@ const SchoolCalendarScreen = () => {
                                         : "400",
                                   }}
                                 >
-                                  Going
+                                  {t("buttons.going")}
                                 </ThemedText>
                               </TouchableOpacity>
 
@@ -1049,8 +1036,7 @@ const SchoolCalendarScreen = () => {
                                 }}
                                 disabled={isSubmittingEvent}
                               >
-                                <Feather
-                                  name="help-circle"
+                                <QuestionMarkCircleFillIcon
                                   size={18}
                                   color={
                                     currentRsvpStatus === "maybe"
@@ -1071,7 +1057,7 @@ const SchoolCalendarScreen = () => {
                                         : "400",
                                   }}
                                 >
-                                  Maybe
+                                  {t("buttons.maybe")}
                                 </ThemedText>
                               </TouchableOpacity>
 
@@ -1095,8 +1081,7 @@ const SchoolCalendarScreen = () => {
                                 }}
                                 disabled={isSubmittingEvent}
                               >
-                                <Feather
-                                  name="x-circle"
+                                <XMarkCircleFillIcon
                                   size={18}
                                   color={
                                     currentRsvpStatus === "not_going"
@@ -1117,7 +1102,7 @@ const SchoolCalendarScreen = () => {
                                         : "400",
                                   }}
                                 >
-                                  Not Going
+                                  {t("buttons.notGoing")}
                                 </ThemedText>
                               </TouchableOpacity>
                             </View>
@@ -1134,10 +1119,10 @@ const SchoolCalendarScreen = () => {
           <View style={styles.endmessage}>
             <FontAwesome name="calendar" size={24} color={theme.subText} />
             <ThemedText type="subtitle" style={{ color: theme.text }}>
-              That&apos;s all for now!
+              {t("event.thatsAllForNow")}
             </ThemedText>
             <ThemedText type="subText" style={{ color: theme.subText }}>
-              Check back later for new events and announcements.
+              {t("event.checkBackLater")}
             </ThemedText>
           </View>
         )}
@@ -1179,7 +1164,7 @@ const SchoolCalendarScreen = () => {
                 type="defaultSemiBold"
                 style={{ fontSize: 18, color: theme.text }}
               >
-                Choose Time Slot
+                {t("event.chooseTimeSlot")}
               </ThemedText>
               <TouchableOpacity onPress={closeTimeSlotModal}>
                 <Feather name="x" size={24} color={theme.text} />
@@ -1187,9 +1172,9 @@ const SchoolCalendarScreen = () => {
             </View>
 
             {selectedEventForSlot &&
-            selectedEventForSlot.timeSlots &&
-            Array.isArray(selectedEventForSlot.timeSlots) &&
-            selectedEventForSlot.timeSlots.length > 0 ? (
+              selectedEventForSlot.timeSlots &&
+              Array.isArray(selectedEventForSlot.timeSlots) &&
+              selectedEventForSlot.timeSlots.length > 0 ? (
               <ScrollView
                 showsVerticalScrollIndicator={false}
                 style={{ maxHeight: 400 }}
@@ -1269,8 +1254,8 @@ const SchoolCalendarScreen = () => {
                           }}
                         >
                           {slot.startTime && slot.endTime
-                            ? formatTimeSlotRange(slot.startTime, slot.endTime)
-                            : "Time slot"}
+                            ? formatTimeSlotRange(slot.startTime, slot.endTime, t("event.allDay"))
+                            : t("event.timeSlot")}
                         </ThemedText>
                       </View>
                       {slotsLeft !== null && (
@@ -1282,7 +1267,7 @@ const SchoolCalendarScreen = () => {
                             fontSize: 14,
                           }}
                         >
-                          {slotsLeft} of {slot.maxParticipants} slots left
+                          {t("event.slotsLeft", { count: slotsLeft, max: slot.maxParticipants })}
                         </ThemedText>
                       )}
                       {isFull && (
@@ -1295,7 +1280,7 @@ const SchoolCalendarScreen = () => {
                             fontWeight: "600",
                           }}
                         >
-                          Full
+                          {t("event.full")}
                         </ThemedText>
                       )}
                       {isSubmittingSlot && isSelected && (
@@ -1319,8 +1304,8 @@ const SchoolCalendarScreen = () => {
                   }}
                 >
                   {selectedEventForSlot
-                    ? "No time slots available for this event."
-                    : "Loading..."}
+                    ? t("event.noTimeSlots")
+                    : t("common.loading")}
                 </ThemedText>
               </View>
             )}

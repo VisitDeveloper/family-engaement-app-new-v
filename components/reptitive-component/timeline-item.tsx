@@ -10,8 +10,8 @@ import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Linking,
@@ -21,9 +21,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SvgXml } from "react-native-svg";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 import CommentsBottomSheet from "../ui/comments-bottom-sheet";
+import { DownloadIcon } from "../ui/icons/settings-icons";
+
+// Placeholder when post image fails to load
+const imageErrorPlaceholderSvg = `<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="10" y="10" width="100" height="100" rx="8" stroke="currentColor" stroke-width="2" fill="none" opacity="0.4"/>
+<path d="M35 45L55 65L75 45L95 75H25L35 45Z" stroke="currentColor" stroke-width="2" fill="none" opacity="0.5"/>
+<circle cx="52" cy="48" r="6" stroke="currentColor" stroke-width="2" fill="none" opacity="0.5"/>
+<line x1="20" y1="100" x2="100" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+</svg>`;
+
 export interface ResourceItemProps {
   postId?: string;
   name: string;
@@ -97,6 +108,9 @@ export default function TimelineItem({
   >({});
   const [showCommentsSheet, setShowCommentsSheet] = useState(false);
   const [commentIdToReply, setCommentIdToReply] = useState<string | null>(null);
+  const [postImageLoadState, setPostImageLoadState] = useState<
+    "loading" | "loaded" | "error"
+  >("loading");
 
   // Number of comments to show initially
   const INITIAL_COMMENTS_TO_SHOW = 2;
@@ -117,6 +131,14 @@ export default function TimelineItem({
       return () => clearTimeout(timeout);
     }
   }, [showDropdown]);
+
+  // Reset post image load state when image URL changes
+  const firstImageUrl = props.images?.[0];
+  useEffect(() => {
+    if (firstImageUrl) {
+      setPostImageLoadState("loading");
+    }
+  }, [firstImageUrl]);
 
   // Local state for comments to sync with bottom sheet
   const [localComments, setLocalComments] = useState<CommentResponseDto[]>([]);
@@ -365,12 +387,12 @@ export default function TimelineItem({
             (reply) =>
               reply.id === commentId
                 ? {
-                    ...reply,
-                    isLiked: !isLiked,
-                    likesCount: isLiked
-                      ? (reply.likesCount || 0) - 1
-                      : (reply.likesCount || 0) + 1,
-                  }
+                  ...reply,
+                  isLiked: !isLiked,
+                  likesCount: isLiked
+                    ? (reply.likesCount || 0) - 1
+                    : (reply.likesCount || 0) + 1,
+                }
                 : reply
           );
         });
@@ -381,12 +403,12 @@ export default function TimelineItem({
         prevComments.map((c) =>
           c.id === commentId
             ? {
-                ...c,
-                isLiked: !isLiked,
-                likesCount: isLiked
-                  ? (c.likesCount || 0) - 1
-                  : (c.likesCount || 0) + 1,
-              }
+              ...c,
+              isLiked: !isLiked,
+              likesCount: isLiked
+                ? (c.likesCount || 0) - 1
+                : (c.likesCount || 0) + 1,
+            }
             : c
         )
       );
@@ -406,10 +428,10 @@ export default function TimelineItem({
             (reply) =>
               reply.id === commentId
                 ? {
-                    ...reply,
-                    isLiked: currentState.isLiked,
-                    likesCount: currentState.likesCount,
-                  }
+                  ...reply,
+                  isLiked: currentState.isLiked,
+                  likesCount: currentState.likesCount,
+                }
                 : reply
           );
         });
@@ -486,7 +508,7 @@ export default function TimelineItem({
   const handleShare = async () => {
     try {
       const shareMessage = `${props.name} shared:\n\n${props.desc}\n\n${props.tags && props.tags.length > 0 ? `Tags: ${props.tags.join(", ")}\n` : ""}${props.postId ? `\nView post in app` : ""}`;
-      
+
       const result = await Share.share({
         message: shareMessage,
         title: `Post by ${props.name}`,
@@ -512,162 +534,173 @@ export default function TimelineItem({
 
   const styles = useThemedStyles(
     (theme) =>
-      ({
-        postCard: {
-          backgroundColor: theme.bg,
-          borderRadius: 10,
-          padding: 15,
-          marginTop: 15,
-          borderWidth: 1,
-          borderColor: theme.border,
+    ({
+      postCard: {
+        backgroundColor: theme.bg,
+        borderRadius: 10,
+        padding: 15,
+        marginTop: 15,
+        borderWidth: 1,
+        borderColor: theme.border,
+      },
+      postHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 10,
+      },
+      avatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: theme.panel,
+        justifyContent: "center",
+        alignItems: "center",
+        marginRight: 10,
+
+      },
+      badge: {
+        marginLeft: "auto",
+        backgroundColor: theme.star,
+        borderRadius: 50,
+        paddingHorizontal: 5,
+        paddingVertical: 5,
+      },
+      postImage: {
+        width: "100%",
+        height: 180,
+        borderRadius: 8,
+        marginTop: 10,
+      },
+      postImageSkeleton: {
+        width: "100%",
+        height: 180,
+        borderRadius: 8,
+        marginTop: 10,
+        backgroundColor: theme.panel,
+      },
+      postImageErrorPlaceholder: {
+        backgroundColor: theme.panel,
+        justifyContent: "center",
+        alignItems: "center",
+      },
+      filesContainer: {
+        marginTop: 10,
+        gap: 8,
+      },
+      fileItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 12,
+        borderRadius: 8,
+        backgroundColor: theme.panel,
+        borderWidth: 1,
+        borderColor: theme.border,
+      },
+      fileIcon: {
+        marginRight: 10,
+      },
+      fileInfo: {
+        flex: 1,
+      },
+      fileName: {
+        fontSize: 14,
+        fontWeight: "500",
+        color: theme.text,
+      },
+      tags: { flexDirection: "row", flexWrap: "wrap", marginTop: 10, gap: 8 },
+      tag: {
+        paddingHorizontal: 10,
+        paddingVertical: 2,
+        borderRadius: 6,
+        backgroundColor: theme.panel,
+      },
+      actions: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 20,
+        marginTop: 10,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: theme.border,
+        paddingVertical: 5,
+      },
+      actionButtons: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        gap: 10,
+      },
+      ationItem: { flexDirection: "row", alignItems: "center" },
+      comments: { marginTop: 10 },
+      commentRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        marginTop: 5,
+      },
+      commentInput: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: theme.border,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        marginLeft: 8,
+        color: theme.text,
+        height: 40,
+        backgroundColor: theme.panel,
+      },
+      replyContainer: {
+        marginLeft: 16,
+        marginTop: 8,
+        paddingLeft: 12,
+      },
+      replyItem: {
+        flexDirection: "row",
+        marginTop: 6,
+      },
+      replyInputContainer: {
+        marginLeft: 8,
+        marginTop: 8,
+        paddingLeft: 8,
+      },
+      replyButton: {
+        marginLeft: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+      },
+      generalmargin: {},
+      dropdownContainer: {
+        position: "relative",
+      },
+      dropdownMenu: {
+        position: "absolute",
+        top: 30,
+        right: 0,
+        backgroundColor: theme.bg,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: theme.border,
+        paddingVertical: 4,
+        minWidth: 120,
+        zIndex: 1000,
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 2,
         },
-        postHeader: {
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: 10,
-        },
-        avatar: {
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          backgroundColor: theme.panel,
-          justifyContent: "center",
-          alignItems: "center",
-          marginRight: 10,
-          borderColor: theme.border,
-          borderWidth: 1,
-        },
-        badge: {
-          marginLeft: "auto",
-          backgroundColor: theme.star,
-          borderRadius: 50,
-          paddingHorizontal: 5,
-          paddingVertical: 5,
-        },
-        postImage: {
-          width: "100%",
-          height: 180,
-          borderRadius: 8,
-          marginTop: 10,
-        },
-        filesContainer: {
-          marginTop: 10,
-          gap: 8,
-        },
-        fileItem: {
-          flexDirection: "row",
-          alignItems: "center",
-          padding: 12,
-          borderRadius: 8,
-          backgroundColor: theme.panel,
-          borderWidth: 1,
-          borderColor: theme.border,
-        },
-        fileIcon: {
-          marginRight: 10,
-        },
-        fileInfo: {
-          flex: 1,
-        },
-        fileName: {
-          fontSize: 14,
-          fontWeight: "500",
-          color: theme.text,
-        },
-        tags: { flexDirection: "row", flexWrap: "wrap", marginTop: 10, gap: 8 },
-        tag: {
-          paddingHorizontal: 10,
-          paddingVertical: 2,
-          borderRadius: 6,
-          backgroundColor: theme.panel,
-        },
-        actions: {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 20,
-          marginTop: 10,
-          borderTopWidth: 1,
-          borderBottomWidth: 1,
-          borderColor: theme.border,
-          paddingVertical: 5,
-        },
-        actionButtons: {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          gap: 10,
-        },
-        ationItem: { flexDirection: "row", alignItems: "center" },
-        comments: { marginTop: 10 },
-        commentRow: {
-          flexDirection: "row",
-          alignItems: "flex-start",
-          marginTop: 5,
-        },
-        commentInput: {
-          flex: 1,
-          borderWidth: 1,
-          borderColor: theme.border,
-          borderRadius: 10,
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          marginLeft: 8,
-          color: theme.text,
-          height: 40,
-          backgroundColor: theme.panel,
-        },
-        replyContainer: {
-          marginLeft: 16,
-          marginTop: 8,
-          paddingLeft: 12,
-        },
-        replyItem: {
-          flexDirection: "row",
-          marginTop: 6,
-        },
-        replyInputContainer: {
-          marginLeft: 8,
-          marginTop: 8,
-          paddingLeft: 8,
-        },
-        replyButton: {
-          marginLeft: 8,
-          paddingHorizontal: 8,
-          paddingVertical: 4,
-        },
-        generalmargin: {},
-        dropdownContainer: {
-          position: "relative",
-        },
-        dropdownMenu: {
-          position: "absolute",
-          top: 30,
-          right: 0,
-          backgroundColor: theme.bg,
-          borderRadius: 8,
-          borderWidth: 1,
-          borderColor: theme.border,
-          paddingVertical: 4,
-          minWidth: 120,
-          zIndex: 1000,
-          shadowColor: "#000",
-          shadowOffset: {
-            width: 0,
-            height: 2,
-          },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          elevation: 5,
-        },
-        dropdownItem: {
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-          gap: 8,
-        },
-      } as const)
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+      },
+      dropdownItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        gap: 8,
+      },
+    } as const)
   );
 
   return (
@@ -683,9 +716,9 @@ export default function TimelineItem({
             />
           ) : (
             <View style={styles.avatar}>
-              <ThemedText type="subText" style={{ color: theme.subText }}>
+              <ThemedText type="subText" style={{ color: theme.text }}>
                 {props.author?.firstName?.charAt(0) +
-                  " " +
+                  "" +
                   props.author?.lastName?.charAt(0).trim().toUpperCase() ||
                   props.author?.email?.charAt(0)}
               </ThemedText>
@@ -835,28 +868,49 @@ export default function TimelineItem({
           </View>
         )}
 
+
         {/* Post Image */}
         {(() => {
           const imageUrl = formatImageUrl(props.images?.[0]);
-          return imageUrl ? (
+          if (!imageUrl) return null;
+          return (
             <View>
-              <Image
-                source={{ uri: imageUrl }}
-                style={styles.postImage}
-                accessibilityRole="image"
-                accessibilityLabel={`Image attached to post by ${props.name}`}
-                // contentFit="cover"
-                // transition={200}
-                onError={(error) => {
-                  console.log("Image load error:", error);
-                  console.log("Image URL:", imageUrl);
-                }}
-                onLoad={() => {
-                  console.log("Image loaded successfully:", imageUrl);
-                }}
-              />
+              {postImageLoadState === "loading" && (
+                <View style={styles.postImageSkeleton} />
+              )}
+              {postImageLoadState !== "error" && (
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={[
+                    styles.postImage,
+                    postImageLoadState === "loading" && { position: "absolute", opacity: 0 },
+                  ]}
+                  contentFit="cover"
+                  transition={200}
+                  accessibilityRole="image"
+                  accessibilityLabel={`Image attached to post by ${props.name}`}
+                  onLoad={() => setPostImageLoadState("loaded")}
+                  onError={() => setPostImageLoadState("error")}
+                />
+              )}
+              {postImageLoadState === "error" && (
+                <View
+                  style={[styles.postImage, styles.postImageErrorPlaceholder]}
+                  accessibilityRole="image"
+                  accessibilityLabel="Placeholder for unavailable image"
+                >
+                  <SvgXml
+                    xml={imageErrorPlaceholderSvg.replace(
+                      /currentColor/g,
+                      theme.subText ?? "#8E8E93"
+                    )}
+                    width={64}
+                    height={64}
+                  />
+                </View>
+              )}
             </View>
-          ) : null;
+          );
         })()}
 
         {/* Files */}
@@ -899,7 +953,7 @@ export default function TimelineItem({
               return (
                 <TouchableOpacity
                   key={index}
-                  style={styles.fileItem}
+                  style={[styles.fileItem]}
                   onPress={() => handleFilePress(fileUrl)}
                   activeOpacity={0.7}
                   accessibilityRole="button"
@@ -908,7 +962,7 @@ export default function TimelineItem({
                 >
                   <Ionicons
                     name={getFileIcon() as any}
-                    size={24}
+                    size={20}
                     color={theme.tint}
                     style={styles.fileIcon}
                     accessibilityElementsHidden={true}
@@ -931,12 +985,11 @@ export default function TimelineItem({
                         : fileName}
                     </ThemedText>
                   </View>
-                  <Ionicons
-                    name="download-outline"
+                  <DownloadIcon
                     size={20}
-                    color={theme.subText}
-                    accessibilityElementsHidden={true}
-                    importantForAccessibility="no"
+                    color={theme.tint}
+                  // accessibilityElementsHidden={true}
+                  // importantForAccessibility="no"
                   />
                 </TouchableOpacity>
               );
@@ -952,9 +1005,8 @@ export default function TimelineItem({
               onPress={props.onLike}
               accessibilityRole="button"
               accessibilityLabel={props.isLiked ? "Unlike post" : "Like post"}
-              accessibilityHint={`${props.numberOfLike} likes. Double tap to ${
-                props.isLiked ? "unlike" : "like"
-              } this post`}
+              accessibilityHint={`${props.numberOfLike} likes. Double tap to ${props.isLiked ? "unlike" : "like"
+                } this post`}
               accessibilityState={{ selected: props.isLiked }}
             >
               <EvilIcons
@@ -1028,9 +1080,8 @@ export default function TimelineItem({
             accessibilityLabel={
               props.isSaved ? "Remove from saved" : "Save post"
             }
-            accessibilityHint={`Double tap to ${
-              props.isSaved ? "unsave" : "save"
-            } this post`}
+            accessibilityHint={`Double tap to ${props.isSaved ? "unsave" : "save"
+              } this post`}
             accessibilityState={{ selected: props.isSaved }}
           >
             <Ionicons
@@ -1076,10 +1127,9 @@ export default function TimelineItem({
                             marginRight: 0,
                           }}
                           accessibilityRole="image"
-                          accessibilityLabel={`${
-                            commentItem.author.firstName ||
+                          accessibilityLabel={`${commentItem.author.firstName ||
                             commentItem.author.email
-                          }'s profile picture`}
+                            }'s profile picture`}
                         />
                       ) : (
                         <Ionicons
@@ -1117,12 +1167,12 @@ export default function TimelineItem({
                               }}
                             >
                               {commentItem.author.firstName &&
-                              commentItem.author.lastName
+                                commentItem.author.lastName
                                 ? `${commentItem.author.firstName} ${commentItem.author.lastName}`
                                 : commentItem.author.firstName ||
-                                  commentItem.author.lastName ||
-                                  commentItem.author.email ||
-                                  "Unknown"}
+                                commentItem.author.lastName ||
+                                commentItem.author.email ||
+                                "Unknown"}
                             </ThemedText>
                             <ThemedText
                               type="subLittleText"
@@ -1167,14 +1217,14 @@ export default function TimelineItem({
                               <EvilIcons
                                 name={
                                   commentLikes[commentItem.id]?.isLiked ??
-                                  commentItem.isLiked
+                                    commentItem.isLiked
                                     ? "heart"
                                     : ("heart" as any)
                                 }
                                 size={16}
                                 color={
                                   commentLikes[commentItem.id]?.isLiked ??
-                                  commentItem.isLiked
+                                    commentItem.isLiked
                                     ? theme.tint
                                     : theme.subText
                                 }
@@ -1310,12 +1360,12 @@ export default function TimelineItem({
                                         }}
                                       >
                                         {reply.author.firstName &&
-                                        reply.author.lastName
+                                          reply.author.lastName
                                           ? `${reply.author.firstName} ${reply.author.lastName}`
                                           : reply.author.firstName ||
-                                            reply.author.lastName ||
-                                            reply.author.email ||
-                                            "Unknown"}
+                                          reply.author.lastName ||
+                                          reply.author.email ||
+                                          "Unknown"}
                                       </ThemedText>
                                       <ThemedText
                                         type="subLittleText"
@@ -1367,14 +1417,14 @@ export default function TimelineItem({
                                         <EvilIcons
                                           name={
                                             commentLikes[reply.id]?.isLiked ??
-                                            reply.isLiked
+                                              reply.isLiked
                                               ? "heart"
                                               : ("heart" as any)
                                           }
                                           size={14}
                                           color={
                                             commentLikes[reply.id]?.isLiked ??
-                                            reply.isLiked
+                                              reply.isLiked
                                               ? theme.tint
                                               : theme.subText
                                           }
@@ -1485,7 +1535,7 @@ export default function TimelineItem({
                               borderWidth: 1,
                               borderColor:
                                 replyInputs[commentItem.id]?.trim() &&
-                                !isSubmittingReply[commentItem.id]
+                                  !isSubmittingReply[commentItem.id]
                                   ? theme.tint
                                   : theme.subText,
                               backgroundColor: "transparent",
@@ -1495,7 +1545,7 @@ export default function TimelineItem({
                               style={{
                                 color:
                                   replyInputs[commentItem.id]?.trim() &&
-                                  !isSubmittingReply[commentItem.id]
+                                    !isSubmittingReply[commentItem.id]
                                     ? theme.tint
                                     : theme.subText,
                                 fontSize: 13,
@@ -1597,12 +1647,12 @@ export default function TimelineItem({
                             }}
                           >
                             {commentItem.author.firstName &&
-                            commentItem.author.lastName
+                              commentItem.author.lastName
                               ? `${commentItem.author.firstName} ${commentItem.author.lastName}`
                               : commentItem.author.firstName ||
-                                commentItem.author.lastName ||
-                                commentItem.author.email ||
-                                "Unknown"}
+                              commentItem.author.lastName ||
+                              commentItem.author.email ||
+                              "Unknown"}
                           </ThemedText>
                           <ThemedText
                             type="subText"
@@ -1625,14 +1675,14 @@ export default function TimelineItem({
                             <AntDesign
                               name={
                                 commentLikes[commentItem.id]?.isLiked ??
-                                commentItem.isLiked
+                                  commentItem.isLiked
                                   ? "heart"
                                   : ("hearto" as any)
                               }
                               size={14}
                               color={
                                 commentLikes[commentItem.id]?.isLiked ??
-                                commentItem.isLiked
+                                  commentItem.isLiked
                                   ? theme.tint
                                   : theme.subText
                               }
@@ -1640,15 +1690,15 @@ export default function TimelineItem({
                             {((commentLikes[commentItem.id]?.likesCount ??
                               commentItem.likesCount) ||
                               0) > 0 && (
-                              <ThemedText
-                                type="subLittleText"
-                                style={{ color: theme.subText, fontSize: 11 }}
-                              >
-                                {commentLikes[commentItem.id]?.likesCount ??
-                                  commentItem.likesCount ??
-                                  0}
-                              </ThemedText>
-                            )}
+                                <ThemedText
+                                  type="subLittleText"
+                                  style={{ color: theme.subText, fontSize: 11 }}
+                                >
+                                  {commentLikes[commentItem.id]?.likesCount ??
+                                    commentItem.likesCount ??
+                                    0}
+                                </ThemedText>
+                              )}
                           </TouchableOpacity>
                         </View>
                       </View>

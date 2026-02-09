@@ -2,15 +2,16 @@ import RoleGuard from "@/components/check-permisions";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import TimelineItem from "@/components/reptitive-component/timeline-item";
 import { ThemedText } from "@/components/themed-text";
+import { EventIcon } from "@/components/ui/icons/event-icons";
+import { MediaIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { likeService } from "@/services/like.service";
 import { PostResponseDto, postService } from "@/services/post.service";
 import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
-import { Feather, Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -187,10 +188,9 @@ const TimelineScreen = () => {
         marginTop: 20,
       },
       avatarcreate: {
-        width: 40,
-        height: 40,
+        width: 28,
+        height: 28,
         borderRadius: 20, // Make image circular
-        marginRight: 12,
         borderColor: theme.border,
         borderWidth: 1,
       },
@@ -200,7 +200,6 @@ const TimelineScreen = () => {
         borderRadius: 10,
         paddingHorizontal: 16,
         paddingVertical: 8,
-        marginRight: 12,
         justifyContent: "center",
         marginHorizontal: 10,
       },
@@ -262,9 +261,9 @@ const TimelineScreen = () => {
         setPosts(response.posts);
       } catch (err: any) {
         const errorMessage =
-          err.message || "Failed to load posts. Please try again.";
+          err.message || t("common.error");
         setError(errorMessage);
-        Alert.alert("Error", errorMessage);
+        Alert.alert(t("common.error"), errorMessage);
         console.error("Error fetching posts:", err);
       } finally {
         setLoading(false);
@@ -309,7 +308,7 @@ const TimelineScreen = () => {
         <HeaderTabItem
           title={t("tabs.timelineTitle", { name: user?.firstName || "" })}
           subTitle={t("tabs.timelineSubTitle")}
-          buttonIcon={<Feather name="calendar" size={16} color={theme.tint} />}
+          buttonIcon={<EventIcon size={16} color={theme.tint} />}
           buttonLink="/event"
           buttonTitle={t("event.schoolCalendar")}
           buttonRoles={["admin", "teacher", "parent"]}
@@ -365,11 +364,10 @@ const TimelineScreen = () => {
 
               {/* Gallery icon */}
               <TouchableOpacity onPress={() => router.push("/create-or-edit-post")}>
-                <Ionicons
-                  name="image-outline"
-                  size={26}
+                <MediaIcon
+                  size={20}
                   color="#8E8E93"
-                  style={styles.icon}
+                // style={styles.icon}
                 />
               </TouchableOpacity>
             </View>
@@ -562,10 +560,10 @@ const TimelineScreen = () => {
                     onDelete={async () => {
                       try {
                         await postService.delete(post.id);
-                        Alert.alert("Success", "Post deleted successfully");
+                        Alert.alert(t("common.success"), t("timeline.postDeletedSuccess"));
                         fetchPosts(tabsData[activeTab].filter);
                       } catch (error: any) {
-                        Alert.alert("Error", error.message || "Failed to delete post");
+                        Alert.alert(t("common.error"), error.message || t("timeline.failedDeletePost"));
                         console.error("Error deleting post:", error);
                       }
                     }}
