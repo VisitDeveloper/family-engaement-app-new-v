@@ -1,15 +1,8 @@
-import { apiClient, ApiError } from './api';
-import type { UserListItemDto, ParentDto } from '@/types';
-import type { PaginatedResponse, PaginatedResult } from '@/types';
+import type { PaginatedResponse, PaginatedResult, ParentDto, UserListItemDto } from '@/types';
 import { toPaginatedResult } from '@/types';
+import { apiClient, ApiError } from './api';
 
-export type { UserListItemDto, ParentDto };
-
-export interface GetParentsParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-}
+export type { ParentDto, UserListItemDto };
 
 export interface GetUsersParams {
   page?: number;
@@ -18,19 +11,17 @@ export interface GetUsersParams {
   role?: 'parent' | 'teacher' | 'student' | ('parent' | 'teacher' | 'student')[];
 }
 
-export type GetParentsResponse = PaginatedResult<ParentDto, 'users'>;
 export type GetUsersResponse = PaginatedResult<UserListItemDto, 'users'>;
 
 export interface UserService {
   getAll(params?: GetUsersParams): Promise<GetUsersResponse>;
-  getParents(params?: GetParentsParams): Promise<GetParentsResponse>;
 }
 
 class UserServiceImpl implements UserService {
   async getAll(params?: GetUsersParams): Promise<GetUsersResponse> {
     try {
       const queryParams = new URLSearchParams();
-      
+
       if (params?.page) {
         queryParams.append('page', params.page.toString());
       }
@@ -59,34 +50,6 @@ class UserServiceImpl implements UserService {
       const apiError = error as ApiError;
       throw {
         message: apiError.message || 'Failed to fetch users. Please try again.',
-        status: apiError.status,
-        data: apiError.data,
-      } as ApiError;
-    }
-  }
-
-  async getParents(params?: GetParentsParams): Promise<GetParentsResponse> {
-    try {
-      const queryParams = new URLSearchParams();
-      
-      if (params?.page) {
-        queryParams.append('page', params.page.toString());
-      }
-      if (params?.limit) {
-        queryParams.append('limit', params.limit.toString());
-      }
-      if (params?.search) {
-        queryParams.append('search', params.search);
-      }
-
-      const queryString = queryParams.toString();
-      const endpoint = `/users/parents${queryString ? `?${queryString}` : ''}`;
-      const response = await apiClient.get<PaginatedResponse<ParentDto>>(endpoint);
-      return toPaginatedResult(response, 'users');
-    } catch (error) {
-      const apiError = error as ApiError;
-      throw {
-        message: apiError.message || 'Failed to fetch parents. Please try again.',
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

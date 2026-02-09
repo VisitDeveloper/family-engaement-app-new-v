@@ -7,8 +7,8 @@ import { CheckboxIcon, CheckedboxIcon } from "@/components/ui/icons/common-icons
 import { EventIcon } from "@/components/ui/icons/event-icons";
 import { UsersIcon } from "@/components/ui/icons/messages-icons";
 import MapPicker from "@/components/ui/map-picker";
-import SelectListBottomSheet from "@/components/ui/select-list-bottom-sheet";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
+import SelectListBottomSheet from "@/components/ui/select-list-bottom-sheet";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useValidation } from "@/hooks/use-validation";
 import {
@@ -143,9 +143,10 @@ function CreateNewEvent() {
   const fetchParents = useCallback(async () => {
     try {
       setLoadingParents(true);
-      const response = await userService.getParents({
+      const response = await userService.getAll({
         page: 1,
         limit: 50,
+        role: ["parent"]
       });
       const invitees = response.users.map(convertParentToInvitee);
       setParents(invitees);

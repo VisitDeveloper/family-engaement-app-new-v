@@ -11,8 +11,8 @@ import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -163,7 +163,19 @@ export default function CreateGroupScreen() {
   const loadContacts = useCallback(async () => {
     setLoadingContacts(true);
     try {
-      const response = await userService.getAll({ limit: 100 });
+
+      let role:
+        | "parent"
+        | "teacher"
+        | "student"
+        | ("parent" | "teacher" | "student")[] = ["parent", "teacher"]
+      if (currentUser.role === "teacher") {
+        role = ["parent"];
+      } else if (currentUser.role === "parent") {
+        role = ["teacher"];
+      }
+
+      const response = await userService.getAll({ limit: 100, role });
       const mappedContacts: Invitee[] = response.users
         .filter((user) => user.id !== currentUserId)
         .map((user) => ({
@@ -191,6 +203,7 @@ export default function CreateGroupScreen() {
     } finally {
       setLoadingContacts(false);
     }
+    // eslint-disable-next-line
   }, [currentUserId]);
 
   const loadClassrooms = useCallback(async () => {
@@ -238,13 +251,13 @@ export default function CreateGroupScreen() {
     );
   };
 
-  const selectAllUsers = () => {
-    if (selected.length === data.length) {
-      setSelected([]);
-    } else {
-      setSelected(data.map((person) => person.id));
-    }
-  };
+  // const selectAllUsers = () => {
+  //   if (selected.length === data.length) {
+  //     setSelected([]);
+  //   } else {
+  //     setSelected(data.map((person) => person.id));
+  //   }
+  // };
 
   const [selectedGroup, setSelectedGroup] = useState<string[]>([]);
 
@@ -254,13 +267,13 @@ export default function CreateGroupScreen() {
     );
   };
 
-  const selectAllGroup = () => {
-    if (selectedGroup.length === group.length) {
-      setSelectedGroup([]);
-    } else {
-      setSelectedGroup(group.map((person) => person.id));
-    }
-  };
+  // const selectAllGroup = () => {
+  //   if (selectedGroup.length === group.length) {
+  //     setSelectedGroup([]);
+  //   } else {
+  //     setSelectedGroup(group.map((person) => person.id));
+  //   }
+  // };
 
   const [showInputOfGroupName, setShowInputOFGroupName] =
     useState<boolean>(false);
