@@ -344,6 +344,7 @@ export default function CreateGroupScreen() {
             : undefined,
         memberIds: selected,
         imageUrl,
+        classroomIds: selectedGroup.length > 0 ? selectedGroup : undefined,
       });
 
       // Add the new conversation to the store

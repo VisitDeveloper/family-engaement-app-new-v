@@ -6,6 +6,7 @@ export interface UserDto {
   firstName?: string | null;
   lastName?: string | null;
   profilePicture?: string | null;
+  classrooms?: ClassroomResponseDto[]
 }
 
 export interface MessageResponseDto {
@@ -51,6 +52,7 @@ export interface ConversationResponseDto {
   lastMessage?: MessageResponseDto | null;
   participantCount?: number;
   participants?: { id: string; user: UserDto }[];
+  classrooms?: ClassroomResponseDto[];
 }
 
 export interface CreateConversationDto {
@@ -59,6 +61,7 @@ export interface CreateConversationDto {
   description?: string;
   imageUrl?: string;
   memberIds?: string[];
+  classroomIds?: string[];
 }
 
 export interface UpdateConversationDto {

@@ -9,8 +9,8 @@ import type { ConversationResponseDto } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import { useLocalSearchParams } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Image,
@@ -135,6 +135,23 @@ export default function GroupProfileScreen() {
       backgroundColor: t.border,
     },
     itemAvatarWrap: { position: "relative" },
+    itemAvatarContainer: {
+      position: "relative",
+      marginRight: 12,
+    },
+    itemAvatarOverlay: {
+      position: "absolute",
+      bottom: -2,
+      right: -2,
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: "#4A90E2",
+      borderWidth: 2,
+      borderColor: t.bg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
     itemBody: { flex: 1, gap: 4 },
     itemName: { fontSize: 15, fontWeight: "500", color: t.text, marginBottom: 2 },
     itemMeta: { fontSize: 12, color: t.subText },
@@ -175,6 +192,8 @@ export default function GroupProfileScreen() {
     );
   }
 
+  console.log(conversation)
+
   const groupName = getGroupDisplayName(conversation);
   const groupImage = conversation.imageUrl;
   const participants = conversation.participants || [];
@@ -209,12 +228,48 @@ export default function GroupProfileScreen() {
           <Text style={styles.groupType}>Group</Text>
         </View>
 
-        {/* Classrooms Attached - placeholder */}
+        {/* Classrooms Attached */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Classrooms Attached</Text>
-          <View style={styles.item}>
-            <Text style={[styles.itemName, { color: theme.subText }]}>No classrooms</Text>
-          </View>
+          {conversation?.classrooms?.length === 0 ? (
+            <View style={styles.item}>
+              <Text style={[styles.itemName, { color: theme.subText }]}>No classrooms</Text>
+            </View>
+          ) : (
+            conversation?.classrooms?.map((classroom, index) => {
+              const classroomName =
+                typeof classroom.name === "string"
+                  ? classroom.name
+                  : classroom.name && typeof classroom.name === "object"
+                    ? (Object.values(classroom.name)[0] as string) || "Classroom"
+                    : "Classroom";
+              return (
+                <View key={classroom.id}>
+                  {index > 0 && <View style={styles.separator} />}
+                  <View style={styles.item}>
+                    <View style={styles.itemAvatarContainer}>
+                      {classroom.imageUrl ? (
+                        <Image
+                          source={{ uri: classroom.imageUrl }}
+                          style={styles.itemAvatar}
+                        />
+                      ) : (
+                        <View style={[styles.itemAvatar, { alignItems: "center", justifyContent: "center", marginRight: 0 }]}>
+                          <Ionicons name="school-outline" size={20} color={theme.subText} />
+                        </View>
+                      )}
+                      <View style={styles.itemAvatarOverlay}>
+                        <Ionicons name="people" size={8} color="#fff" />
+                      </View>
+                    </View>
+                    <View style={styles.itemBody}>
+                      <Text style={styles.itemName}>{classroomName}</Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })
+          )}
         </View>
 
         {/* Group Invite Link */}
@@ -290,7 +345,7 @@ export default function GroupProfileScreen() {
                       <Image source={{ uri: avatarUri }} style={styles.itemAvatar} />
                     ) : (
                       <View style={[styles.itemAvatar, { alignItems: "center", justifyContent: "center" }]}>
-                        <Text style={{ fontSize: 16, fontWeight: "600", color: theme.subText }}>
+                        <Text style={{ fontSize: 16, fontWeight: "600", color: theme.text }}>
                           {memberInitials}
                         </Text>
                       </View>
