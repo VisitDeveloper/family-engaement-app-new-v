@@ -10,6 +10,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ConversationResponseDto, MessageResponseDto, messagingService, PollResponseDto } from "@/services/messaging.service";
 import { detectSourceLanguage, SUPPORTED_LANGUAGES, translateText } from "@/services/translate.service";
 import { useStore } from "@/store";
+import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio, ResizeMode, Video } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
@@ -1072,9 +1073,9 @@ export default function ChatScreen() {
         const lastOnlineDate = new Date(lastOnline);
         const now = new Date();
         const diffInSeconds = Math.floor((now.getTime() - lastOnlineDate.getTime()) / 1000);
-        const isOnline = diffInSeconds < 120; // 2 minutes = 120 seconds
+        const isOnline = diffInSeconds < 300; // 5 minutes = 300 seconds
 
-        return isOnline ? 'Online' : 'Offline';
+        return isOnline ? 'Online' : formatTimeAgoShort(lastOnline as string, false);
     }, [conversation, currentUserId]);
 
     // Find the last read message index to show read status indicator

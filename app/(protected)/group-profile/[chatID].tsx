@@ -67,7 +67,12 @@ export default function GroupProfileScreen() {
     loadGroup();
   }, [loadGroup]);
 
-  const inviteLink = chatID ? Linking.createURL(`chat/${chatID}`) : "";
+  let inviteLink = chatID ? Linking.createURL(`chat/${chatID}`) : ""
+
+  if ("production" === process.env.EXPO_PUBLIC_ENV) {
+    inviteLink = conversation?.inviteLink ? conversation.inviteLink : "";
+  }
+
 
   const handleShareInvite = useCallback(async () => {
     if (!inviteLink) return;
@@ -359,7 +364,7 @@ export default function GroupProfileScreen() {
                         </View>
                       )}
                     </View>
-                    <Text style={styles.itemMeta}>Last Seen: {p.user.lastOnline ? formatTimeAgoShort(p.user.lastOnline) : "Never"}</Text>
+                    <Text style={styles.itemMeta}>Last Seen: {p.user.lastOnline ? formatTimeAgoShort(p.user.lastOnline as string, false) : "Never"}</Text>
                   </View>
                 </View>
               </View>

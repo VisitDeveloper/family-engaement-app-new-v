@@ -774,7 +774,7 @@ export default function CreateGroupScreen() {
                         )}
                       </View>
                       <ThemedText style={styles.subtitle}>
-                        Last Seen: {person.lastOnline ? formatTimeAgoShort(person.lastOnline) : "Never"}
+                        Last Seen: {person.lastOnline ? formatTimeAgoShort(person.lastOnline as string, false) : "Never"}
                       </ThemedText>
                     </View>
                   </View>

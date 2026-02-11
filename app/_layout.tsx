@@ -28,6 +28,7 @@ export default function RootLayout() {
 
     // Otherwise, navigate based on type
     if (data.type === 'message' && data.conversationId) {
+      console.log(`familyappengagement://chat/${data.conversationId}`);
       handleDeepLink(`familyappengagement://chat/${data.conversationId}`);
     } else if (data.type === 'emergency') {
       router.push('/(protected)/emergency-notifications');

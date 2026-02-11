@@ -59,7 +59,7 @@ export default function HeaderThreeSections({ titlePrefix = <></>, ...props }: H
                         {titlePrefix}
                         <View>
                             <ThemedText type="subtitle" style={{ fontWeight: 600, fontSize: 16 }}>
-                                {props.title}222
+                                {props.title}
                             </ThemedText>
                             {props.desc ?
                                 <ThemedText type="subText" style={{ color: `${props.colorDesc}` }}>
