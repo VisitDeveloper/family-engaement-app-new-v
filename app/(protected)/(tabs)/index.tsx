@@ -437,6 +437,7 @@ export default function MessagesScreen() {
           width: 16,
           height: 16,
           borderRadius: 4,
+          marginRight: 6,
           backgroundColor: theme.border,
         },
         lastMessageIconWrap: {
