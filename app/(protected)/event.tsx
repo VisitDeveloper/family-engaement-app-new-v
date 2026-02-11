@@ -689,28 +689,28 @@ const SchoolCalendarScreen = () => {
               if (currentRsvpStatus === "going") {
                 rsvpButtonDisplay = {
                   text: t("buttons.going"),
-                  icon: "check-circle",
+                  icon: <CheckMarkCircleFillIcon size={18} color="#16A34A" />,
                   color: "#16A34A",
                   bg: "#EAFCEF",
                 };
               } else if (currentRsvpStatus === "maybe") {
                 rsvpButtonDisplay = {
                   text: t("buttons.maybe"),
-                  icon: "help-circle",
+                  icon: <QuestionMarkCircleFillIcon size={18} color="#F59E0B" />,
                   color: "#F59E0B",
                   bg: "#FEF3C7",
                 };
               } else if (currentRsvpStatus === "not_going") {
                 rsvpButtonDisplay = {
                   text: t("buttons.notGoing"),
-                  icon: "x-circle",
+                  icon: <XMarkCircleFillIcon size={18} color="#DC2626" />,
                   color: "#DC2626",
                   bg: "#FEE2E2",
                 };
               } else {
                 rsvpButtonDisplay = {
                   text: t("buttons.rsvp"),
-                  icon: "question",
+                  icon: <QuestionMarkCircleFillIcon size={18} color={theme.subText} />,
                   color: theme.subText,
                   bg: theme.panel,
                 };
@@ -877,37 +877,50 @@ const SchoolCalendarScreen = () => {
 
                   {/* Time Slot Button */}
                   {ev.requestRSVP && ev.multipleTimeSlots && (
-                    <TouchableOpacity
-                      style={{
-                        marginTop: 12,
-                        paddingVertical: 10,
-                        paddingHorizontal: 12,
-                        borderRadius: 8,
-                        backgroundColor: theme.panel,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      onPress={() => openTimeSlotModal(ev)}
-                      disabled={isSubmittingEvent}
-                    >
-                      {isSubmittingEvent ? (
-                        <ActivityIndicator size="small" color={theme.tint} />
-                      ) : (
-                        <>
-                          <Feather name="clock" size={18} color={theme.tint} />
-                          <ThemedText
-                            style={{
-                              color: theme.tint,
-                              fontWeight: "500",
-                              marginLeft: 8,
-                            }}
-                          >
-                            {t("event.chooseTimeSlot")}
-                          </ThemedText>
-                        </>
-                      )}
-                    </TouchableOpacity>
+                    <View style={{ marginTop: 12 }}>
+                      <TouchableOpacity
+                        style={{
+                          paddingVertical: 10,
+                          paddingHorizontal: 12,
+                          borderRadius: 8,
+                          backgroundColor: theme.panel,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                        onPress={() => openTimeSlotModal(ev)}
+                        disabled={isSubmittingEvent}
+                      >
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          {isSubmittingEvent ? (
+                            <ActivityIndicator size="small" color={theme.subText} />
+                          ) : (
+                            <>
+                              <Feather name="clock" size={18} color={theme.subText} />
+                              <ThemedText
+                                style={{
+                                  color: theme.subText,
+                                  fontWeight: "500",
+                                }}
+                              >
+                                {t("event.chooseTimeSlot")}
+                              </ThemedText>
+                            </>
+                          )}
+                        </View>
+                        <Feather
+                          name="chevron-down"
+                          size={16}
+                          color={theme.subText}
+                        />
+                      </TouchableOpacity>
+                    </View>
                   )}
 
                   {/* RSVP Button with Dropdown */}
@@ -941,11 +954,9 @@ const SchoolCalendarScreen = () => {
                                 color={rsvpButtonDisplay.color}
                               />
                             ) : (
-                              <Feather
-                                name={rsvpButtonDisplay.icon as any}
-                                size={18}
-                                color={rsvpButtonDisplay.color}
-                              />
+                              <>
+                                {rsvpButtonDisplay.icon}
+                              </>
                             )}
                             <ThemedText
                               style={{
