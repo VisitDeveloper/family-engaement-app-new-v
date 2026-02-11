@@ -683,6 +683,11 @@ const SchoolCalendarScreen = () => {
             const isSubmittingEvent = submitting === ev.id;
             const isRsvpExpanded = expandedRsvpEventId === ev.id;
 
+            // Find selected time slot if user has selected one
+            const selectedTimeSlot = ev.multipleTimeSlots && currentUserInvitee?.selectedTimeSlotId
+              ? ev.timeSlots?.find((slot: TimeSlotDto) => slot.id === currentUserInvitee.selectedTimeSlotId)
+              : null;
+
             // Determine RSVP display for button
             let rsvpButtonDisplay = null;
             if (ev.requestRSVP && !ev.multipleTimeSlots) {
@@ -883,7 +888,7 @@ const SchoolCalendarScreen = () => {
                           paddingVertical: 10,
                           paddingHorizontal: 12,
                           borderRadius: 8,
-                          backgroundColor: theme.panel,
+                          backgroundColor: selectedTimeSlot ? "#EAFCEF" : theme.panel,
                           flexDirection: "row",
                           alignItems: "center",
                           justifyContent: "space-between",
@@ -899,17 +904,27 @@ const SchoolCalendarScreen = () => {
                           }}
                         >
                           {isSubmittingEvent ? (
-                            <ActivityIndicator size="small" color={theme.subText} />
+                            <ActivityIndicator size="small" color={selectedTimeSlot ? "#16A34A" : theme.subText} />
                           ) : (
                             <>
-                              <Feather name="clock" size={18} color={theme.subText} />
+                              <Feather 
+                                name="clock" 
+                                size={18} 
+                                color={selectedTimeSlot ? "#16A34A" : theme.subText} 
+                              />
                               <ThemedText
                                 style={{
-                                  color: theme.subText,
+                                  color: selectedTimeSlot ? "#16A34A" : theme.subText,
                                   fontWeight: "500",
                                 }}
                               >
-                                {t("event.chooseTimeSlot")}
+                                {selectedTimeSlot && selectedTimeSlot.startTime && selectedTimeSlot.endTime
+                                  ? formatTimeSlotRange(
+                                      selectedTimeSlot.startTime,
+                                      selectedTimeSlot.endTime,
+                                      t("event.allDay")
+                                    )
+                                  : t("event.chooseTimeSlot")}
                               </ThemedText>
                             </>
                           )}
@@ -917,7 +932,7 @@ const SchoolCalendarScreen = () => {
                         <Feather
                           name="chevron-down"
                           size={16}
-                          color={theme.subText}
+                          color={selectedTimeSlot ? "#16A34A" : theme.subText}
                         />
                       </TouchableOpacity>
                     </View>
