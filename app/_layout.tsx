@@ -1,3 +1,4 @@
+import { PushNotificationData, usePushNotifications } from "@/hooks/usePushNotifications";
 import "@/i18n";
 import { useStore } from "@/store";
 import { handleDeepLink } from "@/utils/deep-linking";
@@ -16,6 +17,27 @@ export default function RootLayout() {
   const segments = useSegments();
   const isLoggedIn = useStore((s) => s.isLoggedIn);
   const [isMounted, setIsMounted] = useState(false);
+
+  // Handler for notification clicks
+  const handleNotificationClick = (data: PushNotificationData) => {
+    // If deepLink exists, use it
+    if (data.deepLink) {
+      handleDeepLink(data.deepLink);
+      return;
+    }
+
+    // Otherwise, navigate based on type
+    if (data.type === 'message' && data.conversationId) {
+      handleDeepLink(`familyappengagement://chat/${data.conversationId}`);
+    } else if (data.type === 'emergency') {
+      router.push('/(protected)/emergency-notifications');
+    } else if (data.type === 'event' && data.eventId) {
+      handleDeepLink(`familyappengagement://event/${data.eventId}`);
+    }
+  };
+
+  // Initialize push notifications
+  usePushNotifications(handleNotificationClick);
 
   useEffect(() => {
     setIsMounted(true);

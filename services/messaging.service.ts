@@ -18,6 +18,8 @@ import type {
   ClassroomResponseDto,
   CreateEmergencyMessageDto,
   EmergencyMessageResponse,
+  EmergencyMessageDto,
+  GetEmergencyMessagesParams,
 } from "@/types";
 import type { PaginatedResponse, PaginatedResult } from "@/types";
 import { toPaginatedResult } from "@/types";
@@ -41,11 +43,14 @@ export type {
   ClassroomResponseDto,
   CreateEmergencyMessageDto,
   EmergencyMessageResponse,
+  EmergencyMessageDto,
+  GetEmergencyMessagesParams,
 };
 
 export type GetConversationsResponse = PaginatedResult<ConversationResponseDto, "conversations">;
 export type GetGroupsResponse = PaginatedResult<ConversationResponseDto, "groups">;
 export type GetMessagesResponse = PaginatedResult<MessageResponseDto, "messages">;
+export type GetEmergencyMessagesResponse = PaginatedResult<EmergencyMessageDto, "emergencyMessages">;
 
 export interface MessagingService {
   createConversation(data: CreateConversationDto): Promise<ConversationResponseDto>;
@@ -88,6 +93,7 @@ export interface MessagingService {
 
   // Emergency Messages
   sendEmergencyMessage(data: CreateEmergencyMessageDto): Promise<EmergencyMessageResponse>;
+  getEmergencyMessages(params?: GetEmergencyMessagesParams): Promise<GetEmergencyMessagesResponse>;
 }
 
 class MessagingServiceImpl implements MessagingService {
@@ -608,6 +614,36 @@ class MessagingServiceImpl implements MessagingService {
         message:
           apiError.message ||
           "Failed to send emergency message. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async getEmergencyMessages(
+    params?: GetEmergencyMessagesParams
+  ): Promise<GetEmergencyMessagesResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+
+      if (params?.page) {
+        queryParams.append("page", params.page.toString());
+      }
+      if (params?.limit) {
+        queryParams.append("limit", params.limit.toString());
+      }
+
+      const queryString = queryParams.toString();
+      const endpoint = `/messaging/emergency${queryString ? `?${queryString}` : ""}`;
+
+      const response = await apiClient.get<PaginatedResponse<EmergencyMessageDto>>(endpoint);
+      return toPaginatedResult(response, "emergencyMessages");
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message ||
+          "Failed to fetch emergency messages. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

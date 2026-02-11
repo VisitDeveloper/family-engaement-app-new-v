@@ -7,16 +7,16 @@ import { userService } from '@/services/user.service';
 import { useStore } from '@/store';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ActivityIndicator, ScrollView, Switch, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Switch, TextInput, TouchableOpacity, View } from 'react-native';
 
 const EmergencyAlertScreen = () => {
     const { t } = useTranslation();
     const [message, setMessage] = useState('');
-    const [pushEnabled, setPushEnabled] = useState(false);
+    const [pushEnabled, setPushEnabled] = useState(true);
     const [emailEnabled, setEmailEnabled] = useState(false);
-    const [smsEnabled, setSmsEnabled] = useState(true);
+    const [smsEnabled, setSmsEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
     const [recipientsCount, setRecipientsCount] = useState<number | null>(null);
     const [loadingRecipients, setLoadingRecipients] = useState(true);
@@ -31,6 +31,7 @@ const EmergencyAlertScreen = () => {
         header: {
             flexDirection: 'row',
             alignItems: 'center',
+            marginTop: 10,
             paddingHorizontal: 10,
             paddingVertical: 5,
             backgroundColor: theme.emergencyBackground,
@@ -130,7 +131,7 @@ const EmergencyAlertScreen = () => {
             opacity: 0.6,
         },
         sendText: { color: '#fff' },
-    }) as const);
+    }));
 
     const loadRecipientsCount = useCallback(async () => {
         if (!currentUserRole || (currentUserRole !== 'admin' && currentUserRole !== 'teacher')) {
@@ -140,7 +141,7 @@ const EmergencyAlertScreen = () => {
 
         try {
             setLoadingRecipients(true);
-            
+
             // Determine filter parameters based on user role (same logic as new-message.tsx)
             let apiParams: {
                 page: number;
@@ -173,13 +174,13 @@ const EmergencyAlertScreen = () => {
             // If we got all users in one page (users.length >= total), use filtered count
             // Otherwise, estimate by subtracting excluded users from total
             let totalRecipients = filteredUsers.length;
-            
+
             if (response.total) {
                 // Check if we got all users in the first page
-                const excludedInPage = response.users.filter(u => 
+                const excludedInPage = response.users.filter(u =>
                     u.id === currentUserId || u.role === 'admin'
                 ).length;
-                
+
                 if (response.users.length >= response.total) {
                     // We got all users, use filtered count
                     totalRecipients = filteredUsers.length;
@@ -242,7 +243,7 @@ const EmergencyAlertScreen = () => {
                     onPress: async () => {
                         try {
                             setLoading(true);
-                            
+
                             const result = await messagingService.sendEmergencyMessage({
                                 content: message.trim(),
                                 sendPushNotification: pushEnabled,
@@ -256,7 +257,7 @@ const EmergencyAlertScreen = () => {
                             // Show simple success message
                             Alert.alert(
                                 t('common.success'),
-                                t('emergency.sendSuccess', { count: result.recipientsCount }) || 
+                                t('emergency.sendSuccess', { count: result.recipientsCount }) ||
                                 `Emergency alert sent to ${result.recipientsCount} recipients`,
                                 [
                                     {
@@ -264,9 +265,9 @@ const EmergencyAlertScreen = () => {
                                         onPress: () => {
                                             // Reset form (keep recipientsCount updated)
                                             setMessage('');
-                                            setPushEnabled(false);
+                                            setPushEnabled(true);
                                             setEmailEnabled(false);
-                                            setSmsEnabled(true);
+                                            setSmsEnabled(false);
                                         },
                                     },
                                 ]
@@ -335,8 +336,8 @@ const EmergencyAlertScreen = () => {
                         {t('emergency.quickTemplates')}
                     </ThemedText>
                     {['emergency.template1', 'emergency.template2', 'emergency.template3', 'emergency.template4'].map((key) => (
-                        <TouchableOpacity 
-                            key={key} 
+                        <TouchableOpacity
+                            key={key}
                             style={styles.templateButton}
                             onPress={() => handleTemplateClick(key)}
                             disabled={loading}
@@ -411,7 +412,7 @@ const EmergencyAlertScreen = () => {
                 </ThemedView>
 
                 {/* Send button */}
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={[
                         styles.sendButton,
                         (loading || !message.trim() || (!pushEnabled && !emailEnabled && !smsEnabled)) && styles.sendButtonDisabled

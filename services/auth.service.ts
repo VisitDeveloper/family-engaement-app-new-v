@@ -1,4 +1,5 @@
 import { apiClient, ApiError } from "./api";
+import { unregisterPushTokenOnLogout } from "@/utils/pushNotifications";
 import type {
   UserResponseDto,
   AuthResponse,
@@ -113,6 +114,9 @@ class AuthServiceImpl implements AuthService {
 
   async logout(): Promise<void> {
     try {
+      // Unregister push notification token
+      await unregisterPushTokenOnLogout();
+
       // Call logout API if endpoint exists
       try {
         await apiClient.post("/auth/logout");

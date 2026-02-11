@@ -413,7 +413,14 @@
     "confirmTitle": "Confirm Emergency Alert",
     "confirmMessage": "Are you sure you want to send this emergency alert to all recipients?",
     "sendSuccess": "Emergency alert sent to {{count}} recipients",
-    "sendError": "Failed to send emergency alert. Please try again."
+    "sendError": "Failed to send emergency alert. Please try again.",
+    "notificationsTitle": "Emergency Notifications",
+    "notificationsSubtitle": "View all emergency alerts",
+    "noNotifications": "No Emergency Notifications",
+    "noNotificationsDesc": "No emergency alerts have been sent yet.",
+    "loadError": "Failed to load emergency notifications",
+    "emergencyAlert": "Emergency Alert",
+    "unknownSender": "Unknown Sender"
   },
   "translate": {
     "modalTitle": "Translate messages",

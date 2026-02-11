@@ -191,3 +191,26 @@ export interface EmergencyMessageResponse {
   };
   smsResult?: EmergencyMessageNotificationResult;
 }
+
+export interface EmergencyMessageDto {
+  id: string;
+  content: string;
+  sendPushNotification: boolean;
+  sendEmail: boolean;
+  sendSMS: boolean;
+  recipientsCount: number;
+  createdById?: string | null;
+  createdBy?: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    email: string;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetEmergencyMessagesParams {
+  page?: number;
+  limit?: number;
+}

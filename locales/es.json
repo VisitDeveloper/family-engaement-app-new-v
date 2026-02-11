@@ -413,7 +413,14 @@
     "confirmTitle": "Confirmar alerta de emergencia",
     "confirmMessage": "¿Está seguro de que desea enviar esta alerta de emergencia a todos los destinatarios?",
     "sendSuccess": "Alerta de emergencia enviada a {{count}} destinatarios",
-    "sendError": "Error al enviar la alerta de emergencia. Por favor intente nuevamente."
+    "sendError": "Error al enviar la alerta de emergencia. Por favor intente nuevamente.",
+    "notificationsTitle": "Notificaciones de Emergencia",
+    "notificationsSubtitle": "Ver todas las alertas de emergencia",
+    "noNotifications": "No hay Notificaciones de Emergencia",
+    "noNotificationsDesc": "Aún no se han enviado alertas de emergencia.",
+    "loadError": "Error al cargar las notificaciones de emergencia",
+    "emergencyAlert": "Alerta de Emergencia",
+    "unknownSender": "Remitente Desconocido"
   },
   "translate": {
     "modalTitle": "Traducir mensajes",

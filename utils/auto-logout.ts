@@ -1,5 +1,6 @@
 import { useStore } from "@/store";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { unregisterPushTokenOnLogout } from "./pushNotifications";
 
 /**
  * Function for automatic logout in case of 401 error
@@ -7,6 +8,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 export async function performAutoLogout(): Promise<void> {
   try {
+    // Unregister push notification token
+    await unregisterPushTokenOnLogout();
+
     // Clear tokens from storage (using AsyncStorage directly to avoid circular dependency)
     await AsyncStorage.removeItem('auth_token');
     await AsyncStorage.removeItem('refresh_token');

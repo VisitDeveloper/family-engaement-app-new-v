@@ -413,7 +413,14 @@
     "confirmTitle": "Confirmer l'alerte d'urgence",
     "confirmMessage": "Êtes-vous sûr de vouloir envoyer cette alerte d'urgence à tous les destinataires ?",
     "sendSuccess": "Alerte d'urgence envoyée à {{count}} destinataires",
-    "sendError": "Échec de l'envoi de l'alerte d'urgence. Veuillez réessayer."
+    "sendError": "Échec de l'envoi de l'alerte d'urgence. Veuillez réessayer.",
+    "notificationsTitle": "Notifications d'Urgence",
+    "notificationsSubtitle": "Voir toutes les alertes d'urgence",
+    "noNotifications": "Aucune Notification d'Urgence",
+    "noNotificationsDesc": "Aucune alerte d'urgence n'a encore été envoyée.",
+    "loadError": "Échec du chargement des notifications d'urgence",
+    "emergencyAlert": "Alerte d'Urgence",
+    "unknownSender": "Expéditeur Inconnu"
   },
   "translate": {
     "modalTitle": "Traduire les messages",

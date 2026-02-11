@@ -15,7 +15,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location to help you select event locations on the map.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to help you select event locations on the map."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to help you select event locations on the map.",
+        "UIBackgroundModes": ["remote-notification"]
       }
     },
     "android": {
@@ -94,7 +95,15 @@
           "iCloudContainerEnvironment": "Production"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#ffffff",
+          "sounds": []
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
