@@ -9,7 +9,7 @@ import { AntDesign, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { RefreshControl, ScrollView, View } from "react-native";
 
 
 
@@ -20,6 +20,7 @@ export default function ParentDashboard() {
     const router = useRouter();
 
     const [events, setEvents] = useState<EventsProps[]>([]);
+    const [refreshing, setRefreshing] = useState(false);
 
     // Format date helper
     const formatDate = (dateString: string): string => {
@@ -106,6 +107,12 @@ export default function ParentDashboard() {
             fetchUpcomingEvents();
         }, [fetchUpcomingEvents])
     );
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchUpcomingEvents();
+        setRefreshing(false);
+    }, [fetchUpcomingEvents]);
 
     const activities: ActivityItem[] = [
         {
@@ -199,7 +206,14 @@ export default function ParentDashboard() {
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                style={styles.container}>
+                style={styles.container}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={theme.tint}
+                    />
+                }>
 
                 {/* Top Stats */}
                 <View style={styles.row}>

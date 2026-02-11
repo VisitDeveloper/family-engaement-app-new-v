@@ -16,6 +16,7 @@ import {
   Alert,
   FlatList,
   Image,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -517,6 +518,13 @@ export default function MessagesScreen() {
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={loading}
+              onRefresh={loadConversations}
+              tintColor={theme.tint}
+            />
+          }
           renderItem={({ item }) => (
             <MessageItem
               item={item}

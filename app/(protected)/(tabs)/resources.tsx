@@ -19,6 +19,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  RefreshControl,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -345,7 +346,7 @@ const ResourceLibrary = () => {
       </View>
 
       {/* Resource List */}
-      {loading ? (
+      {loading && filteredResources.length === 0 ? (
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
@@ -409,6 +410,13 @@ const ResourceLibrary = () => {
           removeClippedSubviews={false}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={loading && filteredResources.length > 0}
+              onRefresh={() => fetchResources(query, selectedCategory)}
+              tintColor={theme.tint}
+            />
+          }
           renderItem={({ item }) => (
             <ResourceItem
               onPress={() => openResource(item)}

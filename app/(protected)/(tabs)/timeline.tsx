@@ -19,6 +19,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   TextInput,
   TouchableOpacity,
@@ -375,7 +376,7 @@ const TimelineScreen = () => {
           </TouchableOpacity>
         </RoleGuard>
 
-        {loading ? (
+        {loading && posts.length === 0 ? (
           <View
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
           >
@@ -439,6 +440,13 @@ const TimelineScreen = () => {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
               keyboardShouldPersistTaps="handled"
+              refreshControl={
+                <RefreshControl
+                  refreshing={loading && posts.length > 0}
+                  onRefresh={() => fetchPosts(tabsData[activeTab].filter)}
+                  tintColor={theme.tint}
+                />
+              }
             >
               {posts.map((post) => {
                 const authorName =

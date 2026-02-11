@@ -10,9 +10,11 @@ import {
     FontAwesome6,
 } from "@expo/vector-icons";
 import { Redirect } from "expo-router";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Platform,
+    RefreshControl,
     ScrollView,
     Text,
     TouchableOpacity,
@@ -23,6 +25,13 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const { theme } = useStore((state) => state);
   const role = useStore((state) => state.role);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    // Dashboard data is static for now; replace with API call when available
+    setTimeout(() => setRefreshing(false), 800);
+  }, []);
 
   const teachers = [
     { name: "Ms. Alvarez", posts: 23, responses: 18, rate: 95 },
@@ -123,6 +132,13 @@ export default function Dashboard() {
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
         style={styles.containerScrollView}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.tint}
+          />
+        }
       >
         <View style={{ flexGrow: 1 }}>
           {/* Top Stats */}
