@@ -36,6 +36,8 @@ export default function ContactProfileScreen() {
   >([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [sending, setSending] = useState(false);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
 
   // Use fetched profile data, fallback to URL params if available
   const displayName = userProfile
@@ -99,6 +101,11 @@ export default function ContactProfileScreen() {
     loadCommonGroups();
   }, [loadCommonGroups]);
 
+  // محاسبه اینکه آیا محتوا کمتر از ارتفاع ScrollView است
+  // اگر محتوا + دکمه (حدود 80px) کمتر از ارتفاع ScrollView باشد، دکمه را fixed نشان می‌دهیم
+  const buttonHeight = 80;
+  const showFixedButton = contentHeight > 0 && scrollViewHeight > 0 && (contentHeight + buttonHeight) <= scrollViewHeight;
+
   const handleSendMessage = useCallback(async () => {
     if (!userId) return;
     setSending(true);
@@ -143,7 +150,17 @@ export default function ContactProfileScreen() {
       },
       scrollContent: {
         padding: 16,
+      },
+      buttonContainer: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 16,
         paddingBottom: 32,
+        backgroundColor: theme.bg,
+        // borderTopWidth: 1,
+        // borderTopColor: theme.border,
       },
       card: {
         backgroundColor: t.bg,
@@ -253,136 +270,173 @@ export default function ContactProfileScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          showFixedButton 
+            ? { flexGrow: 1, paddingBottom: 100 }
+            : { paddingBottom: 32 }
+        ]}
         showsVerticalScrollIndicator={false}
+        onLayout={(event) => {
+          const height = event.nativeEvent.layout.height;
+          setScrollViewHeight(height);
+        }}
+        scrollEventThrottle={16}
       >
-        {/* User Info Card */}
-        <View style={styles.card}>
-          {loadingProfile ? (
-            <View style={styles.avatarPlaceholder}>
-              <ActivityIndicator size="small" color={theme.tint} />
-            </View>
-          ) : avatarUri ? (
-            <Image source={{ uri: avatarUri }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarInitials}>{initials}</Text>
-            </View>
-          )}
-          {loadingProfile ? (
-            <View style={{ alignItems: "center", marginTop: 12 }}>
-              <ActivityIndicator size="small" color={theme.tint} />
-            </View>
-          ) : (
-            <>
-              <Text style={styles.name}>{displayName}</Text>
-              {displayRole ? (
-                <Text style={styles.role}>{displayRole}</Text>
-              ) : null}
-            </>
-          )}
-        </View>
+        <View
+          onLayout={(event) => {
+            const height = event.nativeEvent.layout.height;
+            setContentHeight(height);
+          }}
+        >
+          {/* User Info Card */}
+          <View style={styles.card}>
+            {loadingProfile ? (
+              <View style={styles.avatarPlaceholder}>
+                <ActivityIndicator size="small" color={theme.tint} />
+              </View>
+            ) : avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarInitials}>{initials}</Text>
+              </View>
+            )}
+            {loadingProfile ? (
+              <View style={{ alignItems: "center", marginTop: 12 }}>
+                <ActivityIndicator size="small" color={theme.tint} />
+              </View>
+            ) : (
+              <>
+                <Text style={styles.name}>{displayName}</Text>
+                {displayRole ? (
+                  <Text style={styles.role}>{displayRole}</Text>
+                ) : null}
+              </>
+            )}
+          </View>
 
-        {/* Classrooms Attached */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Classrooms Attached</Text>
-          {loadingProfile ? (
-            <View style={{ paddingVertical: 16, alignItems: "center" }}>
-              <ActivityIndicator size="small" color={theme.tint} />
-            </View>
-          ) : !userProfile?.classrooms || userProfile.classrooms.length === 0 ? (
-            <View style={styles.item}>
-              <Text style={[styles.itemText, { color: theme.subText }]}>
-                No classrooms
-              </Text>
-            </View>
-          ) : (
-            <View style={{ marginTop: 10 }}>
-              {
-                userProfile.classrooms.map((classroom, index) => {
-                  const classroomName =
-                    typeof classroom.name === "string"
-                      ? classroom.name
-                      : classroom.name && typeof classroom.name === "object"
-                        ? (Object.values(classroom.name)[0] as string) || "Classroom"
-                        : "Classroom";
-                  return (
-                    <View key={classroom.id}>
-                      {index > 0 && <View style={styles.separator} />}
-                      <View style={styles.item}>
-                        <View style={{ position: "relative" }}>
-                          <Image
-                            source={classroom.imageUrl ? { uri: classroom.imageUrl } : require("@/assets/images/classroom-placeholder.png")}
-                            style={styles.itemAvatar}
-                          />
-                          <View style={{ position: "absolute", bottom: -4, right: 6, backgroundColor: theme.bg, borderRadius: 50, width: 16, height: 16, alignItems: "center", justifyContent: "center" }}>
-                            <View style={{ backgroundColor: "#2B7FFF", borderRadius: 50, width: 12, height: 12, alignItems: "center", justifyContent: "center" }}>
-                              <SmallUsersIcon color="#fff" size={8} />
+          {/* Classrooms Attached */}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Classrooms Attached</Text>
+            {loadingProfile ? (
+              <View style={{ paddingVertical: 16, alignItems: "center" }}>
+                <ActivityIndicator size="small" color={theme.tint} />
+              </View>
+            ) : !userProfile?.classrooms || userProfile.classrooms.length === 0 ? (
+              <View style={styles.item}>
+                <Text style={[styles.itemText, { color: theme.subText }]}>
+                  No classrooms
+                </Text>
+              </View>
+            ) : (
+              <View style={{ marginTop: 10 }}>
+                {
+                  userProfile.classrooms.map((classroom, index) => {
+                    const classroomName =
+                      typeof classroom.name === "string"
+                        ? classroom.name
+                        : classroom.name && typeof classroom.name === "object"
+                          ? (Object.values(classroom.name)[0] as string) || "Classroom"
+                          : "Classroom";
+                    return (
+                      <View key={classroom.id}>
+                        {index > 0 && <View style={styles.separator} />}
+                        <View style={styles.item}>
+                          <View style={{ position: "relative" }}>
+                            <Image
+                              source={classroom.imageUrl ? { uri: classroom.imageUrl } : require("@/assets/images/classroom-placeholder.png")}
+                              style={styles.itemAvatar}
+                            />
+                            <View style={{ position: "absolute", bottom: -4, right: 6, backgroundColor: theme.bg, borderRadius: 50, width: 16, height: 16, alignItems: "center", justifyContent: "center" }}>
+                              <View style={{ backgroundColor: "#2B7FFF", borderRadius: 50, width: 12, height: 12, alignItems: "center", justifyContent: "center" }}>
+                                <SmallUsersIcon color="#fff" size={8} />
+                              </View>
                             </View>
                           </View>
+                          <Text style={styles.itemText}>{classroomName}</Text>
                         </View>
-                        <Text style={styles.itemText}>{classroomName}</Text>
                       </View>
-                    </View>
-                  );
-                })
-              }
-            </View>
-          )}
-        </View>
+                    );
+                  })
+                }
+              </View>
+            )}
+          </View>
 
-        {/* Common Groups */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Common Groups</Text>
-          {loadingGroups ? (
-            <View style={{ paddingVertical: 16, alignItems: "center" }}>
-              <ActivityIndicator size="small" color={theme.tint} />
-            </View>
-          ) : commonGroups.length === 0 ? (
-            <View style={styles.item}>
-              <Text style={[styles.itemText, { color: theme.subText }]}>
-                No common groups
-              </Text>
-            </View>
-          ) : (
-            commonGroups.map((group, index) => (
-              <View key={group.id}>
-                {index > 0 && <View style={styles.separator} />}
-                <View style={styles.item}>
-                  {group.imageUrl ? (
-                    <Image
-                      source={{ uri: group.imageUrl }}
-                      style={styles.itemAvatar}
-                    />
-                  ) : (
-                    <View style={[styles.itemAvatar, { alignItems: "center", justifyContent: "center" }]}>
-                      <Ionicons name="people-outline" size={20} color={theme.subText} />
+          {/* Common Groups */}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Common Groups</Text>
+            {loadingGroups ? (
+              <View style={{ paddingVertical: 16, alignItems: "center" }}>
+                <ActivityIndicator size="small" color={theme.tint} />
+              </View>
+            ) : commonGroups.length === 0 ? (
+              <View style={styles.item}>
+                <Text style={[styles.itemText, { color: theme.subText }]}>
+                  No common groups
+                </Text>
+              </View>
+            ) : (
+              commonGroups.map((group, index) => (
+                <View key={group.id}>
+                  {index > 0 && <View style={styles.separator} />}
+                  <View style={styles.item}>
+                    {group.imageUrl ? (
+                      <Image
+                        source={{ uri: group.imageUrl }}
+                        style={styles.itemAvatar}
+                      />
+                    ) : (
+                      <View style={[styles.itemAvatar, { alignItems: "center", justifyContent: "center" }]}>
+                        <Ionicons name="people-outline" size={20} color={theme.subText} />
+                      </View>
+                    )}
+                    <Text style={styles.itemText}>{group.name}</Text>
+                    <View style={styles.groupTag}>
+                      <Text style={styles.groupTagText}>Group</Text>
                     </View>
-                  )}
-                  <Text style={styles.itemText}>{group.name}</Text>
-                  <View style={styles.groupTag}>
-                    <Text style={styles.groupTagText}>Group</Text>
                   </View>
                 </View>
-              </View>
-            ))
+              ))
+            )}
+          </View>
+
+          {/* Send Message Button - inside scroll if content is long */}
+          {!showFixedButton && (
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleSendMessage}
+              disabled={sending}
+            >
+              {sending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Feather name="send" size={20} color="#fff" />
+              )}
+              <Text style={styles.buttonText}>Send Message</Text>
+            </TouchableOpacity>
           )}
         </View>
-
-        {/* Send Message Button */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleSendMessage}
-          disabled={sending}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Feather name="send" size={20} color="#fff" />
-          )}
-          <Text style={styles.buttonText}>Send Message</Text>
-        </TouchableOpacity>
       </ScrollView>
+
+      {/* Send Message Button - fixed at bottom if content is short */}
+      {showFixedButton && (
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleSendMessage}
+            disabled={sending}
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Feather name="send" size={20} color="#fff" />
+            )}
+            <Text style={styles.buttonText}>Send Message</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
