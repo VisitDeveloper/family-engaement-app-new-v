@@ -16,6 +16,8 @@ import type {
   CreateClassroomDto,
   UpdateClassroomDto,
   ClassroomResponseDto,
+  CreateEmergencyMessageDto,
+  EmergencyMessageResponse,
 } from "@/types";
 import type { PaginatedResponse, PaginatedResult } from "@/types";
 import { toPaginatedResult } from "@/types";
@@ -37,6 +39,8 @@ export type {
   CreateClassroomDto,
   UpdateClassroomDto,
   ClassroomResponseDto,
+  CreateEmergencyMessageDto,
+  EmergencyMessageResponse,
 };
 
 export type GetConversationsResponse = PaginatedResult<ConversationResponseDto, "conversations">;
@@ -81,6 +85,9 @@ export interface MessagingService {
     data: UpdateClassroomDto
   ): Promise<ClassroomResponseDto>;
   deleteClassroom(id: string): Promise<void>;
+
+  // Emergency Messages
+  sendEmergencyMessage(data: CreateEmergencyMessageDto): Promise<EmergencyMessageResponse>;
 }
 
 class MessagingServiceImpl implements MessagingService {
@@ -579,6 +586,28 @@ class MessagingServiceImpl implements MessagingService {
       throw {
         message:
           apiError.message || "Failed to delete classroom. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  // Emergency Messages
+  async sendEmergencyMessage(
+    data: CreateEmergencyMessageDto
+  ): Promise<EmergencyMessageResponse> {
+    try {
+      const response = await apiClient.post<EmergencyMessageResponse>(
+        "/messaging/emergency",
+        data
+      );
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message ||
+          "Failed to send emergency message. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

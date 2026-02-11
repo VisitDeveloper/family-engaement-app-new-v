@@ -2,12 +2,14 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { EmergencyIcon, SendIcon, UsersIcon } from '@/components/ui/icons/messages-icons';
 import { useThemedStyles } from '@/hooks/use-theme-style';
+import { messagingService } from '@/services/messaging.service';
+import { userService } from '@/services/user.service';
 import { useStore } from '@/store';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Switch, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ActivityIndicator, ScrollView, Switch, TextInput, TouchableOpacity, View } from 'react-native';
 
 const EmergencyAlertScreen = () => {
     const { t } = useTranslation();
@@ -15,8 +17,14 @@ const EmergencyAlertScreen = () => {
     const [pushEnabled, setPushEnabled] = useState(false);
     const [emailEnabled, setEmailEnabled] = useState(false);
     const [smsEnabled, setSmsEnabled] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [recipientsCount, setRecipientsCount] = useState<number | null>(null);
+    const [loadingRecipients, setLoadingRecipients] = useState(true);
     const router = useRouter();
     const theme = useStore(state => state.theme);
+    const currentUser = useStore(state => state.user);
+    const currentUserId = currentUser?.id;
+    const currentUserRole = currentUser?.role;
 
     const styles = useThemedStyles((theme) => ({
         container: { flex: 1, backgroundColor: theme.bg },
@@ -117,8 +125,166 @@ const EmergencyAlertScreen = () => {
             flexDirection: "row",
             gap: 8
         },
+        sendButtonDisabled: {
+            backgroundColor: theme.border,
+            opacity: 0.6,
+        },
         sendText: { color: '#fff' },
     }) as const);
+
+    const loadRecipientsCount = useCallback(async () => {
+        if (!currentUserRole || (currentUserRole !== 'admin' && currentUserRole !== 'teacher')) {
+            setLoadingRecipients(false);
+            return;
+        }
+
+        try {
+            setLoadingRecipients(true);
+            
+            // Determine filter parameters based on user role (same logic as new-message.tsx)
+            let apiParams: {
+                page: number;
+                limit: number;
+                role?: 'parent' | 'teacher' | 'student' | ('parent' | 'teacher' | 'student')[];
+            } = {
+                page: 1,
+                limit: 1000, // Get a large number to count all recipients
+            };
+
+            // If teacher, only get parents
+            if (currentUserRole === 'teacher') {
+                apiParams.role = ['parent'];
+            }
+            // If admin, get all roles (parent, teacher, student)
+            else if (currentUserRole === 'admin') {
+                apiParams.role = ['parent', 'teacher', 'student'];
+            }
+
+            const response = await userService.getAll(apiParams);
+
+            // Filter out current user and admins (same as new-message.tsx)
+            const filteredUsers = response.users.filter((user) => {
+                if (user.id === currentUserId) return false;
+                if (user.role === 'admin') return false;
+                return true;
+            });
+
+            // Calculate total recipients
+            // If we got all users in one page (users.length >= total), use filtered count
+            // Otherwise, estimate by subtracting excluded users from total
+            let totalRecipients = filteredUsers.length;
+            
+            if (response.total) {
+                // Check if we got all users in the first page
+                const excludedInPage = response.users.filter(u => 
+                    u.id === currentUserId || u.role === 'admin'
+                ).length;
+                
+                if (response.users.length >= response.total) {
+                    // We got all users, use filtered count
+                    totalRecipients = filteredUsers.length;
+                } else {
+                    // Estimate: total minus excluded users in this page
+                    // This is an approximation - exact count will come from API when sending
+                    totalRecipients = Math.max(0, response.total - excludedInPage);
+                }
+            }
+
+            setRecipientsCount(totalRecipients);
+        } catch (error: any) {
+            console.error('Error loading recipients count:', error);
+            // Don't show error to user, just set to null
+            setRecipientsCount(null);
+        } finally {
+            setLoadingRecipients(false);
+        }
+    }, [currentUserRole, currentUserId]);
+
+    useEffect(() => {
+        loadRecipientsCount();
+    }, [loadRecipientsCount]);
+
+    const handleTemplateClick = (templateKey: string) => {
+        const templateText = t(templateKey);
+        setMessage(templateText);
+    };
+
+    const handleSend = async () => {
+        // Validation
+        if (!message.trim()) {
+            Alert.alert(
+                t('common.error'),
+                t('emergency.emptyMessage') || 'Please enter a message'
+            );
+            return;
+        }
+
+        if (!pushEnabled && !emailEnabled && !smsEnabled) {
+            Alert.alert(
+                t('common.error'),
+                t('emergency.noDeliveryMethod') || 'Please select at least one delivery method'
+            );
+            return;
+        }
+
+        // Confirm before sending
+        Alert.alert(
+            t('emergency.confirmTitle') || 'Confirm Emergency Alert',
+            t('emergency.confirmMessage') || 'Are you sure you want to send this emergency alert to all recipients?',
+            [
+                {
+                    text: t('common.cancel'),
+                    style: 'cancel',
+                },
+                {
+                    text: t('emergency.sendButton'),
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            
+                            const result = await messagingService.sendEmergencyMessage({
+                                content: message.trim(),
+                                sendPushNotification: pushEnabled,
+                                sendEmail: emailEnabled,
+                                sendSMS: smsEnabled,
+                            });
+
+                            // Update recipient count with actual count from API
+                            setRecipientsCount(result.recipientsCount);
+
+                            // Show simple success message
+                            Alert.alert(
+                                t('common.success'),
+                                t('emergency.sendSuccess', { count: result.recipientsCount }) || 
+                                `Emergency alert sent to ${result.recipientsCount} recipients`,
+                                [
+                                    {
+                                        text: t('common.ok'),
+                                        onPress: () => {
+                                            // Reset form (keep recipientsCount updated)
+                                            setMessage('');
+                                            setPushEnabled(false);
+                                            setEmailEnabled(false);
+                                            setSmsEnabled(true);
+                                        },
+                                    },
+                                ]
+                            );
+                        } catch (error: any) {
+                            console.error('Error sending emergency message:', error);
+                            Alert.alert(
+                                t('common.error'),
+                                error.message || t('emergency.sendError') || 'Failed to send emergency alert. Please try again.'
+                            );
+                        } finally {
+                            setLoading(false);
+                        }
+                    },
+                },
+            ]
+        );
+    };
 
     return (
         <ThemedView style={styles.container}>
@@ -169,7 +335,12 @@ const EmergencyAlertScreen = () => {
                         {t('emergency.quickTemplates')}
                     </ThemedText>
                     {['emergency.template1', 'emergency.template2', 'emergency.template3', 'emergency.template4'].map((key) => (
-                        <TouchableOpacity key={key} style={styles.templateButton}>
+                        <TouchableOpacity 
+                            key={key} 
+                            style={styles.templateButton}
+                            onPress={() => handleTemplateClick(key)}
+                            disabled={loading}
+                        >
                             <ThemedText type='subText' style={styles.templateText}>{t(key)}</ThemedText>
                         </TouchableOpacity>
                     ))}
@@ -225,7 +396,13 @@ const EmergencyAlertScreen = () => {
                         </ThemedText>
                         <ThemedView style={styles.recipientsBox}>
                             <UsersIcon size={18} color={theme.tint} />
-                            <ThemedText type='subText' style={{ color: theme.tint }}>5</ThemedText>
+                            {loadingRecipients ? (
+                                <ActivityIndicator size="small" color={theme.tint} />
+                            ) : (
+                                <ThemedText type='subText' style={{ color: theme.tint }}>
+                                    {recipientsCount !== null ? recipientsCount : '...'}
+                                </ThemedText>
+                            )}
                         </ThemedView>
                     </View>
                     <ThemedText type="subText" style={{ marginTop: 10, color: theme.subText }}>
@@ -234,9 +411,22 @@ const EmergencyAlertScreen = () => {
                 </ThemedView>
 
                 {/* Send button */}
-                <TouchableOpacity style={styles.sendButton}>
-                    <SendIcon size={16} color='#fff' />
-                    <ThemedText type='middleTitle' style={styles.sendText}>{t('emergency.sendButton')}</ThemedText>
+                <TouchableOpacity 
+                    style={[
+                        styles.sendButton,
+                        (loading || !message.trim() || (!pushEnabled && !emailEnabled && !smsEnabled)) && styles.sendButtonDisabled
+                    ]}
+                    onPress={handleSend}
+                    disabled={loading || !message.trim() || (!pushEnabled && !emailEnabled && !smsEnabled)}
+                >
+                    {loading ? (
+                        <ActivityIndicator color='#fff' size="small" />
+                    ) : (
+                        <>
+                            <SendIcon size={16} color='#fff' />
+                            <ThemedText type='middleTitle' style={styles.sendText}>{t('emergency.sendButton')}</ThemedText>
+                        </>
+                    )}
                 </TouchableOpacity>
             </ScrollView>
         </ThemedView>

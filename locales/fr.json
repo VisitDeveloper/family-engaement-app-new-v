@@ -405,9 +405,15 @@
     "smsMessages": "SMS",
     "smsSub": "Alertes par message texte",
     "recipients": "Destinataires",
-    "recipientsNote": "Cette alerte sera envoyée aux 5 membres de la famille dans toutes les classes.",
+    "recipientsNote": "Cette alerte sera envoyée à tous les membres de la famille dans toutes les classes.",
     "sendButton": "Envoyer l'alerte d'urgence",
-    "charCount": "{{count}}/500 caractères"
+    "charCount": "{{count}}/500 caractères",
+    "emptyMessage": "Veuillez saisir un message",
+    "noDeliveryMethod": "Veuillez sélectionner au moins une méthode d'envoi",
+    "confirmTitle": "Confirmer l'alerte d'urgence",
+    "confirmMessage": "Êtes-vous sûr de vouloir envoyer cette alerte d'urgence à tous les destinataires ?",
+    "sendSuccess": "Alerte d'urgence envoyée à {{count}} destinataires",
+    "sendError": "Échec de l'envoi de l'alerte d'urgence. Veuillez réessayer."
   },
   "translate": {
     "modalTitle": "Traduire les messages",

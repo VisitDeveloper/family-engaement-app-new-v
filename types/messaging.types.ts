@@ -168,3 +168,26 @@ export interface GetGroupsParams {
   page?: number;
   limit?: number;
 }
+
+export interface CreateEmergencyMessageDto {
+  content: string;
+  sendPushNotification?: boolean;
+  sendEmail?: boolean;
+  sendSMS?: boolean;
+}
+
+export interface EmergencyMessageNotificationResult {
+  success: number;
+  failed: number;
+  errors?: string[];
+}
+
+export interface EmergencyMessageResponse {
+  recipientsCount: number;
+  pushNotificationResult?: EmergencyMessageNotificationResult;
+  emailResult?: {
+    success: number;
+    failed: number;
+  };
+  smsResult?: EmergencyMessageNotificationResult;
+}

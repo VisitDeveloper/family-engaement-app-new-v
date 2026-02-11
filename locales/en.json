@@ -405,9 +405,15 @@
     "smsMessages": "SMS Messages",
     "smsSub": "Text message alerts",
     "recipients": "Recipients",
-    "recipientsNote": "This alert will be sent to all 5 family members across all classes.",
+    "recipientsNote": "This alert will be sent to all family members across all classes.",
     "sendButton": "Send Emergency Alert",
-    "charCount": "{{count}}/500 characters"
+    "charCount": "{{count}}/500 characters",
+    "emptyMessage": "Please enter a message",
+    "noDeliveryMethod": "Please select at least one delivery method",
+    "confirmTitle": "Confirm Emergency Alert",
+    "confirmMessage": "Are you sure you want to send this emergency alert to all recipients?",
+    "sendSuccess": "Emergency alert sent to {{count}} recipients",
+    "sendError": "Failed to send emergency alert. Please try again."
   },
   "translate": {
     "modalTitle": "Translate messages",
