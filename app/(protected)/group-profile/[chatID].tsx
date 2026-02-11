@@ -1,7 +1,7 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
 import { ShareIcon } from "@/components/ui/icons/common-icons";
-import { UsersIcon } from "@/components/ui/icons/messages-icons";
+import { SmallUsersIcon, UsersIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { useStore } from "@/store";
@@ -236,39 +236,39 @@ export default function GroupProfileScreen() {
               <Text style={[styles.itemName, { color: theme.subText }]}>No classrooms</Text>
             </View>
           ) : (
-            conversation?.classrooms?.map((classroom, index) => {
-              const classroomName =
-                typeof classroom.name === "string"
-                  ? classroom.name
-                  : classroom.name && typeof classroom.name === "object"
-                    ? (Object.values(classroom.name)[0] as string) || "Classroom"
-                    : "Classroom";
-              return (
-                <View key={classroom.id}>
-                  {index > 0 && <View style={styles.separator} />}
-                  <View style={styles.item}>
-                    <View style={styles.itemAvatarContainer}>
-                      {classroom.imageUrl ? (
-                        <Image
-                          source={{ uri: classroom.imageUrl }}
-                          style={styles.itemAvatar}
-                        />
-                      ) : (
-                        <View style={[styles.itemAvatar, { alignItems: "center", justifyContent: "center", marginRight: 0 }]}>
-                          <Ionicons name="school-outline" size={20} color={theme.subText} />
+            <View style={{ marginTop: 10 }}>
+              {
+                conversation?.classrooms?.map((classroom, index) => {
+                  const classroomName =
+                    typeof classroom.name === "string"
+                      ? classroom.name
+                      : classroom.name && typeof classroom.name === "object"
+                        ? (Object.values(classroom.name)[0] as string) || "Classroom"
+                        : "Classroom";
+                  return (
+                    <View key={classroom.id}>
+                      {index > 0 && <View style={styles.separator} />}
+                      <View style={styles.item}>
+                        <View style={{ position: "relative" }}>
+                          <Image
+                            source={classroom.imageUrl ? { uri: classroom.imageUrl } : require("@/assets/images/classroom-placeholder.png")}
+                            style={styles.itemAvatar}
+                          />
+                          <View style={{ position: "absolute", bottom: -4, right: 6, backgroundColor: theme.bg, borderRadius: 50, width: 16, height: 16, alignItems: "center", justifyContent: "center" }}>
+                            <View style={{ backgroundColor: "#2B7FFF", borderRadius: 50, width: 12, height: 12, alignItems: "center", justifyContent: "center" }}>
+                              <SmallUsersIcon color="#fff" size={8} />
+                            </View>
+                          </View>
+
                         </View>
-                      )}
-                      <View style={styles.itemAvatarOverlay}>
-                        <Ionicons name="people" size={8} color="#fff" />
+                        <View style={styles.itemBody}>
+                          <Text style={styles.itemName}>{classroomName}</Text>
+                        </View>
                       </View>
                     </View>
-                    <View style={styles.itemBody}>
-                      <Text style={styles.itemName}>{classroomName}</Text>
-                    </View>
-                  </View>
-                </View>
-              );
-            })
+                  );
+                })}
+            </View>
           )}
         </View>
 
@@ -367,7 +367,7 @@ export default function GroupProfileScreen() {
             );
           })}
         </View>
-      </ScrollView>
-    </View>
+      </ScrollView >
+    </View >
   );
 }

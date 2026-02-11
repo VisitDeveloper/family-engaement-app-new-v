@@ -42,6 +42,7 @@ export interface ProfileResponseDto {
   childName?: string;
   createdAt: string;
   updatedAt: string;
+  classrooms?: import('./messaging.types').ClassroomResponseDto[];
 }
 
 /** Auth login/register response */

@@ -1,8 +1,10 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { SmallUsersIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
+import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
-import type { ConversationResponseDto } from "@/types";
+import type { ConversationResponseDto, ProfileResponseDto } from "@/types";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -20,28 +22,48 @@ export default function ContactProfileScreen() {
   const router = useRouter();
   const theme = useStore((state) => state.theme);
   const addConversation = useStore((state: any) => state.addConversation);
-  const { userId, name = "", role = "", image: imageParam } = useLocalSearchParams<{
+  const { userId, name: nameParam = "", role: roleParam = "", image: imageParam } = useLocalSearchParams<{
     userId: string;
     name?: string;
     role?: string;
     image?: string;
   }>();
 
+  const [userProfile, setUserProfile] = useState<ProfileResponseDto | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [commonGroups, setCommonGroups] = useState<
     { id: string; name: string; imageUrl?: string | null }[]
   >([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [sending, setSending] = useState(false);
 
-  const displayName = name || "User";
-  const displayRole = role || "";
-  const avatarUri = imageParam && imageParam !== "" ? imageParam : null;
+  // Use fetched profile data, fallback to URL params if available
+  const displayName = userProfile
+    ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim() || userProfile.email?.split("@")[0] || "User"
+    : nameParam || "User";
+  const displayRole = userProfile?.role || roleParam || "";
+  const avatarUri = userProfile?.profilePicture || (imageParam && imageParam !== "" ? imageParam : null);
   const initials = displayName
     .split(" ")
     .map((s) => s[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  const loadUserProfile = useCallback(async () => {
+    if (!userId) return;
+    setLoadingProfile(true);
+    try {
+      const profile = await userService.getProfileById(userId);
+      setUserProfile(profile);
+    } catch (error: any) {
+      console.error("Error loading user profile:", error);
+      // Don't show error alert, just use fallback params if available
+      setUserProfile(null);
+    } finally {
+      setLoadingProfile(false);
+    }
+  }, [userId]);
 
   const loadCommonGroups = useCallback(async () => {
     if (!userId) return;
@@ -62,12 +84,16 @@ export default function ContactProfileScreen() {
         imageUrl: g.imageUrl ?? null,
       }));
       setCommonGroups(mapped);
-    } catch (_) {
+    } catch {
       setCommonGroups([]);
     } finally {
       setLoadingGroups(false);
     }
   }, [userId]);
+
+  useEffect(() => {
+    loadUserProfile();
+  }, [loadUserProfile]);
 
   useEffect(() => {
     loadCommonGroups();
@@ -116,10 +142,8 @@ export default function ContactProfileScreen() {
         backgroundColor: t.bg,
       },
       scrollContent: {
-        flex: 1,
         padding: 16,
-        // paddingBottom: 32,
-        // backgroundColor: "red",
+        paddingBottom: 32,
       },
       card: {
         backgroundColor: t.bg,
@@ -207,7 +231,7 @@ export default function ContactProfileScreen() {
         flexDirection: "row",
         backgroundColor: theme.tint,
         padding: 16,
-        paddingVertical: 8,
+        paddingVertical: 12,
         borderRadius: 8,
         justifyContent: "center",
         alignItems: "center",
@@ -232,69 +256,117 @@ export default function ContactProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ flex: 1 }}>
-          {/* User Info Card */}
-          <View style={styles.card}>
-            {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarInitials}>{initials}</Text>
-              </View>
-            )}
-            <Text style={styles.name}>{displayName}</Text>
-            {displayRole ? (
-              <Text style={styles.role}>{displayRole}</Text>
-            ) : null}
-          </View>
+        {/* User Info Card */}
+        <View style={styles.card}>
+          {loadingProfile ? (
+            <View style={styles.avatarPlaceholder}>
+              <ActivityIndicator size="small" color={theme.tint} />
+            </View>
+          ) : avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarInitials}>{initials}</Text>
+            </View>
+          )}
+          {loadingProfile ? (
+            <View style={{ alignItems: "center", marginTop: 12 }}>
+              <ActivityIndicator size="small" color={theme.tint} />
+            </View>
+          ) : (
+            <>
+              <Text style={styles.name}>{displayName}</Text>
+              {displayRole ? (
+                <Text style={styles.role}>{displayRole}</Text>
+              ) : null}
+            </>
+          )}
+        </View>
 
-          {/* Classrooms Attached - placeholder if we have no API */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Classrooms Attached</Text>
+        {/* Classrooms Attached */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Classrooms Attached</Text>
+          {loadingProfile ? (
+            <View style={{ paddingVertical: 16, alignItems: "center" }}>
+              <ActivityIndicator size="small" color={theme.tint} />
+            </View>
+          ) : !userProfile?.classrooms || userProfile.classrooms.length === 0 ? (
             <View style={styles.item}>
               <Text style={[styles.itemText, { color: theme.subText }]}>
                 No classrooms
               </Text>
             </View>
-          </View>
-
-          {/* Common Groups */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Common Groups</Text>
-            {loadingGroups ? (
-              <View style={{ paddingVertical: 16, alignItems: "center" }}>
-                <ActivityIndicator size="small" color={theme.tint} />
-              </View>
-            ) : commonGroups.length === 0 ? (
-              <View style={styles.item}>
-                <Text style={[styles.itemText, { color: theme.subText }]}>
-                  No common groups
-                </Text>
-              </View>
-            ) : (
-              commonGroups.map((group, index) => (
-                <View key={group.id}>
-                  {index > 0 && <View style={styles.separator} />}
-                  <View style={styles.item}>
-                    {group.imageUrl ? (
-                      <Image
-                        source={{ uri: group.imageUrl }}
-                        style={styles.itemAvatar}
-                      />
-                    ) : (
-                      <View style={[styles.itemAvatar, { alignItems: "center", justifyContent: "center" }]}>
-                        <Ionicons name="people-outline" size={20} color={theme.subText} />
+          ) : (
+            <View style={{ marginTop: 10 }}>
+              {
+                userProfile.classrooms.map((classroom, index) => {
+                  const classroomName =
+                    typeof classroom.name === "string"
+                      ? classroom.name
+                      : classroom.name && typeof classroom.name === "object"
+                        ? (Object.values(classroom.name)[0] as string) || "Classroom"
+                        : "Classroom";
+                  return (
+                    <View key={classroom.id}>
+                      {index > 0 && <View style={styles.separator} />}
+                      <View style={styles.item}>
+                        <View style={{ position: "relative" }}>
+                          <Image
+                            source={classroom.imageUrl ? { uri: classroom.imageUrl } : require("@/assets/images/classroom-placeholder.png")}
+                            style={styles.itemAvatar}
+                          />
+                          <View style={{ position: "absolute", bottom: -4, right: 6, backgroundColor: theme.bg, borderRadius: 50, width: 16, height: 16, alignItems: "center", justifyContent: "center" }}>
+                            <View style={{ backgroundColor: "#2B7FFF", borderRadius: 50, width: 12, height: 12, alignItems: "center", justifyContent: "center" }}>
+                              <SmallUsersIcon color="#fff" size={8} />
+                            </View>
+                          </View>
+                        </View>
+                        <Text style={styles.itemText}>{classroomName}</Text>
                       </View>
-                    )}
-                    <Text style={styles.itemText}>{group.name}</Text>
-                    <View style={styles.groupTag}>
-                      <Text style={styles.groupTagText}>Group</Text>
                     </View>
+                  );
+                })
+              }
+            </View>
+          )}
+        </View>
+
+        {/* Common Groups */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Common Groups</Text>
+          {loadingGroups ? (
+            <View style={{ paddingVertical: 16, alignItems: "center" }}>
+              <ActivityIndicator size="small" color={theme.tint} />
+            </View>
+          ) : commonGroups.length === 0 ? (
+            <View style={styles.item}>
+              <Text style={[styles.itemText, { color: theme.subText }]}>
+                No common groups
+              </Text>
+            </View>
+          ) : (
+            commonGroups.map((group, index) => (
+              <View key={group.id}>
+                {index > 0 && <View style={styles.separator} />}
+                <View style={styles.item}>
+                  {group.imageUrl ? (
+                    <Image
+                      source={{ uri: group.imageUrl }}
+                      style={styles.itemAvatar}
+                    />
+                  ) : (
+                    <View style={[styles.itemAvatar, { alignItems: "center", justifyContent: "center" }]}>
+                      <Ionicons name="people-outline" size={20} color={theme.subText} />
+                    </View>
+                  )}
+                  <Text style={styles.itemText}>{group.name}</Text>
+                  <View style={styles.groupTag}>
+                    <Text style={styles.groupTagText}>Group</Text>
                   </View>
                 </View>
-              ))
-            )}
-          </View>
+              </View>
+            ))
+          )}
         </View>
 
         {/* Send Message Button */}

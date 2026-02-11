@@ -1,4 +1,4 @@
-import type { PaginatedResponse, PaginatedResult, ParentDto, UserListItemDto } from '@/types';
+import type { PaginatedResponse, PaginatedResult, ParentDto, UserListItemDto, ProfileResponseDto } from '@/types';
 import { toPaginatedResult } from '@/types';
 import { apiClient, ApiError } from './api';
 
@@ -15,6 +15,7 @@ export type GetUsersResponse = PaginatedResult<UserListItemDto, 'users'>;
 
 export interface UserService {
   getAll(params?: GetUsersParams): Promise<GetUsersResponse>;
+  getProfileById(userId: string): Promise<ProfileResponseDto>;
 }
 
 class UserServiceImpl implements UserService {
@@ -50,6 +51,20 @@ class UserServiceImpl implements UserService {
       const apiError = error as ApiError;
       throw {
         message: apiError.message || 'Failed to fetch users. Please try again.',
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async getProfileById(userId: string): Promise<ProfileResponseDto> {
+    try {
+      const response = await apiClient.get<ProfileResponseDto>(`/users/${userId}`);
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message: apiError.message || 'Failed to fetch user profile. Please try again.',
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
