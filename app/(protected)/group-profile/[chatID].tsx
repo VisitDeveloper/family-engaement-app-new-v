@@ -6,6 +6,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import type { ConversationResponseDto } from "@/types";
+import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import { useLocalSearchParams } from "expo-router";
@@ -30,7 +31,7 @@ function getGroupDisplayName(conv: ConversationResponseDto | undefined): string 
   return "Group";
 }
 
-function getParticipantDisplayName(p: { user?: { firstName?: string | null; lastName?: string | null } }): string {
+function getParticipantDisplayName(p: { user?: { firstName?: string | null; lastName?: string | null; lastOnline?: string | Date | null } }): string {
   const u = p?.user;
   if (!u) return "Member";
   const first = u.firstName?.trim() || "";
@@ -191,8 +192,6 @@ export default function GroupProfileScreen() {
       </View>
     );
   }
-
-  console.log(conversation)
 
   const groupName = getGroupDisplayName(conversation);
   const groupImage = conversation.imageUrl;
@@ -360,7 +359,7 @@ export default function GroupProfileScreen() {
                         </View>
                       )}
                     </View>
-                    <Text style={styles.itemMeta}>Last Seen: 2 hours ago</Text>
+                    <Text style={styles.itemMeta}>Last Seen: {p.user.lastOnline ? formatTimeAgoShort(p.user.lastOnline) : "Never"}</Text>
                   </View>
                 </View>
               </View>

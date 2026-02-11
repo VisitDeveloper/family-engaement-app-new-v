@@ -1058,16 +1058,21 @@ export default function ChatScreen() {
     }
 
     // Get online/offline status for direct conversations
-    // TODO: Replace with actual online status from API when available
     const getOnlineStatus = useMemo(() => {
         if (!conversation || conversation.type !== 'direct') return null;
 
         const otherParticipant = conversation.participants?.find((p: any) => p.user.id !== currentUserId);
         if (!otherParticipant) return null;
 
-        // For now, default to offline. Update this when API provides online status
-        // You can check lastSeen timestamp or isOnline field if available
-        const isOnline = false; // Replace with: otherParticipant.user.isOnline or check lastSeen timestamp
+        // Check if user is online based on lastOnline timestamp
+        // Consider user online if they were active within the last 5 minutes
+        const lastOnline = otherParticipant.user?.lastOnline;
+        if (!lastOnline) return 'Offline';
+
+        const lastOnlineDate = new Date(lastOnline);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - lastOnlineDate.getTime()) / 1000);
+        const isOnline = diffInSeconds < 120; // 2 minutes = 120 seconds
 
         return isOnline ? 'Online' : 'Offline';
     }, [conversation, currentUserId]);

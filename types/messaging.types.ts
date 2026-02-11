@@ -6,7 +6,8 @@ export interface UserDto {
   firstName?: string | null;
   lastName?: string | null;
   profilePicture?: string | null;
-  classrooms?: ClassroomResponseDto[]
+  classrooms?: ClassroomResponseDto[],
+  lastOnline?: string | Date | null;
 }
 
 export interface MessageResponseDto {

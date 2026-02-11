@@ -12,6 +12,7 @@ export interface UserResponseDto {
   profilePicture?: string;
   childName?: string;
   subjects?: string[];
+  lastOnline?: string | Date;
 }
 
 /** User list item (users/parents endpoints) */
@@ -24,6 +25,7 @@ export interface UserListItemDto {
   phoneNumber?: string | null;
   role?: UserRole;
   childName?: string | null;
+  lastOnline?: string | Date | null;
 }
 
 /** Alias for parent list (same shape as UserListItemDto) */
@@ -40,6 +42,7 @@ export interface ProfileResponseDto {
   profilePicture?: string;
   subjects?: string[];
   childName?: string;
+  lastOnline?: string | Date;
   createdAt: string;
   updatedAt: string;
   classrooms?: import('./messaging.types').ClassroomResponseDto[];

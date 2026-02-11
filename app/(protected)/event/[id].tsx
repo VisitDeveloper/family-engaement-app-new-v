@@ -80,36 +80,6 @@ const extractString = (
   return String(value);
 };
 
-// Helper function to format last seen time
-const formatLastSeen = (dateString: string | null | undefined, t: (key: string) => string): string => {
-  if (!dateString) return t("event.never");
-
-  try {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return t("event.justNow");
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) {
-      const hours = date.getHours();
-      const minutes = date.getMinutes();
-      const ampm = hours >= 12 ? "PM" : "AM";
-      const displayHours = hours % 12 || 12;
-      return `${displayHours}:${String(minutes).padStart(2, "0")} ${ampm}`;
-    }
-    if (diffDays === 1) return t("event.yesterday");
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
-  } catch {
-    return t("event.unknown");
-  }
-};
-
 type EventKind = "Conference" | "Fieldtrip" | "Event" | "Holiday";
 
 const mapEventTypeToKind = (type: string): EventKind => {

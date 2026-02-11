@@ -9,6 +9,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
+import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -32,6 +33,7 @@ type Invitee = {
   isAdmin?: boolean;
   isOnline?: boolean;
   role?: string;
+  lastOnline?: string | Date | null;
 };
 
 type Classroom = {
@@ -195,6 +197,7 @@ export default function CreateGroupScreen() {
               }`.toUpperCase() || user.email[0].toUpperCase(),
           isAdmin: user.role === "admin",
           role: user.role,
+          lastOnline: user.lastOnline,
         }));
       setData(mappedContacts);
     } catch (error: any) {
@@ -771,7 +774,7 @@ export default function CreateGroupScreen() {
                         )}
                       </View>
                       <ThemedText style={styles.subtitle}>
-                        Last Seen: 2 hours ago
+                        Last Seen: {person.lastOnline ? formatTimeAgoShort(person.lastOnline) : "Never"}
                       </ThemedText>
                     </View>
                   </View>
