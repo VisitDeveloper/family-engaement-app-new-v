@@ -1,9 +1,10 @@
+import type { UserRole } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { UserRole } from '@/types';
+import { Appearance } from 'react-native';
 import { ChatSlice, createChatSlice } from './slice/chat';
-import { createThemeSlice, ThemeSlice } from './slice/highContrast';
+import { buildTheme, createThemeSlice, ThemeSlice } from './slice/highContrast';
 import { createLanguageSlice, LanguageSlice } from './slice/language';
 import { createLargeFontSlice, LargeFontSlice } from './slice/largeFont';
 import { loginSliceStatus, LoginStatusSlice } from './slice/login';
@@ -61,7 +62,23 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'main-store',
-      storage: createJSONStorage(() => AsyncStorage), // ← This is important
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => {
+        const { theme: _t, ...rest } = state;
+        return rest;
+      },
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const scheme =
+          state.userPreferredScheme ??
+          state.colorScheme ??
+          (Appearance.getColorScheme() ?? 'light');
+        const isHC = state.isHighContrast ?? false;
+        useStore.setState({
+          colorScheme: scheme as 'light' | 'dark',
+          theme: buildTheme(scheme as 'light' | 'dark', isHC),
+        });
+      },
     }
   )
 );

@@ -89,7 +89,7 @@ export default function RootLayout() {
           },
           fonts: DefaultTheme.fonts,
         }}
-        // value={colorScheme === 'dark' ? DarkTheme : MyTheme}
+      // value={colorScheme === 'dark' ? DarkTheme : MyTheme}
       >
         <SafeAreaView
           style={{ flex: 1, backgroundColor: theme.bg }}

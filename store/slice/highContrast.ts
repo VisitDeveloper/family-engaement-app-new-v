@@ -16,33 +16,47 @@ export interface Theme {
   star: string;
 }
 
+/** When undefined, app follows device theme; otherwise use this. */
+export type UserPreferredScheme = "light" | "dark" | undefined;
+
 export interface ThemeSlice {
   colorScheme: "light" | "dark";
+  /** User choice; undefined = follow device. */
+  userPreferredScheme: UserPreferredScheme;
   isHighContrast: boolean;
   theme: Theme;
   setColorScheme: (scheme: "light" | "dark") => void;
   toggleHighContrast: () => void;
 }
 
+function getSystemScheme(): "light" | "dark" {
+  return (Appearance.getColorScheme() ?? "light") as "light" | "dark";
+}
+
 export const createThemeSlice: StateCreator<any, [], [], ThemeSlice> = (set, get) => {
-  const listener = (preferences: { colorScheme: any }) => {
-    const scheme = preferences.colorScheme ?? "light"; // If null, consider light
-    const { isHighContrast } = get();
+  const systemScheme = getSystemScheme();
+
+  const listener = () => {
+    const { userPreferredScheme, isHighContrast } = get();
+    if (userPreferredScheme !== undefined) return;
+    const scheme = getSystemScheme();
     set({ colorScheme: scheme, theme: buildTheme(scheme, isHighContrast) });
   };
-
   Appearance.addChangeListener(listener);
 
   return {
-    colorScheme: Appearance.getColorScheme() as 'light' | 'dark',
+    colorScheme: systemScheme,
+    userPreferredScheme: undefined,
     isHighContrast: false,
-
-    theme: buildTheme(Appearance.getColorScheme() as 'light' | 'dark', false),
-
+    theme: buildTheme(systemScheme, false),
 
     setColorScheme: (scheme) => {
       const { isHighContrast } = get();
-      set({ colorScheme: scheme, theme: buildTheme(scheme, isHighContrast) });
+      set({
+        userPreferredScheme: scheme,
+        colorScheme: scheme,
+        theme: buildTheme(scheme, isHighContrast),
+      });
     },
 
     toggleHighContrast: () => {
@@ -52,11 +66,10 @@ export const createThemeSlice: StateCreator<any, [], [], ThemeSlice> = (set, get
         theme: buildTheme(colorScheme, !isHighContrast),
       });
     },
-  }
-}
+  };
+};
 
-// helper
-function buildTheme(colorScheme: "light" | "dark", isHighContrast: boolean): Theme {
+export function buildTheme(colorScheme: "light" | "dark", isHighContrast: boolean): Theme {
   const baseTheme = colorScheme === "dark" ? Colors.dark : Colors.light;
   return {
     bg: isHighContrast ? "#000" : baseTheme.background,

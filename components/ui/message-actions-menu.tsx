@@ -34,8 +34,8 @@ export default function MessageActionsMenu({
       ...(isMe && right !== undefined
         ? { right: right }
         : left !== undefined
-        ? { left: left }
-        : { left: 16 }),
+          ? { left: left }
+          : { left: 16 }),
       alignItems: isMe ? "flex-end" : "flex-start",
     },
     dropdownWrapper: {
@@ -104,17 +104,17 @@ export default function MessageActionsMenu({
   const menuItems = [
     ...(onEdit
       ? [
-          {
-            id: "edit",
-            icon: <Ionicons name="create-outline" size={22} color={iconColor} />,
-            title: "Edit",
-            onPress: () => {
-              onEdit();
-              onClose();
-            },
-            isDelete: false,
+        {
+          id: "edit",
+          icon: <Ionicons name="create-outline" size={22} color={iconColor} />,
+          title: "Edit",
+          onPress: () => {
+            onEdit();
+            onClose();
           },
-        ]
+          isDelete: false,
+        },
+      ]
       : []),
     {
       id: "delete",
