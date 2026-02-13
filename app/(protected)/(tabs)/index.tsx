@@ -1,7 +1,8 @@
 import RoleGuard from "@/components/check-permisions";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
-import { AnnouncementIcon, EmergencyIcon, FileIcon, MediaIcon, NewIcon, PollIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
+import { FAB } from "@/components/ui/fab";
+import { AnnouncementIcon, EmergencyIcon, FileIcon, MediaIcon, NewIcon, NewMessageIcon, PollIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
 import {
   ConversationResponseDto,
   messagingService,
@@ -16,6 +17,7 @@ import {
   Alert,
   FlatList,
   Image,
+  Platform,
   RefreshControl,
   StyleSheet,
   Text,
@@ -457,16 +459,20 @@ export default function MessagesScreen() {
     [theme]
   );
 
+  const isAndroid = Platform.OS === "android";
+
   return (
     <View style={styles.container}>
       <HeaderTabItem
         title={t("tabs.messages")}
         subTitle={t("tabs.messagesSubTitle")}
-        buttonIcon={<NewIcon size={16} color="#ffffff" />}
-        buttonLink="/new-message"
-        buttonTitle={t("tabs.newButton")}
-        buttonRoles={["admin", "teacher", "parent"]}
-        buttonVariant="primary"
+        {...(!isAndroid && {
+          buttonIcon: <NewIcon size={16} color="#ffffff" />,
+          buttonLink: "/new-message",
+          buttonTitle: t("tabs.newButton"),
+          buttonRoles: ["admin", "teacher", "parent"],
+          buttonVariant: "primary",
+        })}
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
       />
 
@@ -542,6 +548,16 @@ export default function MessagesScreen() {
             </View>
           }
         />
+      )}
+
+      {isAndroid && (
+        <RoleGuard roles={["admin", "teacher", "parent"]}>
+          <FAB
+            href="/new-message"
+            icon={<NewMessageIcon size={24} color="#ffffff" />}
+            accessibilityLabel={t("tabs.newButton")}
+          />
+        </RoleGuard>
       )}
     </View>
   );

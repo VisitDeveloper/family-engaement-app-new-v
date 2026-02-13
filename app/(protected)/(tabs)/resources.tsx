@@ -1,9 +1,11 @@
+import RoleGuard from "@/components/check-permisions";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import ResourceItem, {
   ResourceItemProps,
 } from "@/components/reptitive-component/resource-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
 import { ThemedText } from "@/components/themed-text";
+import { FAB } from "@/components/ui/fab";
 import { NewIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import {
@@ -20,6 +22,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Platform,
   RefreshControl,
   TouchableOpacity,
   View,
@@ -289,16 +292,20 @@ const ResourceLibrary = () => {
     }
   };
 
+  const isAndroid = Platform.OS === "android";
+
   return (
     <View style={styles.container}>
       <HeaderTabItem
         title={t("tabs.resources")}
         subTitle={t("tabs.resourcesSubTitle")}
-        buttonIcon={<NewIcon size={16} color="#ffffff" />}
-        buttonLink="/new-resource"
-        buttonTitle={t("tabs.newButton")}
-        buttonRoles={["admin", "teacher"]}
-        buttonVariant="primary"
+        {...(!isAndroid && {
+          buttonIcon: <NewIcon size={16} color="#ffffff" />,
+          buttonLink: "/new-resource",
+          buttonTitle: t("tabs.newButton"),
+          buttonRoles: ["admin", "teacher"],
+          buttonVariant: "primary",
+        })}
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
       />
 
@@ -432,6 +439,16 @@ const ResourceLibrary = () => {
             />
           )}
         />
+      )}
+
+      {isAndroid && (
+        <RoleGuard roles={["admin", "teacher"]}>
+          <FAB
+            href="/new-resource"
+            icon={<NewIcon size={24} color="#ffffff" />}
+            accessibilityLabel={t("tabs.newButton")}
+          />
+        </RoleGuard>
       )}
     </View>
   );
