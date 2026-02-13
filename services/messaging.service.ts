@@ -2,6 +2,7 @@ import { apiClient, ApiError } from "./api";
 import type {
   ConversationResponseDto,
   MessageResponseDto,
+  MessageReactionItemDto,
   CreateConversationDto,
   UpdateConversationDto,
   AddMembersDto,
@@ -27,6 +28,7 @@ import { toPaginatedResult } from "@/types";
 export type {
   ConversationResponseDto,
   MessageResponseDto,
+  MessageReactionItemDto,
   CreateConversationDto,
   UpdateConversationDto,
   AddMembersDto,
@@ -67,6 +69,8 @@ export interface MessagingService {
   markConversationAsRead(conversationId: string): Promise<void>;
   deleteMessage(messageId: string): Promise<void>;
   updateMessage(messageId: string, data: UpdateMessageDto): Promise<MessageResponseDto>;
+  addReaction(messageId: string, userId: string, emoji: string, lang?: string): Promise<MessageResponseDto>;
+  removeReaction(messageId: string, userId: string, lang?: string): Promise<MessageResponseDto>;
 
   // File Uploads
   uploadImage(file: FormData): Promise<UploadFileResponse>;
@@ -351,6 +355,61 @@ class MessagingServiceImpl implements MessagingService {
       throw {
         message:
           apiError.message || "Failed to update message. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async addReaction(
+    messageId: string,
+    _userId: string,
+    emoji: string,
+    lang?: string
+  ): Promise<MessageResponseDto> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (lang) {
+        queryParams.append("lang", lang);
+      }
+      const queryString = queryParams.toString();
+      const endpoint = `/messaging/messages/${messageId}/reactions${queryString ? `?${queryString}` : ""}`;
+      const response = await apiClient.post<MessageResponseDto>(endpoint, {
+        emoji,
+      });
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message ||
+          "Failed to add reaction. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async removeReaction(
+    messageId: string,
+    _userId: string,
+    lang?: string
+  ): Promise<MessageResponseDto> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (lang) {
+        queryParams.append("lang", lang);
+      }
+      const queryString = queryParams.toString();
+      const endpoint = `/messaging/messages/${messageId}/reactions${queryString ? `?${queryString}` : ""}`;
+      const response = await apiClient.delete<MessageResponseDto>(endpoint);
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message ||
+          "Failed to remove reaction. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

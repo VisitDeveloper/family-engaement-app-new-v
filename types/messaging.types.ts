@@ -10,6 +10,13 @@ export interface UserDto {
   lastOnline?: string | Date | null;
 }
 
+/** One reaction aggregate (emoji + count and optionally user ids). */
+export interface MessageReactionItemDto {
+  emoji: string;
+  count: number;
+  userIds?: string[];
+}
+
 export interface MessageResponseDto {
   id: string;
   conversationId: string;
@@ -36,6 +43,10 @@ export interface MessageResponseDto {
   polls?: PollResponseDto[] | null;
   statuses?: string[] | null;
   userStatus?: string | null;
+  /** Aggregated reactions (filled in getMessages / createMessage / addReaction / removeReaction). */
+  reactions?: MessageReactionItemDto[] | null;
+  /** Current user's reaction emoji, if any. */
+  myReaction?: string | null;
 }
 
 export interface ConversationResponseDto {

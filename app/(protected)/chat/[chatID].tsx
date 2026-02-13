@@ -28,7 +28,7 @@ import { ActivityIndicator, Alert, Clipboard, Dimensions, FlatList, Image, Keybo
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChatScreen() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [input, setInput] = useState("");
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -133,6 +133,24 @@ export default function ChatScreen() {
         readStatusContainer: { flexDirection: "row", alignItems: "center" },
         actions: { flexDirection: "row", alignItems: "center", gap: 10 },
         actionIcon: { padding: 2 },
+        reactionsRow: {
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 6,
+            marginTop: 6,
+        },
+        reactionBubble: {
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 12,
+            backgroundColor: "rgba(128,128,128,0.2)",
+            gap: 4,
+        },
+        reactionEmoji: { fontSize: 14 },
+        reactionCount: { fontSize: 12, color: t.subText },
         audioPlayer: {
             // minHeight: 60,
             // padding: 12,
@@ -718,13 +736,44 @@ export default function ChatScreen() {
         }
     }, []);
 
-    const handleReaction = useCallback((emoji: string) => {
-        if (!selectedOtherMessage) return;
-        // TODO: Implement reaction API call
-        console.log("React with:", emoji, "to message:", selectedOtherMessage.id);
+    const handleReaction = useCallback(async (emoji: string) => {
+        if (!selectedOtherMessage || !currentUserId || !conversationId) return;
         setShowReactionPicker(false);
+        const messageId = selectedOtherMessage.id;
         setSelectedOtherMessage(null);
-    }, [selectedOtherMessage]);
+        try {
+            const updated = await messagingService.addReaction(
+                messageId,
+                currentUserId,
+                emoji,
+                i18n.language
+            );
+            updateMessageInStore(conversationId, messageId, updated);
+        } catch (err: any) {
+            Alert.alert("Error", err?.message ?? "Failed to add reaction");
+        }
+    }, [selectedOtherMessage, currentUserId, conversationId, i18n.language, updateMessageInStore]);
+
+    const handleRemoveReaction = useCallback(async () => {
+        if (!selectedOtherMessage || !currentUserId || !conversationId) return;
+        setShowReactionPicker(false);
+        const messageId = selectedOtherMessage.id;
+        setSelectedOtherMessage(null);
+        try {
+            const updated = await messagingService.removeReaction(
+                messageId,
+                currentUserId,
+                i18n.language
+            );
+            if (updated?.id) {
+                updateMessageInStore(conversationId, messageId, updated);
+            } else {
+                loadMessages();
+            }
+        } catch (err: any) {
+            Alert.alert("Error", err?.message ?? "Failed to remove reaction");
+        }
+    }, [selectedOtherMessage, currentUserId, conversationId, i18n.language, updateMessageInStore, loadMessages]);
 
 
     const formatTime = (dateString: string) => {
@@ -960,7 +1009,7 @@ export default function ChatScreen() {
                         onEdit={() => handleEditMessage(item)}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
                     />
                 )}
                 {item.type === "announcement" && item.content && (
@@ -973,7 +1022,7 @@ export default function ChatScreen() {
                         onEdit={() => handleEditMessage(item)}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
                     />
                 )}
                 {item.type === "image" && item.mediaUrl && (
@@ -985,7 +1034,7 @@ export default function ChatScreen() {
                         onImagePress={handleImagePress}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
                     />
                 )}
                 {item.type === "video" && (item.thumbnailUrl ?? item.mediaUrl) && item.mediaUrl && (
@@ -997,7 +1046,7 @@ export default function ChatScreen() {
                         onVideoPress={handleVideoPress}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
                     />
                 )}
                 {item.type === "audio" && item.mediaUrl && (
@@ -1011,7 +1060,7 @@ export default function ChatScreen() {
                         onPlay={handleAudioPlay}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
                         formatAudioDuration={formatAudioDuration}
                     />
                 )}
@@ -1024,7 +1073,7 @@ export default function ChatScreen() {
                         onFilePress={handleFilePress}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
                     />
                 )}
                 {item.type === "poll" && item.polls?.length && (
@@ -1057,6 +1106,13 @@ export default function ChatScreen() {
                                         >
                                             <TrashIcon size={12} color={theme.subText ?? '#666'} />
                                         </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.actionIcon}
+                                            onPress={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
+                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                        >
+                                            <Ionicons name="heart-outline" size={12} color={theme.subText ?? '#666'} />
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
                             ) : (
@@ -1086,6 +1142,22 @@ export default function ChatScreen() {
                     <Text style={[styles.timeText, { fontSize: 9, marginTop: 2, fontStyle: 'italic' }, isPoll ? { color: theme.subText ?? '#666' } : { color: '#fff' }]}>
                         Read
                     </Text>
+                )}
+                {item.reactions && item.reactions.length > 0 && (
+                    <View style={styles.reactionsRow}>
+                        {item.reactions.map((r, i) => (
+                            <View
+                                key={`${r.emoji}-${i}`}
+                                style={[
+                                    styles.reactionBubble,
+                                    item.myReaction === r.emoji && { backgroundColor: "rgba(128,128,128,0.5)" },
+                                ]}
+                            >
+                                <Text style={styles.reactionEmoji}>{r.emoji}</Text>
+                                {r.count > 1 && <Text style={styles.reactionCount}>{r.count}</Text>}
+                            </View>
+                        ))}
+                    </View>
                 )}
             </View>
         );
@@ -1394,6 +1466,22 @@ export default function ChatScreen() {
                                         </TouchableOpacity>
                                     ))}
                                 </View>
+                                {selectedOtherMessage?.myReaction && (
+                                    <TouchableOpacity
+                                        onPress={() => handleRemoveReaction()}
+                                        style={{
+                                            marginTop: 16,
+                                            padding: 12,
+                                            borderRadius: 10,
+                                            backgroundColor: theme.border + "40",
+                                            alignItems: "center",
+                                        }}
+                                    >
+                                        <Text style={{ color: theme.text, fontSize: 16 }}>
+                                            {t("Remove reaction", "Remove reaction")}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
                                 <TouchableOpacity
                                     onPress={() => setShowReactionPicker(false)}
                                     style={{

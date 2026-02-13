@@ -1,19 +1,19 @@
-import { apiClient, ApiError } from "./api";
-import { unregisterPushTokenOnLogout } from "@/utils/pushNotifications";
 import type {
-  UserResponseDto,
   AuthResponse,
-  RefreshTokenResponse,
-  ProfileResponseDto,
-  UpdateProfileRequest,
-  UpdateSettingsRequest,
-  UserSettings,
   ChangePasswordRequest,
   ChangePasswordResponse,
+  ProfileResponseDto,
+  RefreshTokenResponse,
   UpdateProfilePictureResponse,
+  UpdateProfileRequest,
+  UpdateSettingsRequest,
+  UserResponseDto,
+  UserSettings,
 } from "@/types";
+import { unregisterPushTokenOnLogout } from "@/utils/pushNotifications";
+import { apiClient, ApiError } from "./api";
 
-export type { UserResponseDto, AuthResponse, RefreshTokenResponse, ProfileResponseDto, UpdateProfilePictureResponse };
+export type { AuthResponse, ProfileResponseDto, RefreshTokenResponse, UpdateProfilePictureResponse, UserResponseDto };
 
 export interface LoginRequest {
   email: string;
@@ -32,7 +32,7 @@ export interface ProfileResponse extends ProfileResponseDto {
 }
 
 /** UserProfile alias for profile display */
-export type UserProfile = ProfileResponseDto & { phone?: string; [key: string]: unknown };
+export type UserProfile = ProfileResponseDto & { phone?: string;[key: string]: unknown };
 
 export interface AuthService {
   login(credentials: LoginRequest): Promise<AuthResponse>;
@@ -43,7 +43,7 @@ export interface AuthService {
   getProfile(): Promise<ProfileResponse>;
   updateProfile(body: UpdateProfileRequest): Promise<ProfileResponse>;
   /** PATCH /auth/settings — only send fields to update */
-  updateSettings(body: UpdateSettingsRequest): Promise<UserSettings>;
+  updateSettings(body: UpdateSettingsRequest): Promise<{ settings: UserSettings }>;
   updateProfilePicture(imageUri: string): Promise<UpdateProfilePictureResponse>;
 }
 
@@ -58,11 +58,11 @@ class AuthServiceImpl implements AuthService {
       // Use access_token and refresh_token
       const accessToken = response.access_token || response.data?.access_token;
       const refreshToken = response.refresh_token || response.data?.refresh_token;
-      
+
       if (accessToken) {
         await apiClient.setAuthToken(accessToken);
       }
-      
+
       if (refreshToken) {
         await apiClient.setRefreshToken(refreshToken);
       }
@@ -93,11 +93,11 @@ class AuthServiceImpl implements AuthService {
       // Use access_token and refresh_token
       const accessToken = response.access_token || response.data?.access_token;
       const refreshToken = response.refresh_token || response.data?.refresh_token;
-      
+
       if (accessToken) {
         await apiClient.setAuthToken(accessToken);
       }
-      
+
       if (refreshToken) {
         await apiClient.setRefreshToken(refreshToken);
       }
@@ -155,7 +155,7 @@ class AuthServiceImpl implements AuthService {
       if (response.access_token) {
         await apiClient.setAuthToken(response.access_token);
       }
-      
+
       if (response.refresh_token) {
         await apiClient.setRefreshToken(response.refresh_token);
       }
@@ -241,13 +241,13 @@ class AuthServiceImpl implements AuthService {
     }
   }
 
-  async updateSettings(body: UpdateSettingsRequest): Promise<UserSettings> {
+  async updateSettings(body: UpdateSettingsRequest): Promise<{ settings: UserSettings }> {
     try {
       // PATCH: فقط فیلدهایی که مقدار دارن برن (همون که تغییر کرده)
       const payload = Object.fromEntries(
         Object.entries(body).filter(([, v]) => v !== undefined)
       ) as UpdateSettingsRequest;
-      const response = await apiClient.patch<UserSettings>(
+      const response = await apiClient.patch<{ settings: UserSettings }>(
         "/auth/settings",
         payload
       );

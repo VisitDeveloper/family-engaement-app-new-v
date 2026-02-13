@@ -104,6 +104,18 @@ export default function TextMessageCard({
                   />
                 </TouchableOpacity>
               )}
+              {onReaction && (
+                <TouchableOpacity
+                  style={styles.actionIcon}
+                  onPress={onReaction}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <EmojiIcon
+                    size={12}
+                    color={isPoll ? (theme.subText ?? "#666") : "#fff"}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         ) : (

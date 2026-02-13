@@ -93,20 +93,21 @@ export default function SettingsScreen() {
     appLanguage?: string;
   }) => {
     try {
-      const response = await authService.updateSettings(partial);
+      const state = useStore.getState();
+      const params = {
+        pushNotifications: state.pushNotifications,
+        emailNotifications: state.emailNotifications,
+        textMessages: state.textMessages,
+        urgentAlerts: state.urgentAlerts,
+        appLanguage: state.appLanguage,
+        ...partial
+      }
+      const response = await authService.updateSettings(params);
       if (response) {
-        const state = useStore.getState();
-        const merged = {
-          pushNotifications: response.pushNotifications ?? state.pushNotifications,
-          emailNotifications: response.emailNotifications ?? state.emailNotifications,
-          textMessages: response.textMessages ?? state.textMessages,
-          urgentAlerts: response.urgentAlerts ?? state.urgentAlerts,
-          appLanguage: response.appLanguage ?? state.appLanguage ?? "en",
-        };
-        setUserSettingsFromProfile(merged);
-        if (merged.appLanguage) {
-          setAppLanguage(merged.appLanguage);
-          i18n.changeLanguage(merged.appLanguage);
+        setUserSettingsFromProfile(response.settings);
+        if (response.settings?.appLanguage) {
+          setAppLanguage(response.settings.appLanguage);
+          i18n.changeLanguage(response.settings.appLanguage);
         }
       }
     } catch {
