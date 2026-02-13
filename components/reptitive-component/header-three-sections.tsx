@@ -7,6 +7,11 @@ import { TouchableOpacity, View } from 'react-native'
 import RoleGuard from '../check-permisions'
 import { ThemedText } from '../themed-text'
 
+export interface HeaderRightAction {
+    icon: React.ReactNode;
+    onPress?: () => void | Promise<void>;
+    disabled?: boolean;
+}
 
 interface HeaderThreeSectionsProps {
     title: string;
@@ -15,6 +20,8 @@ interface HeaderThreeSectionsProps {
     colorDesc?: string;
     onPress?: () => void;
     onCenterPress?: () => void;
+    /** When set, renders multiple right-side buttons instead of single icon+onPress */
+    rightActions?: HeaderRightAction[];
     buttonRoles?: string[];
     titlePrefix?: React.ReactNode | React.ReactElement;
 }
@@ -33,7 +40,9 @@ export default function HeaderThreeSections({ titlePrefix = <></>, ...props }: H
             borderBottomWidth: 1,
             borderColor: t.border,
         },
-        headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+        headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+        headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+        headerIconBtn: { padding: 6 },
         backBtn: { padding: 6 },
         cover: {
             width: '100%',
@@ -83,9 +92,24 @@ export default function HeaderThreeSections({ titlePrefix = <></>, ...props }: H
                 )}
             </View>
             <RoleGuard roles={props.buttonRoles || ["admin", "teacher", "parent"]}>
-                <TouchableOpacity onPress={props.onPress} style={{ flexShrink: 1 }}>
-                    {props.icon}
-                </TouchableOpacity>
+                {props.rightActions && props.rightActions.length > 0 ? (
+                    <View style={styles.headerRight}>
+                        {props.rightActions.map((action, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                onPress={action.onPress}
+                                style={styles.headerIconBtn}
+                                disabled={action.disabled}
+                            >
+                                {action.icon}
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                ) : (
+                    <TouchableOpacity onPress={props.onPress} style={{ flexShrink: 1 }}>
+                        {props.icon}
+                    </TouchableOpacity>
+                )}
             </RoleGuard>
         </View>
     )

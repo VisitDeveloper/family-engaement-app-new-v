@@ -21,6 +21,7 @@ export interface Resource {
 export interface ResourceSlice {
   resources: Resource[];
   addResource: (resource: Resource) => void;
+  removeResource: (resourceId: string) => void;
   getResourceById: (resourceId: string) => Resource | undefined;
 }
 
@@ -65,6 +66,12 @@ export const createResourceSlice: StateCreator<any, [], [], ResourceSlice> = (
         return { resources: [...state.resources, resource] };
       }
     });
+  },
+
+  removeResource: (resourceId) => {
+    set((state: any) => ({
+      resources: state.resources.filter((r: Resource) => r.id !== resourceId),
+    }));
   },
 
   getResourceById: (resourceId) =>

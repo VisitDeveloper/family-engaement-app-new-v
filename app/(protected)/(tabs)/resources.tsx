@@ -4,6 +4,7 @@ import ResourceItem, {
 } from "@/components/reptitive-component/resource-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
 import { ThemedText } from "@/components/themed-text";
+import { NewIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import {
   ResourceResponseDto,
@@ -13,8 +14,8 @@ import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -293,10 +294,15 @@ const ResourceLibrary = () => {
       <HeaderTabItem
         title={t("tabs.resources")}
         subTitle={t("tabs.resourcesSubTitle")}
+        buttonIcon={<NewIcon size={16} color="#ffffff" />}
+        buttonLink="/new-resource"
+        buttonTitle={t("tabs.newButton")}
+        buttonRoles={["admin", "teacher"]}
+        buttonVariant="primary"
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
       />
 
-      <View style={{ paddingHorizontal: 10, paddingTop: 10 }}>
+      <View style={{ paddingHorizontal: 10 }}>
         <SearchContainer
           query={query}
           onChangeQuery={setQuery}
