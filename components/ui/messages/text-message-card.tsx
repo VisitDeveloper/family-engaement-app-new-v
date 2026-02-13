@@ -1,9 +1,8 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { MessageResponseDto } from "@/services/messaging.service";
 import { useStore } from "@/store";
-import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
-import { CopyIcon, PencilIcon, TrashIcon } from "../icons/messages-icons";
+import { CopyIcon, EmojiIcon, PencilIcon, TrashIcon } from "../icons/messages-icons";
 
 interface TextMessageCardProps {
   message: MessageResponseDto;
@@ -126,8 +125,7 @@ export default function TextMessageCard({
                     onPress={onReaction}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Ionicons
-                      name="heart-outline"
+                    <EmojiIcon
                       size={12}
                       color={theme.subText ?? "#666"}
                     />

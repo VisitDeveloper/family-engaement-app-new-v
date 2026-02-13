@@ -6,6 +6,8 @@ import type {
   RefreshTokenResponse,
   ProfileResponseDto,
   UpdateProfileRequest,
+  UpdateSettingsRequest,
+  UserSettings,
   ChangePasswordRequest,
   ChangePasswordResponse,
   UpdateProfilePictureResponse,
@@ -40,6 +42,8 @@ export interface AuthService {
   changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse>;
   getProfile(): Promise<ProfileResponse>;
   updateProfile(body: UpdateProfileRequest): Promise<ProfileResponse>;
+  /** PATCH /auth/settings — only send fields to update */
+  updateSettings(body: UpdateSettingsRequest): Promise<UserSettings>;
   updateProfilePicture(imageUri: string): Promise<UpdateProfilePictureResponse>;
 }
 
@@ -231,6 +235,28 @@ class AuthServiceImpl implements AuthService {
       throw {
         message:
           apiError.message || "Failed to update profile. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async updateSettings(body: UpdateSettingsRequest): Promise<UserSettings> {
+    try {
+      // PATCH: فقط فیلدهایی که مقدار دارن برن (همون که تغییر کرده)
+      const payload = Object.fromEntries(
+        Object.entries(body).filter(([, v]) => v !== undefined)
+      ) as UpdateSettingsRequest;
+      const response = await apiClient.patch<UserSettings>(
+        "/auth/settings",
+        payload
+      );
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message || "Failed to update settings. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

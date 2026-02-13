@@ -15,7 +15,7 @@ export interface UserResponseDto {
   lastOnline?: string | Date;
 }
 
-/** User settings as returned in profile (GET/PUT /auth/profile) */
+/** User settings as returned in profile (GET /auth/profile) */
 export interface UserSettings {
   pushNotifications: boolean;
   emailNotifications: boolean;
@@ -23,6 +23,9 @@ export interface UserSettings {
   urgentAlerts: boolean;
   appLanguage: string;
 }
+
+/** Body for PATCH /auth/settings (only fields to update) */
+export type UpdateSettingsRequest = Partial<UserSettings>;
 
 /** User list item (users/parents endpoints) */
 export interface UserListItemDto {
@@ -63,6 +66,7 @@ export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
+  subjects?: string[];
   settings?: Partial<UserSettings>;
 }
 

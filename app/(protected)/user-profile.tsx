@@ -120,6 +120,7 @@ export default function ProfileScreen() {
     try {
       const response = await authService.getProfile();
 
+      debugger
       // API returns ProfileResponse directly
       if (response.id) {
         const profileData: UserProfile = {
@@ -148,6 +149,7 @@ export default function ProfileScreen() {
         };
         setUser(userData);
         if (response.settings) {
+          debugger
           setUserSettingsFromProfile(response.settings);
           if (response.settings.appLanguage) {
             setAppLanguage(response.settings.appLanguage);

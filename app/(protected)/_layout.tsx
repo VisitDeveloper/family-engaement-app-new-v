@@ -1,8 +1,8 @@
 import Header from "@/components/layout/header";
-import { authService } from "@/services/auth.service";
 import { apiClient } from "@/services/api";
-import { useStore } from "@/store";
+import { authService } from "@/services/auth.service";
 import type { StoreUser } from "@/store";
+import { useStore } from "@/store";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -54,6 +54,7 @@ export default function RootLayout() {
     authService
       .getProfile()
       .then((response) => {
+        debugger
         if (cancelled) return;
         const store = useStore.getState();
         const name =
@@ -75,6 +76,8 @@ export default function RootLayout() {
           updatedAt: response.updatedAt,
         };
         store.setUser(userData);
+        debugger
+
         store.setUserSettingsFromProfile(response.settings);
         if (response.settings?.appLanguage) {
           store.setAppLanguage(response.settings.appLanguage);
