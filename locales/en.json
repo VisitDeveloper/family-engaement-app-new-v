@@ -1,5 +1,6 @@
 {
   "common": {
+    "apply": "Apply",
     "cancel": "Cancel",
     "save": "Save",
     "done": "Done",
@@ -357,7 +358,8 @@
     "downloadFile": "Download file",
     "noFileToDownload": "No file available to download.",
     "cannotOpenFile": "Cannot open this file.",
-    "downloadFailed": "Failed to open or download the file."
+    "downloadFailed": "Failed to open or download the file.",
+    "editNotAllowed": "Only the creator or an admin can edit or delete this resource."
   },
   "feed": {
     "backToTimeline": "Back to Timeline",

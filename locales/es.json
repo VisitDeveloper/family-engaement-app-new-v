@@ -1,5 +1,6 @@
 {
   "common": {
+    "apply": "Aplicar",
     "cancel": "Cancelar",
     "save": "Guardar",
     "done": "Hecho",
@@ -367,7 +368,8 @@
     "downloadFile": "Descargar archivo",
     "noFileToDownload": "No hay archivo disponible para descargar.",
     "cannotOpenFile": "No se puede abrir este archivo.",
-    "downloadFailed": "Error al abrir o descargar el archivo."
+    "downloadFailed": "Error al abrir o descargar el archivo.",
+    "editNotAllowed": "Solo el creador o un administrador pueden editar o eliminar este recurso."
   },
   "feed": {
     "backToTimeline": "Volver a la línea de tiempo",

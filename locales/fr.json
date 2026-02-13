@@ -1,5 +1,6 @@
 {
   "common": {
+    "apply": "Appliquer",
     "cancel": "Annuler",
     "save": "Enregistrer",
     "done": "Terminé",
@@ -357,7 +358,8 @@
     "downloadFile": "Télécharger le fichier",
     "noFileToDownload": "Aucun fichier disponible à télécharger.",
     "cannotOpenFile": "Impossible d'ouvrir ce fichier.",
-    "downloadFailed": "Échec de l'ouverture ou du téléchargement du fichier."
+    "downloadFailed": "Échec de l'ouverture ou du téléchargement du fichier.",
+    "editNotAllowed": "Seul le créateur ou un administrateur peut modifier ou supprimer cette ressource."
   },
   "feed": {
     "backToTimeline": "Retour au fil d'actualité",

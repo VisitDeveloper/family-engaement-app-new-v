@@ -45,7 +45,15 @@ const BookDetailScreen = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [deleting, setDeleting] = useState(false);
 
-  const canEditDelete = user?.role === "admin" || user?.role === "teacher";
+  const creatorId =
+    resourceItem?.createdBy == null
+      ? null
+      : typeof resourceItem.createdBy === "string"
+        ? resourceItem.createdBy
+        : resourceItem.createdBy?.id;
+  const canEditDelete =
+    user?.role === "admin" ||
+    (!!user?.id && !!creatorId && user.id === creatorId);
 
   const hasContentUrl = !!(resourceItem?.contentUrl?.trim());
 

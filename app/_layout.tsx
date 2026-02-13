@@ -1,4 +1,4 @@
-import { PushNotificationData, usePushNotifications } from "@/hooks/usePushNotifications";
+import { PushNotificationData, usePushNotifications } from "@/hooks/use-push-notifications";
 import "@/i18n";
 import { useStore } from "@/store";
 import { handleDeepLink } from "@/utils/deep-linking";

@@ -31,6 +31,7 @@ const RESOURCE_TYPES: { value: ResourceType; labelKey: string }[] = [
 export default function EditResourceScreen() {
   const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
+  const user = useStore((state: any) => state.user);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const addResource = useStore((state: any) => state.addResource);
@@ -102,6 +103,17 @@ export default function EditResourceScreen() {
     try {
       setLoading(true);
       const res = await resourceService.getById(id);
+      const creatorId = res.createdBy?.id ?? null;
+      const isAdmin = user?.role === "admin";
+      const isCreator = !!user?.id && !!creatorId && user.id === creatorId;
+      if (!isAdmin && !isCreator) {
+        Alert.alert(
+          t("common.error"),
+          t("resource.editNotAllowed") || "You are not allowed to edit this resource."
+        );
+        router.back();
+        return;
+      }
       setTitle(res.title);
       setDescription(res.description || "");
       setType(res.type);
@@ -120,7 +132,7 @@ export default function EditResourceScreen() {
     } finally {
       setLoading(false);
     }
-  }, [id, t, router]);
+  }, [id, t, router, user?.id, user?.role]);
 
   useFocusEffect(
     useCallback(() => {
@@ -152,6 +164,7 @@ export default function EditResourceScreen() {
       borderRadius: 10,
       alignItems: "center" as const,
       marginTop: 8,
+      marginBottom: 40,
     },
     submitText: { color: "#fff", fontWeight: "600", fontSize: 16 },
     imageTouchable: {

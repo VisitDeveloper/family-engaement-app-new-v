@@ -117,6 +117,7 @@ export default function NewResourceScreen() {
       borderRadius: 10,
       alignItems: "center" as const,
       marginTop: 8,
+      marginBottom: 40,
     },
     submitText: { color: "#fff", fontWeight: "600", fontSize: 16 },
     imageTouchable: {
