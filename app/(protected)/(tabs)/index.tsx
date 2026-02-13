@@ -1,7 +1,7 @@
 import RoleGuard from "@/components/check-permisions";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
-import { AiAssistantIcon, AnnouncementIcon, EmergencyIcon, FileIcon, MediaIcon, NewIcon, PollIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
+import { AnnouncementIcon, EmergencyIcon, FileIcon, MediaIcon, NewIcon, PollIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
 import {
   ConversationResponseDto,
   messagingService,
@@ -483,13 +483,14 @@ export default function MessagesScreen() {
         {/* Filter Buttons */}
         <View style={styles.filterContainer}>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() => router.push("/ai-assisstant")}
             style={styles.filterBtn}
+            disabled={true}
           >
             <AiAssistantIcon size={16} color={theme.tint} />
             <Text>{t("ai.buttonLabel")}</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity
             onPress={() => router.push("/emergency")}

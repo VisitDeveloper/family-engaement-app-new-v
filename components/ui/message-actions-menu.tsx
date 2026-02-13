@@ -7,7 +7,9 @@ interface MessageActionsMenuProps {
   visible: boolean;
   onClose: () => void;
   onEdit?: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
+  onCopy?: () => void;
+  onReaction?: () => void;
   /** Position from top of screen */
   top: number;
   /** Position from left/right of screen */
@@ -22,6 +24,8 @@ export default function MessageActionsMenu({
   onClose,
   onEdit,
   onDelete,
+  onCopy,
+  onReaction,
   top,
   left,
   right,
@@ -102,6 +106,34 @@ export default function MessageActionsMenu({
   const deleteIconColor = "#FF3B30";
 
   const menuItems = [
+    ...(onCopy
+      ? [
+        {
+          id: "copy",
+          icon: <Ionicons name="copy-outline" size={22} color={iconColor} />,
+          title: "Copy",
+          onPress: () => {
+            onCopy();
+            onClose();
+          },
+          isDelete: false,
+        },
+      ]
+      : []),
+    ...(onReaction
+      ? [
+        {
+          id: "reaction",
+          icon: <Ionicons name="happy-outline" size={22} color={iconColor} />,
+          title: "React",
+          onPress: () => {
+            onReaction();
+            onClose();
+          },
+          isDelete: false,
+        },
+      ]
+      : []),
     ...(onEdit
       ? [
         {
@@ -116,16 +148,20 @@ export default function MessageActionsMenu({
         },
       ]
       : []),
-    {
-      id: "delete",
-      icon: <Ionicons name="trash-outline" size={22} color={deleteIconColor} />,
-      title: "Delete",
-      onPress: () => {
-        onDelete();
-        onClose();
-      },
-      isDelete: true,
-    },
+    ...(onDelete
+      ? [
+        {
+          id: "delete",
+          icon: <Ionicons name="trash-outline" size={22} color={deleteIconColor} />,
+          title: "Delete",
+          onPress: () => {
+            onDelete();
+            onClose();
+          },
+          isDelete: true,
+        },
+      ]
+      : []),
   ];
 
   const dropdownContent = (

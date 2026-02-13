@@ -187,7 +187,7 @@ export default function PollMessageCard({
               return (
                 <View key={option.id} style={styles.resultOptionRow}>
                   <View>
-                    <Text 
+                    <Text
                       style={{
                         fontSize: 15,
                         color: POLL_CARD.text,
@@ -197,7 +197,7 @@ export default function PollMessageCard({
                         top: 11,
                         left: 8,
                         right: 8,
-                      }} 
+                      }}
                       numberOfLines={1}
                       ellipsizeMode="tail"
                     >
@@ -308,10 +308,26 @@ export default function PollMessageCard({
       )}
 
       {hasVoted && (
-        <Text style={styles.votedLabel}>You voted</Text>
+        <View>
+          <TouchableOpacity
+            style={[styles.finalizeButton, styles.finalizeButtonDisabled]}
+            disabled={true}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.finalizeButtonText}>You voted</Text>
+          </TouchableOpacity>
+        </View>
       )}
       {poll.isClosed && (
-        <Text style={styles.closedLabel}>Poll closed</Text>
+        <View>
+          <TouchableOpacity
+            style={[styles.finalizeButton, styles.finalizeButtonDisabled]}
+            disabled={true}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.finalizeButtonText}>Poll closed</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );

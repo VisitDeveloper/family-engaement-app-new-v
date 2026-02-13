@@ -3,12 +3,12 @@ import { messagingService, PollResponseDto, VotePollDto } from "@/services/messa
 import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import {
-    BottomSheetModal,
-    BottomSheetView,
+  BottomSheetModal,
+  BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { ThemedText } from "../themed-text";
+import { ThemedText } from "../../themed-text";
 
 interface PollViewBottomSheetProps {
   visible: boolean;
@@ -136,7 +136,7 @@ export default function PollViewBottomSheet({
       setLoading(true);
       const pollData = await messagingService.getPoll(pollId);
       setPoll(pollData);
-      
+
       // Find which options the current user has voted for
       const userVotedOptions: string[] = [];
       pollData.options.forEach((option) => {
@@ -189,14 +189,14 @@ export default function PollViewBottomSheet({
       };
 
       await messagingService.votePoll(pollId, voteData);
-      
+
       // Refresh poll data
       await fetchPoll();
-      
+
       if (onVote) {
         onVote();
       }
-      
+
       Alert.alert("Success", "Your vote has been recorded");
     } catch (error: any) {
       console.error("Error voting:", error);
@@ -324,28 +324,28 @@ export default function PollViewBottomSheet({
                   </View>
                   {totalVotes > 0 && (
                     <View style={{ marginTop: 8 }}>
-                    <View
-                      style={{
-                        height: 6,
-                        backgroundColor: theme.border,
-                        borderRadius: 3,
-                        overflow: "hidden",
-                        marginTop: 4,
-                      }}
-                    >
                       <View
                         style={{
-                          height: "100%",
-                          width: `${percentage}%`,
-                          backgroundColor: theme.tint,
+                          height: 6,
+                          backgroundColor: theme.border,
+                          borderRadius: 3,
+                          overflow: "hidden",
+                          marginTop: 4,
                         }}
-                      />
+                      >
+                        <View
+                          style={{
+                            height: "100%",
+                            width: `${percentage}%`,
+                            backgroundColor: theme.tint,
+                          }}
+                        />
+                      </View>
+                      <Text style={styles.optionVotes}>
+                        {option.voteCount} vote{option.voteCount !== 1 ? "s" : ""} ({percentage.toFixed(0)}%)
+                        {hasUserVoted && " • You voted"}
+                      </Text>
                     </View>
-                    <Text style={styles.optionVotes}>
-                      {option.voteCount} vote{option.voteCount !== 1 ? "s" : ""} ({percentage.toFixed(0)}%)
-                      {hasUserVoted && " • You voted"}
-                    </Text>
-                  </View>
                   )}
                 </TouchableOpacity>
               );

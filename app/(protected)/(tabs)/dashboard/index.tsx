@@ -1,24 +1,22 @@
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import StatCard from "@/components/reptitive-component/stat-card-admin";
 import { ThemedText } from "@/components/themed-text";
+import { ChartLineUptrendIcon, Person2FillIcon } from "@/components/ui/icons/dashboard.icons";
+import { MediaIcon } from "@/components/ui/icons/messages-icons";
+import { DownloadIcon } from "@/components/ui/icons/settings-icons";
+import { MessagesIcon } from "@/components/ui/icons/tab-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store"; // The same Zustand store that returns theme
-import {
-    AntDesign,
-    Feather,
-    FontAwesome5,
-    FontAwesome6,
-} from "@expo/vector-icons";
 import { Redirect } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-    Platform,
-    RefreshControl,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function Dashboard() {
@@ -147,7 +145,7 @@ export default function Dashboard() {
               label="Active Families"
               value="22"
               sub="of 24 total families"
-              icon={<Feather name="users" size={30} color={theme.iconDash} />}
+              icon={<Person2FillIcon size={30} color={theme.iconDash} />}
             />
 
             <StatCard
@@ -156,8 +154,7 @@ export default function Dashboard() {
               sub="↑ 5% from last month"
               positive
               icon={
-                <FontAwesome5
-                  name="chart-line"
+                <ChartLineUptrendIcon
                   size={30}
                   color={theme.iconDash}
                 />
@@ -172,7 +169,7 @@ export default function Dashboard() {
               sub="↓ 4% from last month"
               negative
               icon={
-                <AntDesign name="picture" size={30} color={theme.iconDash} />
+                <MediaIcon size={30} color={theme.iconDash} />
               }
             />
 
@@ -181,7 +178,7 @@ export default function Dashboard() {
               value="340"
               sub="Same as last month"
               icon={
-                <FontAwesome6 name="message" size={24} color={theme.iconDash} />
+                <MessagesIcon size={24} color={theme.iconDash} />
               }
             />
           </View>
@@ -209,7 +206,7 @@ export default function Dashboard() {
                   borderRadius: 8,
                 }}
               >
-                <AntDesign name="download" size={15} color={theme.tint} />
+                <DownloadIcon size={15} color={theme.tint} />
                 <Text style={{ color: theme.tint }}>{t("buttons.export")}</Text>
               </TouchableOpacity>
             </View>
