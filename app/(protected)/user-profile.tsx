@@ -25,6 +25,8 @@ export default function ProfileScreen() {
   const theme = useStore((state) => state.theme);
   const router = useRouter();
   const setUser = useStore((s) => s.setUser);
+  const setUserSettingsFromProfile = useStore((s) => s.setUserSettingsFromProfile);
+  const setAppLanguage = useStore((s) => s.setAppLanguage);
   const role = useStore((state) => state.role);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -145,6 +147,12 @@ export default function ProfileScreen() {
               : profileData.email?.split("@")[0] || "",
         };
         setUser(userData);
+        if (response.settings) {
+          setUserSettingsFromProfile(response.settings);
+          if (response.settings.appLanguage) {
+            setAppLanguage(response.settings.appLanguage);
+          }
+        }
       }
     } catch (err) {
       const apiError = err as ApiError;
@@ -170,7 +178,7 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false);
     }
-  }, [setUser, router, t]);
+  }, [setUser, setUserSettingsFromProfile, setAppLanguage, router, t]);
 
   useEffect(() => {
     fetchProfile();

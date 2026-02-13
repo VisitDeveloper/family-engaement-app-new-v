@@ -15,6 +15,15 @@ export interface UserResponseDto {
   lastOnline?: string | Date;
 }
 
+/** User settings as returned in profile (GET/PUT /auth/profile) */
+export interface UserSettings {
+  pushNotifications: boolean;
+  emailNotifications: boolean;
+  textMessages: boolean;
+  urgentAlerts: boolean;
+  appLanguage: string;
+}
+
 /** User list item (users/parents endpoints) */
 export interface UserListItemDto {
   id: string;
@@ -45,7 +54,16 @@ export interface ProfileResponseDto {
   lastOnline?: string | Date;
   createdAt: string;
   updatedAt: string;
+  settings?: UserSettings;
   classrooms?: import('./messaging.types').ClassroomResponseDto[];
+}
+
+/** Body for PUT /auth/profile (partial update; only send changed fields) */
+export interface UpdateProfileRequest {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  settings?: Partial<UserSettings>;
 }
 
 /** Auth login/register response */

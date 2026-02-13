@@ -5,6 +5,7 @@ import type {
   AuthResponse,
   RefreshTokenResponse,
   ProfileResponseDto,
+  UpdateProfileRequest,
   ChangePasswordRequest,
   ChangePasswordResponse,
   UpdateProfilePictureResponse,
@@ -38,6 +39,7 @@ export interface AuthService {
   refreshToken(refreshToken: string): Promise<RefreshTokenResponse>;
   changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse>;
   getProfile(): Promise<ProfileResponse>;
+  updateProfile(body: UpdateProfileRequest): Promise<ProfileResponse>;
   updateProfilePicture(imageUri: string): Promise<UpdateProfilePictureResponse>;
 }
 
@@ -211,6 +213,24 @@ class AuthServiceImpl implements AuthService {
       throw {
         message:
           apiError.message || "Failed to fetch profile. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async updateProfile(body: UpdateProfileRequest): Promise<ProfileResponse> {
+    try {
+      const response = await apiClient.put<ProfileResponseDto>(
+        "/auth/profile",
+        body
+      );
+      return response as ProfileResponse;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message || "Failed to update profile. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

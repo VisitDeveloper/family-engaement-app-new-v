@@ -9,6 +9,7 @@ import { createLanguageSlice, LanguageSlice } from './slice/language';
 import { createLargeFontSlice, LargeFontSlice } from './slice/largeFont';
 import { loginSliceStatus, LoginStatusSlice } from './slice/login';
 import { createResourceSlice, ResourceSlice } from './slice/resource';
+import { createUserSettingsSlice, UserSettingsSlice } from './slice/userSettings';
 import { createVoiceNarrationSlice, VoiceNarrationSlice } from './slice/voiceNarration';
 
 export interface StoreUser {
@@ -33,7 +34,7 @@ interface UserSlice {
   setUser: (user: StoreUser | null) => void;
 }
 
-type StoreState = UserSlice & ChatSlice & ThemeSlice & LargeFontSlice & VoiceNarrationSlice & ResourceSlice & LoginStatusSlice & LanguageSlice;
+type StoreState = UserSlice & ChatSlice & ThemeSlice & LargeFontSlice & VoiceNarrationSlice & ResourceSlice & LoginStatusSlice & LanguageSlice & UserSettingsSlice;
 
 
 // Combine multiple slices
@@ -57,6 +58,8 @@ export const useStore = create<StoreState>()(
       ...createResourceSlice(set, get, {} as any),
       // Language Slice
       ...createLanguageSlice(set, get, {} as any),
+      // User settings (notification prefs from API)
+      ...createUserSettingsSlice(set, get, {} as any),
 
       ...loginSliceStatus(set, get, {} as any)
     }),

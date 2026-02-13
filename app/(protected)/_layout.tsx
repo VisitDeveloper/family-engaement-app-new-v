@@ -1,11 +1,13 @@
 import Header from "@/components/layout/header";
+import { authService } from "@/services/auth.service";
 import { apiClient } from "@/services/api";
 import { useStore } from "@/store";
+import type { StoreUser } from "@/store";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import i18n from "i18next";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Appearance } from "react-native";
 import "react-native-reanimated";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -42,6 +44,49 @@ export default function RootLayout() {
   useEffect(() => {
     apiClient.setLanguageGetter(() => getAcceptLanguage());
   }, [getAcceptLanguage]);
+
+  // After login / app load: fetch profile and hydrate user + settings (per User Settings API)
+  const profileFetchedRef = useRef(false);
+  useEffect(() => {
+    if (!user?.id || profileFetchedRef.current) return;
+    let cancelled = false;
+    profileFetchedRef.current = true;
+    authService
+      .getProfile()
+      .then((response) => {
+        if (cancelled) return;
+        const store = useStore.getState();
+        const name =
+          response.firstName || response.lastName
+            ? `${response.firstName ?? ""} ${response.lastName ?? ""}`.trim()
+            : response.email?.split("@")[0] ?? "";
+        const userData: StoreUser = {
+          id: response.id,
+          name,
+          email: response.email,
+          firstName: response.firstName,
+          lastName: response.lastName,
+          role: response.role,
+          phoneNumber: response.phoneNumber,
+          profilePicture: response.profilePicture,
+          subjects: response.subjects,
+          childName: response.childName,
+          createdAt: response.createdAt,
+          updatedAt: response.updatedAt,
+        };
+        store.setUser(userData);
+        store.setUserSettingsFromProfile(response.settings);
+        if (response.settings?.appLanguage) {
+          store.setAppLanguage(response.settings.appLanguage);
+        }
+      })
+      .catch(() => {
+        profileFetchedRef.current = false;
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   // Memoize userImage to prevent unnecessary re-renders
   const userImage = useMemo(() => {

@@ -45,10 +45,15 @@ export default function SettingsScreen() {
   const setColorScheme = useStore((state) => state.setColorScheme);
   const user = useStore((state) => state.user);
 
-  const [pushNotifs, setPushNotifs] = useState(true);
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [textMessages, setTextMessages] = useState(false);
-  const [urgentAlerts, setUrgentAlerts] = useState(true);
+  const pushNotifications = useStore((state) => state.pushNotifications);
+  const emailNotifications = useStore((state) => state.emailNotifications);
+  const textMessages = useStore((state) => state.textMessages);
+  const urgentAlerts = useStore((state) => state.urgentAlerts);
+  const setPushNotifications = useStore((state) => state.setPushNotifications);
+  const setEmailNotifications = useStore((state) => state.setEmailNotifications);
+  const setTextMessages = useStore((state) => state.setTextMessages);
+  const setUrgentAlerts = useStore((state) => state.setUrgentAlerts);
+  const setUserSettingsFromProfile = useStore((state) => state.setUserSettingsFromProfile);
 
   const isLargeFont = useStore((state) => state.isLargeFont);
   const toggleLargeFont = useStore((state) => state.toggleLargeFont);
@@ -79,6 +84,37 @@ export default function SettingsScreen() {
       }
     }
   }, [appLanguage]);
+
+  const updateSettingsOnServer = async (settings: {
+    pushNotifications?: boolean;
+    emailNotifications?: boolean;
+    textMessages?: boolean;
+    urgentAlerts?: boolean;
+    appLanguage?: string;
+  }) => {
+    try {
+      const response = await authService.updateProfile({ settings });
+      if (response.settings) {
+        setUserSettingsFromProfile(response.settings);
+        if (response.settings.appLanguage) {
+          setAppLanguage(response.settings.appLanguage);
+          i18n.changeLanguage(response.settings.appLanguage);
+        }
+      }
+    } catch {
+      // Revert on failure: refetch profile to restore server state
+      try {
+        const profile = await authService.getProfile();
+        setUserSettingsFromProfile(profile.settings);
+        if (profile.settings?.appLanguage) {
+          setAppLanguage(profile.settings.appLanguage);
+          i18n.changeLanguage(profile.settings.appLanguage);
+        }
+      } catch {
+        // ignore
+      }
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert(
@@ -210,10 +246,13 @@ export default function SettingsScreen() {
               </ThemedText>
             </View>
             <Switch
-              value={pushNotifs}
-              onValueChange={setPushNotifs}
+              value={pushNotifications}
+              onValueChange={(val) => {
+                setPushNotifications(val);
+                updateSettingsOnServer({ pushNotifications: val });
+              }}
               trackColor={{ false: "#ccc", true: "#a846c2" }}
-              thumbColor={pushNotifs ? "#fff" : "#fff"}
+              thumbColor={pushNotifications ? "#fff" : "#fff"}
             />
           </View>
 
@@ -231,10 +270,13 @@ export default function SettingsScreen() {
               </ThemedText>
             </View>
             <Switch
-              value={emailNotifs}
-              onValueChange={setEmailNotifs}
+              value={emailNotifications}
+              onValueChange={(val) => {
+                setEmailNotifications(val);
+                updateSettingsOnServer({ emailNotifications: val });
+              }}
               trackColor={{ false: "#ccc", true: "#a846c2" }}
-              thumbColor={emailNotifs ? "#fff" : "#fff"}
+              thumbColor={emailNotifications ? "#fff" : "#fff"}
             />
           </View>
 
@@ -253,7 +295,10 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={textMessages}
-              onValueChange={setTextMessages}
+              onValueChange={(val) => {
+                setTextMessages(val);
+                updateSettingsOnServer({ textMessages: val });
+              }}
               trackColor={{ false: "#ccc", true: "#a846c2" }}
               thumbColor={textMessages ? "#fff" : "#fff"}
             />
@@ -286,7 +331,10 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={urgentAlerts}
-              onValueChange={setUrgentAlerts}
+              onValueChange={(val) => {
+                setUrgentAlerts(val);
+                updateSettingsOnServer({ urgentAlerts: val });
+              }}
               trackColor={{ false: "#ccc", true: theme.emergencyColor }}
               thumbColor={urgentAlerts ? "#fff" : "#fff"}
             />
@@ -364,6 +412,7 @@ export default function SettingsScreen() {
                   setLang([{ ...selectedOption, label: t(`languages.${selectedOption.value}`) }]);
                   setAppLanguage(selectedOption.value);
                   i18n.changeLanguage(selectedOption.value);
+                  updateSettingsOnServer({ appLanguage: selectedOption.value });
                 }
               }}
               title={t("settings.listOfLanguage")}
