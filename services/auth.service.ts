@@ -3,7 +3,10 @@ import type {
   ChangePasswordRequest,
   ChangePasswordResponse,
   ProfileResponseDto,
+  ProfilesResponse,
   RefreshTokenResponse,
+  SwitchProfileBody,
+  SwitchProfileResponse,
   UpdateProfilePictureResponse,
   UpdateProfileRequest,
   UpdateSettingsRequest,
@@ -45,6 +48,10 @@ export interface AuthService {
   /** PATCH /auth/settings — only send fields to update */
   updateSettings(body: UpdateSettingsRequest): Promise<{ settings: UserSettings }>;
   updateProfilePicture(imageUri: string): Promise<UpdateProfilePictureResponse>;
+  /** GET /auth/profiles — list of profiles the user can switch to */
+  getProfiles(): Promise<ProfilesResponse>;
+  /** POST /auth/switch-profile — switch active profile; updates stored tokens */
+  switchProfile(body: SwitchProfileBody): Promise<SwitchProfileResponse>;
 }
 
 class AuthServiceImpl implements AuthService {
@@ -295,6 +302,51 @@ class AuthServiceImpl implements AuthService {
         message:
           apiError.message ||
           "Failed to update profile picture. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async getProfiles(): Promise<ProfilesResponse> {
+    try {
+      const response = await apiClient.get<ProfilesResponse>("/auth/profiles");
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message ?? "Failed to load profiles",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async switchProfile(body: SwitchProfileBody): Promise<SwitchProfileResponse> {
+    try {
+      const response = await apiClient.post<SwitchProfileResponse>(
+        "/auth/switch-profile",
+        {
+          role: body.role,
+          ...(body.siteId != null && { siteId: body.siteId }),
+          ...(body.organizationId != null && { organizationId: body.organizationId }),
+        }
+      );
+
+      if (response.access_token) {
+        await apiClient.setAuthToken(response.access_token);
+      }
+      if (response.refresh_token) {
+        await apiClient.setRefreshToken(response.refresh_token);
+      }
+
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message ?? "Failed to switch profile",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

@@ -1,7 +1,7 @@
 import HeaderThreeSections from "@/components/reptitive-component/header-three-sections";
 import AttachingMenu from "@/components/ui/attaching-menu";
 import { TranslateIcon } from "@/components/ui/icons/common-icons";
-import { CopyIcon, SendIcon, TrashIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
+import { CopyIcon, EmojiIcon, SendIcon, TrashIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
 import AnnouncementMessageCard from "@/components/ui/messages/announcement-message-card";
 import AudioMessageCard from "@/components/ui/messages/audio-message-card";
 import CreateAnnouncementBottomSheet from "@/components/ui/messages/create-announcement-bottom-sheet";
@@ -9,7 +9,6 @@ import CreatePollBottomSheet from "@/components/ui/messages/create-poll-bottom-s
 import FileMessageCard from "@/components/ui/messages/file-message-card";
 import ImageMessageCard from "@/components/ui/messages/image-message-card";
 import PollMessageCard from "@/components/ui/messages/poll-message-card";
-import PollViewBottomSheet from "@/components/ui/messages/poll-view-bottom-sheet";
 import ReactionRow from "@/components/ui/messages/reaction-row";
 import TextMessageCard from "@/components/ui/messages/text-message-card";
 import VideoMessageCard from "@/components/ui/messages/video-message-card";
@@ -34,8 +33,6 @@ export default function ChatScreen() {
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
     const [showPollSheet, setShowPollSheet] = useState(false);
-    const [showPollViewSheet, setShowPollViewSheet] = useState(false);
-    const [selectedPollId, setSelectedPollId] = useState<string | null>(null);
     const [showAnnouncementSheet, setShowAnnouncementSheet] = useState(false);
     const [uploadingFile, setUploadingFile] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -709,7 +706,7 @@ export default function ChatScreen() {
             } else {
                 textToCopy = message.mediaUrl || "";
             }
-            
+
             if (textToCopy) {
                 Clipboard.setString(textToCopy);
                 Alert.alert("Copied", "Message copied to clipboard");
@@ -1094,37 +1091,41 @@ export default function ChatScreen() {
                             <Text style={[styles.timeText, { color: theme.subText ?? '#666' }]}>
                                 {messageTime}
                             </Text>
-                            {isMe ? (
-                                <View style={[styles.readStatusContainer, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
-                                    <View style={styles.actions}>
-                                        <TouchableOpacity
-                                            style={styles.actionIcon}
-                                            onPress={() => handleDeleteMessage(item.id)}
-                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                        >
-                                            <TrashIcon size={12} color={theme.subText ?? '#666'} />
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-                            ) : (
-                                <View style={[styles.readStatusContainer, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
-                                    <View style={styles.actions}>
-                                        <TouchableOpacity
-                                            style={styles.actionIcon}
-                                            onPress={() => handleCopyMessage(item)}
-                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                        >
-                                            <CopyIcon size={12} color={theme.subText ?? '#666'} />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={styles.actionIcon}
-                                            onPress={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
-                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                        >
-                                            <Ionicons name="heart-outline" size={12} color={theme.subText ?? '#666'} />
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
+                            {!isPoll && (
+                                <>
+                                    {isMe ? (
+                                        <View style={[styles.readStatusContainer, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
+                                            <View style={styles.actions}>
+                                                <TouchableOpacity
+                                                    style={styles.actionIcon}
+                                                    onPress={() => handleDeleteMessage(item.id)}
+                                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                                >
+                                                    <TrashIcon size={12} color={theme.subText ?? '#666'} />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    ) : (
+                                        <View style={[styles.readStatusContainer, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
+                                            <View style={styles.actions}>
+                                                <TouchableOpacity
+                                                    style={styles.actionIcon}
+                                                    onPress={() => handleCopyMessage(item)}
+                                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                                >
+                                                    <CopyIcon size={12} color={theme.subText ?? '#666'} />
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={styles.actionIcon}
+                                                    onPress={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
+                                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                                >
+                                                    <EmojiIcon size={12} color={theme.subText ?? '#666'} />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    )}
+                                </>
                             )}
                         </View>
                     </>
@@ -1509,20 +1510,7 @@ export default function ChatScreen() {
                     />
                 )}
 
-                {/* Poll View Bottom Sheet */}
-                {selectedPollId && (
-                    <PollViewBottomSheet
-                        visible={showPollViewSheet}
-                        onClose={() => {
-                            setShowPollViewSheet(false);
-                            setSelectedPollId(null);
-                        }}
-                        pollId={selectedPollId}
-                        onVote={() => {
-                            loadMessages();
-                        }}
-                    />
-                )}
+
 
                 {/* Full-screen image modal */}
                 <Modal

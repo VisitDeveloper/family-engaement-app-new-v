@@ -1,4 +1,4 @@
-import type { UserRole } from '@/types';
+import type { CurrentProfile, UserRole } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -19,6 +19,8 @@ export interface StoreUser {
   firstName?: string;
   lastName?: string;
   role?: UserRole;
+  organizationId?: string | null;
+  siteId?: string | null;
   phoneNumber?: string;
   phone?: string;
   profilePicture?: string;
@@ -32,6 +34,8 @@ export interface StoreUser {
 interface UserSlice {
   user: StoreUser | null;
   setUser: (user: StoreUser | null) => void;
+  currentProfile: CurrentProfile | null;
+  setCurrentProfile: (currentProfile: CurrentProfile | null) => void;
 }
 
 type StoreState = UserSlice & ChatSlice & ThemeSlice & LargeFontSlice & VoiceNarrationSlice & ResourceSlice & LoginStatusSlice & LanguageSlice & UserSettingsSlice;
@@ -44,6 +48,8 @@ export const useStore = create<StoreState>()(
       // Main slice
       user: null,
       setUser: (user) => set({ user }),
+      currentProfile: null,
+      setCurrentProfile: (currentProfile) => set({ currentProfile }),
 
       // Slice THeme
       ...createThemeSlice(set, get, {} as any),

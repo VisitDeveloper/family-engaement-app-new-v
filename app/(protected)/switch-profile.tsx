@@ -4,7 +4,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
-import type { UserRole } from "@/types";
+import type { CurrentProfile, ProfileItem, SwitchProfileBody } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -18,15 +18,34 @@ import {
   View,
 } from "react-native";
 
-interface ProfileItem {
-  id: string;
-  firstName?: string;
-  lastName?: string;
-  profilePicture?: string;
-  role: UserRole;
-  childName?: string;
-  classroom?: string;
-  isActive: boolean;
+function profileToSwitchBody(profile: ProfileItem): SwitchProfileBody {
+  return {
+    role: profile.role,
+    ...(profile.siteId != null && { siteId: profile.siteId }),
+    ...(profile.organizationId != null && { organizationId: profile.organizationId }),
+  };
+}
+
+function profileLabel(profile: ProfileItem): string {
+  if (profile.role === "admin") return "Administrator";
+  if (profile.siteName) return `${profile.role} · ${profile.siteName}`;
+  if (profile.organizationName) return `Org manager · ${profile.organizationName}`;
+  return profile.role;
+}
+
+function profileKey(profile: ProfileItem): string {
+  return profile.id ?? `${profile.role}-${profile.siteId ?? ""}-${profile.organizationId ?? ""}`;
+}
+
+/** True when this profile is the active one (match by currentProfile.id from GET /auth/profile). */
+function isActiveProfile(profile: ProfileItem, currentProfile: CurrentProfile | null): boolean {
+  if (!currentProfile) return false;
+  if (profile.id != null && profile.id !== "") return profile.id === currentProfile.id;
+  return (
+    profile.role === currentProfile.role &&
+    (profile.organizationId ?? null) === currentProfile.organizationId &&
+    (profile.siteId ?? null) === currentProfile.siteId
+  );
 }
 
 export default function SwitchProfileScreen() {
@@ -34,13 +53,14 @@ export default function SwitchProfileScreen() {
   const theme = useStore((state) => state.theme);
   const router = useRouter();
   const user = useStore((state) => state.user);
-  const role = useStore((state) => state.role);
+  const currentProfile = useStore((s) => s.currentProfile);
   const setUser = useStore((s) => s.setUser);
   const setRole = useStore((s) => s.setRole);
+  const setCurrentProfile = useStore((s) => s.setCurrentProfile);
 
   const [profiles, setProfiles] = useState<ProfileItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [switching, setSwitching] = useState<string | null>(null);
+  const [switchingKey, setSwitchingKey] = useState<string | null>(null);
 
   const styles = useThemedStyles((theme) => ({
     container: {
@@ -58,6 +78,11 @@ export default function SwitchProfileScreen() {
       marginBottom: 16,
       borderWidth: 1,
       borderColor: theme.border,
+    },
+    profileCardActive: {
+      borderColor: theme.border,
+      borderWidth: 1,
+      // backgroundColor: "#F0FDF4",
     },
 
     profileContent: {
@@ -88,11 +113,12 @@ export default function SwitchProfileScreen() {
       width: 80,
       height: 80,
       borderRadius: 40,
+      // backgroundColor: theme.panel,
       backgroundColor: theme.panel,
       justifyContent: "center",
       alignItems: "center",
-      borderWidth: 2,
-      borderColor: theme.border,
+      // borderWidth: 2,
+      // borderColor: theme.border,
       marginBottom: 12,
     },
     avatarPlaceholderRow: {
@@ -102,19 +128,21 @@ export default function SwitchProfileScreen() {
       backgroundColor: theme.panel,
       justifyContent: "center",
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: theme.border,
+      // borderWidth: 1,
+      // borderColor: theme.border,
       marginRight: 12,
     },
     avatarText: {
       fontSize: 32,
       fontWeight: "600",
       color: theme.text,
+      paddingTop: 16,
     },
     avatarTextRow: {
       fontSize: 24,
       fontWeight: "600",
       color: theme.text,
+      paddingTop: 4,
     },
     userName: {
       fontSize: 14,
@@ -185,81 +213,36 @@ export default function SwitchProfileScreen() {
     return (first + second).toUpperCase() || "U";
   };
 
-  const getProfileDisplayName = (profile: ProfileItem) => {
-    if (profile.role === "parent" && profile.childName) {
-      return `${t("switchProfile.parentPrefix")}${profile.childName}`;
-    } else if (profile.role === "teacher" && profile.classroom) {
-      return `${t("switchProfile.teacherPrefix")}${profile.classroom}`;
-    } else if (profile.role === "teacher") {
-      return t("switchProfile.teacher");
-    } else {
-      return profile.childName || t("switchProfile.parent");
-    }
-  };
+  const getProfileDisplayName = useCallback(
+    (profile: ProfileItem) => {
+      if (profile.role === "admin") return t("switchProfile.administrator", { defaultValue: "Administrator" });
+      if (profile.role === "parent" && profile.siteName) return `${t("switchProfile.parentPrefix", { defaultValue: "Parent · " })}${profile.siteName}`;
+      if (profile.role === "parent") return t("switchProfile.parent", { defaultValue: "Parent" });
+      if (profile.role === "teacher" && profile.siteName) return `${t("switchProfile.teacherPrefix", { defaultValue: "Teacher · " })}${profile.siteName}`;
+      if (profile.role === "teacher") return t("switchProfile.teacher", { defaultValue: "Teacher" });
+      if (profile.role === "organization_manager" && profile.organizationName) return `${t("switchProfile.orgManagerPrefix", { defaultValue: "Org manager · " })}${profile.organizationName}`;
+      if (profile.role === "site_manager" && profile.siteName) return `${t("switchProfile.siteManagerPrefix", { defaultValue: "Site manager · " })}${profile.siteName}`;
+      return profileLabel(profile);
+    },
+    [t]
+  );
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
     try {
-      // Get current profile
-      const currentProfile = await authService.getProfile();
-
-      // TODO: Replace with actual API call to get all user profiles/roles
-      // For now, we'll create a mock list with the current profile as active
-      // In a real implementation, you would call something like:
-      // const allProfiles = await authService.getAllProfiles();
-
-      const currentProfileItem: ProfileItem = {
-        id: currentProfile.id,
-        firstName: currentProfile.firstName,
-        lastName: currentProfile.lastName,
-        profilePicture: currentProfile.profilePicture,
-        role: currentProfile.role,
-        childName: currentProfile.childName,
-        classroom: "Classroom 1A", // This should come from API
-        isActive: true,
-      };
-
-      // Mock additional profiles - replace with actual API call
-      const mockProfiles: ProfileItem[] = [
-        currentProfileItem,
-        // Example: Another parent profile for a different child
-        ...(currentProfile.role === "parent"
-          ? [
-            {
-              id: `${currentProfile.id}-2`,
-              firstName: currentProfile.firstName,
-              lastName: currentProfile.lastName,
-              profilePicture: currentProfile.profilePicture,
-              role: "parent" as UserRole,
-              childName: "Mike Rodriguez",
-              classroom: "Classroom 1A",
-              isActive: false,
-            },
-          ]
-          : []),
-        // Example: Teacher profile if user can be a teacher
-        ...(currentProfile.role === "parent" || currentProfile.role === "teacher"
-          ? [
-            {
-              id: `${currentProfile.id}-teacher`,
-              firstName: currentProfile.firstName,
-              lastName: currentProfile.lastName,
-              profilePicture: currentProfile.profilePicture,
-              role: "teacher" as UserRole,
-              classroom: "Classroom 1A",
-              isActive: false,
-            },
-          ]
-          : []),
-      ];
-
-      setProfiles(mockProfiles);
+      const { profiles: list } = await authService.getProfiles();
+      setProfiles(list);
     } catch (err) {
       const apiError = err as ApiError;
-      Alert.alert(
-        t("common.error"),
-        apiError.message || t("switchProfile.failedLoadProfiles")
-      );
+      if (apiError.status === 401) {
+        // Treat as logged out; caller/global handler may redirect to login
+        Alert.alert(t("common.error"), apiError.message || t("switchProfile.failedLoadProfiles"));
+      } else {
+        Alert.alert(
+          t("common.error"),
+          apiError.message || t("switchProfile.failedLoadProfiles")
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -271,44 +254,45 @@ export default function SwitchProfileScreen() {
 
   const handleSwitchProfile = useCallback(
     async (profile: ProfileItem) => {
-      if (profile.isActive || switching) {
-        return;
-      }
+      const key = profileKey(profile);
+      const active = isActiveProfile(profile, currentProfile);
+      if (active || switchingKey) return;
 
-      setSwitching(profile.id);
+      setSwitchingKey(key);
 
       try {
-        // TODO: Replace with actual API call to switch profile
-        // Example: await authService.switchProfile(profile.id);
+        const data = await authService.switchProfile(profileToSwitchBody(profile));
 
-        // For now, update the store with the selected profile
-        const updatedUser = {
-          ...user!,
-          role: profile.role as any,
-          childName: profile.childName,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          profilePicture: profile.profilePicture,
-        };
+        const u = data.user;
+        const name =
+          u.firstName || u.lastName
+            ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim()
+            : u.email?.split("@")[0] ?? "";
 
-        setUser(updatedUser);
-        setRole(profile.role);
-
-        // Update profiles to reflect the new active profile
-        setProfiles((prev) =>
-          prev.map((p) => ({
-            ...p,
-            isActive: p.id === profile.id,
-          }))
-        );
+        setUser({
+          id: u.id,
+          name,
+          email: u.email,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          role: u.role,
+          organizationId: u.organizationId ?? undefined,
+          siteId: u.siteId ?? undefined,
+          phoneNumber: u.phoneNumber,
+          profilePicture: u.profilePicture,
+          childName: u.childName,
+          subjects: u.subjects,
+        });
+        setRole(u.role);
+        setCurrentProfile({
+          id: profile.id ?? `${profile.role}|${profile.organizationId ?? ""}|${profile.siteId ?? ""}`,
+          role: profile.role,
+          organizationId: profile.organizationId ?? null,
+          siteId: profile.siteId ?? null,
+        });
 
         Alert.alert(t("common.success"), t("switchProfile.profileSwitchedSuccess"), [
-          {
-            text: t("common.ok"),
-            onPress: () => {
-              router.back();
-            },
-          },
+          { text: t("common.ok"), onPress: () => router.back() },
         ]);
       } catch (err) {
         const apiError = err as ApiError;
@@ -317,10 +301,10 @@ export default function SwitchProfileScreen() {
           apiError.message || t("switchProfile.failedSwitchProfile")
         );
       } finally {
-        setSwitching(null);
+        setSwitchingKey(null);
       }
     },
-    [user, setUser, setRole, router, switching, t]
+    [currentProfile, setUser, setRole, setCurrentProfile, router, switchingKey, t]
   );
 
   if (loading) {
@@ -340,100 +324,121 @@ export default function SwitchProfileScreen() {
     );
   }
 
+  const currentProfileItem =
+    (currentProfile && profiles.find((p) => p.id === currentProfile.id)) ??
+    (currentProfile
+      ? {
+        id: currentProfile.id,
+        role: currentProfile.role,
+        siteId: currentProfile.siteId,
+        organizationId: currentProfile.organizationId,
+        siteName: null as string | null,
+        organizationName: null as string | null,
+      }
+      : null);
+
+  const fullName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
+  const initials = getInitials(user?.firstName, user?.lastName);
+
   return (
     <View style={styles.container}>
       <HeaderInnerPage title={t("switchProfile.title")} />
       <ScrollView style={styles.scrollContent}>
-        {profiles.map((profile) => {
-          const displayName = getProfileDisplayName(profile);
-          const fullName = `${profile.firstName || ""} ${profile.lastName || ""}`.trim();
-          const initials = getInitials(profile.firstName, profile.lastName);
-          const isRowLayout = !profile.isActive;
-
-          return (
-            <TouchableOpacity
-              key={profile.id}
-              style={styles.profileCard}
-              onPress={() => handleSwitchProfile(profile)}
-              disabled={profile.isActive || !!switching}
-            >
-              {isRowLayout ? (
-                <View style={styles.profileContentRow}>
-                  {profile.profilePicture ? (
-                    <Image
-                      source={{ uri: profile.profilePicture }}
-                      style={styles.avatarRow}
-                    />
-                  ) : (
-                    <View style={styles.avatarPlaceholderRow}>
-                      <ThemedText style={styles.avatarTextRow}>
-                        {initials}
-                      </ThemedText>
-                    </View>
-                  )}
-                  <View style={[styles.profileInfo, { alignItems: "flex-start", justifyContent: "center", gap: 6 }]}>
-                    <ThemedText type="subtitle" style={[styles.profileTitleRow]}>
-                      {displayName}
-                    </ThemedText>
-                    {/* {fullName && (
-                      <ThemedText type="subText" style={[styles.userName]}>
-                        {fullName}
-                      </ThemedText>
-                    )} */}
-                    <ThemedText type="subText" style={styles.tapToSwitch}>
-                      {t("switchProfile.tapToSwitch")}
-                    </ThemedText>
-                  </View>
-                </View>
-              ) : (
+        <View style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 12, padding: 16, paddingBottom: 0 }} >
+          {currentProfileItem ? (
+            <>
+              {/* <ThemedText type="subtitle" style={{ fontSize: 14, marginBottom: 10, color: theme.subText }}>
+              {t("switchProfile.currentProfile", { defaultValue: "Current profile" })}
+            </ThemedText> */}
+              <View style={[styles.profileCard, styles.profileCardActive]}>
                 <View style={styles.profileContent}>
-                  {profile.profilePicture ? (
-                    <Image
-                      source={{ uri: profile.profilePicture }}
-                      style={styles.avatar}
-                    />
+                  {user?.profilePicture ? (
+                    <Image source={{ uri: user.profilePicture }} style={styles.avatar} />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <ThemedText style={styles.avatarText}>
-                        {initials}
-                      </ThemedText>
+                      <ThemedText style={styles.avatarText}>{initials}</ThemedText>
                     </View>
                   )}
-                  {fullName && (
+                  {fullName ? (
                     <ThemedText type="subText" style={styles.userName}>
                       {fullName}
                     </ThemedText>
-                  )}
+                  ) : null}
                   <ThemedText type="subtitle" style={styles.profileTitle}>
-                    {displayName}
+                    {getProfileDisplayName(currentProfileItem)}
                   </ThemedText>
                   <View style={styles.badgesContainer}>
-                    {profile.classroom && (
+                    {(currentProfileItem.siteName ?? currentProfileItem.organizationName) ? (
                       <View style={styles.badge}>
                         <ThemedText style={styles.badgeText}>
-                          {profile.classroom}
+                          {currentProfileItem.siteName ?? currentProfileItem.organizationName}
                         </ThemedText>
                       </View>
-                    )}
-                    {profile.isActive && (
-                      <View style={[styles.badge, styles.activeBadge, { flexDirection: "row", alignItems: "center", gap: 0 }]}>
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={14}
-                          color="#016630"
-                          style={styles.activeBadgeIcon}
-                        />
-                        <ThemedText style={styles.activeBadgeText}>
-                          {t("switchProfile.currentlyActive")}
-                        </ThemedText>
-                      </View>
-                    )}
+                    ) : null}
+                    <View style={[styles.badge, styles.activeBadge, { flexDirection: "row", alignItems: "center", gap: 0 }]}>
+                      <Ionicons name="checkmark-circle" size={14} color="#016630" style={styles.activeBadgeIcon} />
+                      <ThemedText style={styles.activeBadgeText}>
+                        {t("switchProfile.currentlyActive")}
+                      </ThemedText>
+                    </View>
                   </View>
                 </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
+              </View>
+            </>
+          ) : null}
+
+
+          <View style={{ borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 16 }} >
+            {(() => {
+              const otherProfiles = profiles.filter((p) => !isActiveProfile(p, currentProfile));
+              if (otherProfiles.length === 0) {
+                return (
+                  <ThemedText type="subText">{t("switchProfile.noOtherProfiles", { defaultValue: "No other profiles to switch to." })}</ThemedText>
+                );
+              }
+              return (
+                <>
+                  {/* <ThemedText type="subtitle" style={{ fontSize: 14, marginBottom: 10, marginTop: 8, color: theme.subText }}>
+                {t("switchProfile.switchTo", { defaultValue: "Switch to" })}
+              </ThemedText> */}
+
+                  {otherProfiles.map((profile) => {
+                    const displayName = getProfileDisplayName(profile);
+                    const key = profileKey(profile);
+
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        style={styles.profileCard}
+                        onPress={() => handleSwitchProfile(profile)}
+                        disabled={!!switchingKey}
+                      >
+                        <View style={styles.profileContentRow}>
+                          {user?.profilePicture ? (
+                            <Image source={{ uri: user.profilePicture }} style={styles.avatarRow} />
+                          ) : (
+                            <View style={styles.avatarPlaceholderRow}>
+                              <ThemedText style={styles.avatarTextRow}>{initials}</ThemedText>
+                            </View>
+                          )}
+                          <View style={[styles.profileInfo, { alignItems: "flex-start", justifyContent: "center", gap: 6 }]}>
+                            <ThemedText type="subtitle" style={styles.profileTitleRow}>
+                              {displayName}
+                            </ThemedText>
+                            <ThemedText type="subText" style={styles.tapToSwitch}>
+                              {t("switchProfile.tapToSwitch")}
+                            </ThemedText>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </>
+              );
+            })()}
+          </View>
+
+        </View>
       </ScrollView>
     </View>
   );

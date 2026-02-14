@@ -54,7 +54,6 @@ export default function RootLayout() {
     authService
       .getProfile()
       .then((response) => {
-        debugger
         if (cancelled) return;
         const store = useStore.getState();
         const name =
@@ -68,6 +67,8 @@ export default function RootLayout() {
           firstName: response.firstName,
           lastName: response.lastName,
           role: response.role,
+          organizationId: response.organizationId ?? undefined,
+          siteId: response.siteId ?? undefined,
           phoneNumber: response.phoneNumber,
           profilePicture: response.profilePicture,
           subjects: response.subjects,
@@ -76,7 +77,9 @@ export default function RootLayout() {
           updatedAt: response.updatedAt,
         };
         store.setUser(userData);
-        debugger
+        if (response.currentProfile) {
+          store.setCurrentProfile(response.currentProfile);
+        }
 
         store.setUserSettingsFromProfile(response.settings);
         if (response.settings?.appLanguage) {

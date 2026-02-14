@@ -64,6 +64,7 @@ export default function SettingsScreen() {
   const setLoggedIn = useStore((s) => s.setLoggedIn);
   const setRole = useStore((s) => s.setRole);
   const setUser = useStore((s) => s.setUser);
+  const setCurrentProfile = useStore((s) => s.setCurrentProfile);
   const appLanguage = useStore((state) => state.appLanguage);
   const setAppLanguage = useStore((state) => state.setAppLanguage);
   const [tone, setTone] = useState("Default");
@@ -147,6 +148,7 @@ export default function SettingsScreen() {
               setLoggedIn(false);
               setRole(null);
               setUser(null);
+              setCurrentProfile(null);
 
               // Redirect to login page
               router.replace("/(auth)/login");
@@ -156,6 +158,7 @@ export default function SettingsScreen() {
               setLoggedIn(false);
               setRole(null);
               setUser(null);
+              setCurrentProfile(null);
               router.replace("/(auth)/login");
             } finally {
               setLogoutLoading(false);
@@ -560,7 +563,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               style={[
                 styles.dataSecurityLink,
-                { borderColor: theme.border, backgroundColor: theme.panel },
+                { borderColor: theme.border },
               ]}
             >
               {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
@@ -582,7 +585,7 @@ export default function SettingsScreen() {
             onPress={() => router.push("/data-privacy")}
             style={[
               styles.dataSecurityLink,
-              { borderColor: theme.border, backgroundColor: theme.panel },
+              { borderColor: theme.border },
             ]}
           >
             {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
@@ -603,7 +606,7 @@ export default function SettingsScreen() {
             onPress={() => router.push("/blocklist")}
             style={[
               styles.dataSecurityLink,
-              { borderColor: theme.border, backgroundColor: theme.panel },
+              { borderColor: theme.border },
             ]}
           >
             {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
@@ -643,7 +646,7 @@ export default function SettingsScreen() {
               onPress={() => speak(t("settings.addFamilyMember"))}
               style={[
                 styles.dataSecurityLink,
-                { borderColor: theme.border, backgroundColor: theme.panel },
+                { borderColor: theme.border },
               ]}
             >
               {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
@@ -662,7 +665,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               style={[
                 styles.dataSecurityLink,
-                { borderColor: theme.border, backgroundColor: theme.panel },
+                { borderColor: theme.border },
               ]}
             >
               {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
@@ -681,7 +684,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               style={[
                 styles.dataSecurityLink,
-                { borderColor: theme.border, backgroundColor: theme.panel },
+                { borderColor: theme.border },
               ]}
             >
               {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
@@ -893,6 +896,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 5,
+    paddingRight: 10
   },
 
   separator: {

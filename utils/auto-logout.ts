@@ -20,6 +20,7 @@ export async function performAutoLogout(): Promise<void> {
     store.setLoggedIn(false);
     store.setRole(null);
     store.setUser(null);
+    store.setCurrentProfile(null);
 
     console.log("Auto logout performed due to unauthorized error");
   } catch (error) {
@@ -30,6 +31,7 @@ export async function performAutoLogout(): Promise<void> {
       store.setLoggedIn(false);
       store.setRole(null);
       store.setUser(null);
+      store.setCurrentProfile(null);
     } catch (stateError) {
       console.error("Error clearing state:", stateError);
     }
