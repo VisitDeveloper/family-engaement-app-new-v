@@ -10,6 +10,7 @@ import FileMessageCard from "@/components/ui/messages/file-message-card";
 import ImageMessageCard from "@/components/ui/messages/image-message-card";
 import PollMessageCard from "@/components/ui/messages/poll-message-card";
 import PollViewBottomSheet from "@/components/ui/messages/poll-view-bottom-sheet";
+import ReactionRow from "@/components/ui/messages/reaction-row";
 import TextMessageCard from "@/components/ui/messages/text-message-card";
 import VideoMessageCard from "@/components/ui/messages/video-message-card";
 import { useThemedStyles } from "@/hooks/use-theme-style";
@@ -105,7 +106,7 @@ export default function ChatScreen() {
         header: { padding: 15, borderBottomWidth: 1, borderBottomColor: t.border },
         headerTitle: { fontWeight: "bold", fontSize: 18, color: t.text },
         onlineText: { color: t.passDesc, fontSize: 12, },
-        messageContainer: { marginVertical: 5, padding: 10, borderRadius: 10, maxWidth: "80%" },
+        messageContainer: { marginVertical: 5, padding: 10, borderRadius: 10, maxWidth: "80%", minWidth: 200 },
         myMessage: { backgroundColor: t.tint, alignSelf: "flex-end", },
         otherMessage: { backgroundColor: t.panel, alignSelf: "flex-start" },
         messageContainerPoll: { backgroundColor: "transparent", padding: 0, maxWidth: "85%" },
@@ -133,24 +134,6 @@ export default function ChatScreen() {
         readStatusContainer: { flexDirection: "row", alignItems: "center" },
         actions: { flexDirection: "row", alignItems: "center", gap: 10 },
         actionIcon: { padding: 2 },
-        reactionsRow: {
-            flexDirection: "row",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: 6,
-            marginTop: 6,
-        },
-        reactionBubble: {
-            flexDirection: "row",
-            alignItems: "center",
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 12,
-            backgroundColor: "rgba(128,128,128,0.2)",
-            gap: 4,
-        },
-        reactionEmoji: { fontSize: 14 },
-        reactionCount: { fontSize: 12, color: t.subText },
         audioPlayer: {
             // minHeight: 60,
             // padding: 12,
@@ -201,8 +184,8 @@ export default function ChatScreen() {
         audioTimestampViewer: {
             color: "#666", // Dark gray for viewer
         },
-        videoThumbnail: { width: 150, height: 100, borderRadius: 8, marginTop: 5 },
-        imageThumbnail: { width: 200, height: 150, borderRadius: 8, marginTop: 5 },
+        videoThumbnail: { minWidth: 200, width: 200, height: 100, borderRadius: 8, marginTop: 5 },
+        imageThumbnail: { minWidth: 200, width: 200, height: 150, borderRadius: 8, marginTop: 5 },
         inputContainer: { flexDirection: "row", paddingVertical: 10, borderTopWidth: 1, borderColor: t.border, alignItems: "flex-end", paddingHorizontal: 15, paddingBottom: 10, backgroundColor: t.bg },
         inputWrapper: { flex: 1, flexDirection: "row", alignItems: "flex-end", gap: 8 },
         attachmentButton: {
@@ -1006,10 +989,12 @@ export default function ChatScreen() {
                         isTranslating={translateMessages && translatingIds.has(item.id)}
                         isPoll={!!isPoll}
                         messageTime={messageTime}
+                        reactions={item.reactions}
+                        myReaction={item.myReaction}
                         onEdit={() => handleEditMessage(item)}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
+                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
                     />
                 )}
                 {item.type === "announcement" && item.content && (
@@ -1019,10 +1004,12 @@ export default function ChatScreen() {
                         translatedContent={translateMessages ? translatedCache[item.id] : undefined}
                         isTranslating={translateMessages && translatingIds.has(item.id)}
                         messageTime={messageTime}
+                        reactions={item.reactions}
+                        myReaction={item.myReaction}
                         onEdit={() => handleEditMessage(item)}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
+                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
                     />
                 )}
                 {item.type === "image" && item.mediaUrl && (
@@ -1031,10 +1018,12 @@ export default function ChatScreen() {
                         isMe={isMe}
                         isPoll={!!isPoll}
                         messageTime={messageTime}
+                        reactions={item.reactions}
+                        myReaction={item.myReaction}
                         onImagePress={handleImagePress}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
+                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
                     />
                 )}
                 {item.type === "video" && (item.thumbnailUrl ?? item.mediaUrl) && item.mediaUrl && (
@@ -1043,10 +1032,12 @@ export default function ChatScreen() {
                         isMe={isMe}
                         isPoll={!!isPoll}
                         messageTime={messageTime}
+                        reactions={item.reactions}
+                        myReaction={item.myReaction}
                         onVideoPress={handleVideoPress}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
+                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
                     />
                 )}
                 {item.type === "audio" && item.mediaUrl && (
@@ -1054,6 +1045,8 @@ export default function ChatScreen() {
                         message={item}
                         isMe={isMe}
                         messageTime={messageTime}
+                        reactions={item.reactions}
+                        myReaction={item.myReaction}
                         playingAudioId={playingAudioId}
                         audioPositions={audioPositions}
                         audioDurations={audioDurations}
@@ -1070,10 +1063,12 @@ export default function ChatScreen() {
                         isMe={isMe}
                         isPoll={!!isPoll}
                         messageTime={messageTime}
+                        reactions={item.reactions}
+                        myReaction={item.myReaction}
                         onFilePress={handleFilePress}
                         onDelete={() => handleDeleteMessage(item.id)}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
-                        onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
+                        onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
                     />
                 )}
                 {item.type === "poll" && item.polls?.length && (
@@ -1092,6 +1087,9 @@ export default function ChatScreen() {
                                 Alert.alert("Edit Poll", "Edit poll is not available yet.");
                             }}
                         />
+                        {item.reactions && item.reactions.length > 0 && (
+                            <ReactionRow reactions={item.reactions} myReaction={item.myReaction} />
+                        )}
                         <View style={styles.messageFooter}>
                             <Text style={[styles.timeText, { color: theme.subText ?? '#666' }]}>
                                 {messageTime}
@@ -1105,13 +1103,6 @@ export default function ChatScreen() {
                                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                         >
                                             <TrashIcon size={12} color={theme.subText ?? '#666'} />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={styles.actionIcon}
-                                            onPress={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
-                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                        >
-                                            <Ionicons name="heart-outline" size={12} color={theme.subText ?? '#666'} />
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -1142,22 +1133,6 @@ export default function ChatScreen() {
                     <Text style={[styles.timeText, { fontSize: 9, marginTop: 2, fontStyle: 'italic' }, isPoll ? { color: theme.subText ?? '#666' } : { color: '#fff' }]}>
                         Read
                     </Text>
-                )}
-                {item.reactions && item.reactions.length > 0 && (
-                    <View style={styles.reactionsRow}>
-                        {item.reactions.map((r, i) => (
-                            <View
-                                key={`${r.emoji}-${i}`}
-                                style={[
-                                    styles.reactionBubble,
-                                    item.myReaction === r.emoji && { backgroundColor: "rgba(128,128,128,0.5)" },
-                                ]}
-                            >
-                                <Text style={styles.reactionEmoji}>{r.emoji}</Text>
-                                {r.count > 1 && <Text style={styles.reactionCount}>{r.count}</Text>}
-                            </View>
-                        ))}
-                    </View>
                 )}
             </View>
         );

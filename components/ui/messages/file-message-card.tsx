@@ -1,15 +1,19 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { MessageResponseDto } from "@/services/messaging.service";
+import type { MessageReactionItemDto } from "@/types";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 import { CopyIcon, TrashIcon } from "../icons/messages-icons";
+import ReactionRow from "./reaction-row";
 
 interface FileMessageCardProps {
   message: MessageResponseDto;
   isMe?: boolean;
   isPoll?: boolean;
   messageTime: string;
+  reactions?: MessageReactionItemDto[] | null;
+  myReaction?: string | null;
   onFilePress?: (url: string) => void;
   onDelete?: () => void;
   onCopy?: () => void;
@@ -25,6 +29,8 @@ export default function FileMessageCard({
   onDelete,
   onCopy,
   onReaction,
+  reactions,
+  myReaction,
 }: FileMessageCardProps) {
   const { theme } = useStore((state) => state);
 
@@ -110,6 +116,9 @@ export default function FileMessageCard({
           color={isMe ? "#fff" : theme.text}
         />
       </TouchableOpacity>
+      {reactions && reactions.length > 0 && (
+        <ReactionRow reactions={reactions} myReaction={myReaction} />
+      )}
       <View style={styles.footer}>
         <Text style={styles.timestamp}>{messageTime}</Text>
         {isMe ? (

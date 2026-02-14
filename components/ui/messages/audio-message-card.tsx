@@ -1,14 +1,18 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { MessageResponseDto } from "@/services/messaging.service";
+import type { MessageReactionItemDto } from "@/types";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
-import { CopyIcon, TrashIcon } from "../icons/messages-icons";
+import { EmojiIcon, TrashIcon } from "../icons/messages-icons";
+import ReactionRow from "./reaction-row";
 
 interface AudioMessageCardProps {
   message: MessageResponseDto;
   isMe?: boolean;
   messageTime: string;
+  reactions?: MessageReactionItemDto[] | null;
+  myReaction?: string | null;
   playingAudioId?: string | null;
   audioPositions?: Record<string, number>;
   audioDurations?: Record<string, number>;
@@ -23,6 +27,8 @@ export default function AudioMessageCard({
   message,
   isMe = false,
   messageTime,
+  reactions,
+  myReaction,
   playingAudioId,
   audioPositions = {},
   audioDurations = {},
@@ -111,8 +117,8 @@ export default function AudioMessageCard({
     ? duration > 0
       ? formatAudioDuration(duration)
       : message.duration
-      ? formatAudioDuration(Number(message.duration))
-      : "0:00"
+        ? formatAudioDuration(Number(message.duration))
+        : "0:00"
     : "0:00";
 
   return (
@@ -140,7 +146,7 @@ export default function AudioMessageCard({
               style={[
                 styles.audioProgressFill,
                 {
-                  width: progressWidth,
+                  width: progressWidth as unknown as number,
                 },
               ]}
             />
@@ -148,6 +154,9 @@ export default function AudioMessageCard({
           <Text style={styles.audioDuration}>{displayDuration}</Text>
         </View>
       </View>
+      {reactions && reactions.length > 0 && (
+        <ReactionRow reactions={reactions} myReaction={myReaction} />
+      )}
       <View style={styles.footer}>
         <Text style={styles.timestamp}>{messageTime}</Text>
         {isMe ? (
@@ -165,17 +174,12 @@ export default function AudioMessageCard({
             </View>
           </View>
         ) : (
-          (onCopy || onReaction) && (
+          (onReaction) && (
             <View style={styles.footerRight}>
               <View style={styles.actions}>
-                {onCopy && (
-                  <TouchableOpacity style={styles.actionIcon} onPress={onCopy} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <CopyIcon size={12} color={theme.subText ?? "#666"} />
-                  </TouchableOpacity>
-                )}
                 {onReaction && (
                   <TouchableOpacity style={styles.actionIcon} onPress={onReaction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Ionicons name="heart-outline" size={12} color={theme.subText ?? "#666"} />
+                    <EmojiIcon size={12} color={theme.subText ?? "#666"} />
                   </TouchableOpacity>
                 )}
               </View>

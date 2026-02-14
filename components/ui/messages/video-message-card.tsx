@@ -1,15 +1,19 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { MessageResponseDto } from "@/services/messaging.service";
+import type { MessageReactionItemDto } from "@/types";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { CopyIcon, TrashIcon } from "../icons/messages-icons";
+import { EmojiIcon, TrashIcon } from "../icons/messages-icons";
+import ReactionRow from "./reaction-row";
 
 interface VideoMessageCardProps {
   message: MessageResponseDto;
   isMe?: boolean;
   isPoll?: boolean;
   messageTime: string;
+  reactions?: MessageReactionItemDto[] | null;
+  myReaction?: string | null;
   onVideoPress?: (uri: string) => void;
   onDelete?: () => void;
   onCopy?: () => void;
@@ -25,6 +29,8 @@ export default function VideoMessageCard({
   onDelete,
   onCopy,
   onReaction,
+  reactions,
+  myReaction,
 }: VideoMessageCardProps) {
   const { theme } = useStore((state) => state);
 
@@ -91,6 +97,9 @@ export default function VideoMessageCard({
           <Ionicons name="play-circle" size={48} color="#fff" />
         </View>
       </TouchableOpacity>
+      {reactions && reactions.length > 0 && (
+        <ReactionRow reactions={reactions} myReaction={myReaction} />
+      )}
       <View style={styles.footer}>
         <Text style={styles.timestamp}>{messageTime}</Text>
         {isMe ? (
@@ -111,17 +120,13 @@ export default function VideoMessageCard({
             </View>
           </View>
         ) : (
-          (onCopy || onReaction) && (
+          (onReaction) && (
             <View style={styles.footerRight}>
               <View style={styles.actions}>
-                {onCopy && (
-                  <TouchableOpacity style={styles.actionIcon} onPress={onCopy} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <CopyIcon size={12} color={theme.subText ?? "#666"} />
-                  </TouchableOpacity>
-                )}
+
                 {onReaction && (
                   <TouchableOpacity style={styles.actionIcon} onPress={onReaction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Ionicons name="heart-outline" size={12} color={theme.subText ?? "#666"} />
+                    <EmojiIcon size={12} color={theme.subText ?? "#666"} />
                   </TouchableOpacity>
                 )}
               </View>

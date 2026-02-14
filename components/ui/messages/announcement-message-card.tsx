@@ -1,20 +1,24 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { MessageResponseDto } from "@/services/messaging.service";
+import type { MessageReactionItemDto } from "@/types";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 import { CopyIcon, PencilIcon, TrashIcon } from "../icons/messages-icons";
+import ReactionRow from "./reaction-row";
 
 interface AnnouncementMessageCardProps {
   message: MessageResponseDto;
   isMe?: boolean;
   translatedContent?: string;
   isTranslating?: boolean;
+  messageTime: string;
+  reactions?: MessageReactionItemDto[] | null;
+  myReaction?: string | null;
   onEdit?: () => void;
   onDelete?: () => void;
   onCopy?: () => void;
   onReaction?: () => void;
-  messageTime: string;
 }
 
 export default function AnnouncementMessageCard({
@@ -27,6 +31,8 @@ export default function AnnouncementMessageCard({
   onCopy,
   onReaction,
   messageTime,
+  reactions,
+  myReaction,
 }: AnnouncementMessageCardProps) {
 
   const { theme } = useStore((state) => state);
@@ -97,6 +103,10 @@ export default function AnnouncementMessageCard({
 
       {/* Message Content */}
       <Text style={styles.content}>{contentDisplay}</Text>
+
+      {reactions && reactions.length > 0 && (
+        <ReactionRow reactions={reactions} myReaction={myReaction} />
+      )}
 
       {/* Footer with timestamp and actions */}
       <View style={styles.footer}>
