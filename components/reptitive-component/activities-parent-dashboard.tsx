@@ -1,5 +1,6 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
+import { useTranslation } from "react-i18next";
 import { Text, View } from "react-native";
 import { ThemedText } from "../themed-text";
 import Card from "./card";
@@ -11,10 +12,11 @@ export type ActivityItem = {
 };
 
 interface RecentActivityCardProps {
-    activities: Array<ActivityItem>;
+    activities: ActivityItem[];
 }
 
 function RecentActivityCard({ activities }: RecentActivityCardProps) {
+    const { t } = useTranslation();
     const theme = useStore((s) => s.theme);
 
     const styles = useThemedStyles((t) => ({
@@ -33,7 +35,7 @@ function RecentActivityCard({ activities }: RecentActivityCardProps) {
             height: 10,
             borderRadius: 5,
             borderWidth: 2,
-            marginTop: 6,
+            marginTop: 8,
             marginRight: 10,
         },
         textContainer: {
@@ -52,35 +54,43 @@ function RecentActivityCard({ activities }: RecentActivityCardProps) {
     return (
         <Card >
             <Text style={[styles.title, { color: theme.text }]}>
-                Recent Activity
+                {t("dashboard.recentActivity")}
             </Text>
 
-            {activities.map((item, index) => (
-                <View key={index} style={styles.row}>
-                    {/* Dot */}
-                    <View
-                        style={[
-                            styles.dot,
-                            {
-                                backgroundColor: item.active
-                                    ? theme.tint
-                                    : "transparent",
-                                borderColor: theme.tint,
-                            },
-                        ]}
-                    />
+            {activities.length > 0 ? (
+                <>
+                    {activities.map((item, index) => (
+                        <View key={index} style={styles.row}>
+                            {/* Dot */}
+                            <View
+                                style={[
+                                    styles.dot,
+                                    {
+                                        backgroundColor: item.active
+                                            ? theme.tint
+                                            : "transparent",
+                                        borderColor: theme.tint,
+                                    },
+                                ]}
+                            />
 
-                    {/* Text */}
-                    <View style={styles.textContainer}>
-                        <ThemedText style={[styles.itemText, { color: theme.text }]}>
-                            {item.title}
-                        </ThemedText>
-                        <ThemedText style={[styles.timeText, { color: theme.subText }]}>
-                            {item.time}
-                        </ThemedText>
-                    </View>
+                            {/* Text */}
+                            <View style={styles.textContainer}>
+                                <ThemedText style={[styles.itemText, { color: theme.text }]}>
+                                    {item.title}
+                                </ThemedText>
+                                <ThemedText style={[styles.timeText, { color: theme.subText }]}>
+                                    {item.time}
+                                </ThemedText>
+                            </View>
+                        </View>
+                    ))}
+                </>
+            ) : (
+                <View style={styles.row}>
+                    <ThemedText type='subText'>{t("dashboard.noActivitiesFound")}</ThemedText>
                 </View>
-            ))}
+            )}
         </Card>
     );
 }

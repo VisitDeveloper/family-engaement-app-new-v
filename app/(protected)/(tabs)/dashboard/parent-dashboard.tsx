@@ -2,16 +2,17 @@ import RecentActivityCard, { ActivityItem } from "@/components/reptitive-compone
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import StatCardParent from "@/components/reptitive-component/state-card-parent";
 import UpcomingEventsCard, { EventsProps } from "@/components/reptitive-component/upcominf-events-parent";
+import { ArrowUpRightSquareIcon } from "@/components/ui/icons/dashboard.icons";
+import { MediaIcon } from "@/components/ui/icons/messages-icons";
+import { MessagesIcon } from "@/components/ui/icons/tab-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { dashboardService, isParentDashboardResponse } from "@/services/dashboard.service";
 import { eventService } from "@/services/event.service";
-import { useStore } from "@/store"; // The same Zustand store that returns theme
-import { AntDesign, FontAwesome6, Ionicons } from "@expo/vector-icons";
+import { useStore } from "@/store";
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useCallback, useEffect, useState } from "react";
-import { RefreshControl, ScrollView, View } from "react-native";
-
-
+import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
 
 export default function ParentDashboard() {
     const { t } = useTranslation();
@@ -21,29 +22,25 @@ export default function ParentDashboard() {
 
     const [events, setEvents] = useState<EventsProps[]>([]);
     const [refreshing, setRefreshing] = useState(false);
+    const [dashboardData, setDashboardData] = useState<Awaited<ReturnType<typeof dashboardService.getDashboard>> | null>(null);
+    const [dashboardLoading, setDashboardLoading] = useState(true);
+    const [dashboardError, setDashboardError] = useState<string | null>(null);
 
-    // Format date helper
-    const formatDate = (dateString: string): string => {
+    const formatDate = useCallback((dateString: string): string => {
         const date = new Date(dateString);
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return `${months[date.getMonth()]} ${date.getDate()}`;
-    };
+        const monthKey = `event.monthShort${date.getMonth()}`;
+        return `${t(monthKey)} ${date.getDate()}`;
+    }, [t]);
 
-    // Helper function to extract string from time field (can be object or string)
-    const extractTimeString = (time: Record<string, any> | string | null | undefined): string | null => {
-        if (!time) return null;
-        if (typeof time === 'string') return time;
-        if (typeof time === 'object' && time !== null) {
-            return (time as any).time || (time as any).value || (time as any).startTime || null;
+    const formatTime = useCallback((time: Record<string, unknown> | string | null | undefined, allDay: boolean): string => {
+        if (allDay) return t("event.allDay");
+        let timeString: string | null = null;
+        if (typeof time === 'string') timeString = time;
+        else if (time && typeof time === 'object') {
+            const t = time as Record<string, unknown>;
+            timeString = (t.time ?? t.value ?? t.startTime) as string ?? null;
         }
-        return null;
-    };
-
-    // Helper function to format time string (HH:mm:ss or HH:mm) to readable format
-    const formatTimeString = (timeString: string): string => {
-        if (!timeString) return 'All Day';
-        
-        // Handle time string format like "15:00:00" or "15:00"
+        if (!timeString) return t("event.allDay");
         const timeMatch = timeString.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
         if (timeMatch) {
             const hours = parseInt(timeMatch[1], 10);
@@ -52,83 +49,78 @@ export default function ParentDashboard() {
             const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
             return `${displayHours}:${minutes} ${period}`;
         }
-        
-        // If it's a full datetime string, try to parse it
         try {
             const date = new Date(timeString);
-            if (!isNaN(date.getTime())) {
-                return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-            }
+            if (!isNaN(date.getTime())) return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
         } catch {
-            // Ignore parsing errors
+            // ignore
         }
-        
-        return timeString; // Return as-is if can't parse
-    };
+        return timeString;
+    }, [t]);
 
-    // Format time helper
-    const formatTime = (time: Record<string, any> | string | null | undefined, allDay: boolean): string => {
-        if (allDay) return 'All Day';
-        const timeString = extractTimeString(time);
-        if (!timeString) return 'All Day';
-        return formatTimeString(timeString);
-    };
-
-    // Fetch upcoming events
-    const fetchUpcomingEvents = useCallback(async () => {
+    // Fetch dashboard; if parent and no upcoming events from API, fetch events from events API
+    const fetchDashboard = useCallback(async () => {
+        setDashboardLoading(true);
+        setDashboardError(null);
         try {
-            const response = await eventService.getAll({
-                page: 1,
-                limit: 3,
-                filter: 'upcoming'
-            });
-
-            const formattedEvents: EventsProps[] = response.events.map(event => ({
-                title: event.title,
-                time: formatTime(event.startTime, event.allDay),
-                date: formatDate(event.startDate)
-            }));
-
-            setEvents(formattedEvents);
-        } catch (error) {
-            console.error('Error fetching upcoming events:', error);
-            // Keep empty array on error
+            const data = await dashboardService.getDashboard();
+            setDashboardData(data);
+            if (isParentDashboardResponse(data) && data.upcomingEvents?.length) {
+                const formatted: EventsProps[] = data.upcomingEvents.slice(0, 5).map(ev => ({
+                    title: ev.title,
+                    time: ev.allDay === true ? t("event.allDay") : formatTime(ev.timeDisplay ?? null, false),
+                    date: formatDate(ev.date),
+                }));
+                setEvents(formatted);
+            } else {
+                // Fallback: parent with no events, or non-parent response
+                try {
+                    const response = await eventService.getAll({
+                        page: 1,
+                        limit: 5,
+                        filter: 'upcoming',
+                    });
+                    const formattedEvents: EventsProps[] = response.events.map(event => ({
+                        title: event.title,
+                        time: formatTime(event.startTime, event.allDay),
+                        date: formatDate(event.startDate),
+                    }));
+                    setEvents(formattedEvents);
+                } catch {
+                    setEvents([]);
+                }
+            }
+        } catch (err) {
+            console.error('Dashboard fetch error:', err);
+            setDashboardError((err as { message?: string })?.message ?? t("dashboard.failedLoad"));
+            setDashboardData(null);
             setEvents([]);
+        } finally {
+            setDashboardLoading(false);
         }
-    }, []);
+    }, [formatDate, formatTime, t]);
 
-    useEffect(() => {
-        fetchUpcomingEvents();
-    }, [fetchUpcomingEvents]);
-
-    // Refresh events when screen comes into focus (e.g., after creating an event)
+    // Only use useFocusEffect: one call on first focus (tab open), one on each return to tab
     useFocusEffect(
         useCallback(() => {
-            fetchUpcomingEvents();
-        }, [fetchUpcomingEvents])
+            fetchDashboard();
+        }, [fetchDashboard])
     );
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        await fetchUpcomingEvents();
+        await fetchDashboard();
         setRefreshing(false);
-    }, [fetchUpcomingEvents]);
+    }, [fetchDashboard]);
 
-    const activities: ActivityItem[] = [
-        {
-            title: "Ms. Alvarez shared a new photo",
-            time: "2 hours ago",
-            active: true,
-        },
-        {
-            title: "New message from Mr. Rodriguez",
-            time: "4 hours ago",
-        },
-        {
-            title: "Reading assessment available",
-            time: "1 day ago",
-        },
-    ];
+    const parentData = dashboardData && isParentDashboardResponse(dashboardData) ? dashboardData : null;
+    const newPosts = parentData?.newPosts ?? { count: 0, postsViewed: 0 };
+    const unreadMessages = parentData?.unreadMessages ?? { count: 0, messagesRead: 0 };
+    const activities: ActivityItem[] = (parentData?.recentActivity ?? []).map(a => ({
+        title: a.title ?? '',
+        time: a.timeAgo ?? '',
+        active: a.type === 'message',
+    })) ?? [];
 
     const styles = useThemedStyles((t) => ({
         container: {
@@ -190,13 +182,19 @@ export default function ParentDashboard() {
         },
     }));
 
-    if (role === 'teacher' || role === 'admin') {
+    if (role === 'admin' || role === 'organization_manager' || role === 'site_manager') {
         return <Redirect href="/(protected)/(tabs)/dashboard" />;
     }
 
+    const newPostsRate = newPosts.count > 0
+        ? Math.round((newPosts.count / (newPosts.postsViewed + newPosts.count)) * 100)
+        : 0;
+    const unreadRate = (unreadMessages.messagesRead + unreadMessages.count) > 0
+        ? Math.round((unreadMessages.messagesRead / (unreadMessages.messagesRead + unreadMessages.count)) * 100)
+        : 0;
+
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg, padding: 10 }}>
-
             <View style={[styles.headerWrap, { borderBottomColor: theme.border }]}>
                 <HeaderTabItem
                     title={t("tabs.dashboard")}
@@ -204,49 +202,56 @@ export default function ParentDashboard() {
                 />
             </View>
 
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                style={styles.container}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        tintColor={theme.tint}
-                    />
-                }>
-
-                {/* Top Stats */}
-                <View style={styles.row}>
-
-                    <StatCardParent
-                        labelIcon={<Ionicons name="arrow-up-right-box-outline" size={18} color={theme.iconDash} />}
-                        label="New Posts"
-                        value="3"
-                        sub="15 posts viewed"
-                        icon={<AntDesign name="picture" size={30} color={theme.iconDash} />}
-                        rate={90}
-                    />
-
-
-                    <StatCardParent
-                        label="Unread"
-                        labelIcon={<Ionicons name="arrow-up-right-box-outline" size={18} color={theme.iconDash} />}
-                        value="2"
-                        sub="8 messages read"
-                        positive
-                        icon={<FontAwesome6 name="message" size={30} color={theme.iconDash} />}
-                        rate={95}
-                    />
-
+            {/* {dashboardError && (
+                <View style={{ padding: 8, backgroundColor: theme.border, borderRadius: 8, marginBottom: 8 }}>
+                    <ThemedText type="default" style={{ color: theme.subText }}>{dashboardError}</ThemedText>
                 </View>
+            )} */}
 
-                <UpcomingEventsCard 
-                    events={events} 
-                    onPressAllEvents={() => router.push('/event')}
-                />
+            {dashboardLoading && !dashboardData ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={theme.tint} />
+                </View>
+            ) : (
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    style={styles.container}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            tintColor={theme.tint}
+                        />
+                    }
+                >
+                    <View style={styles.row}>
+                        <StatCardParent
+                            labelIcon={<ArrowUpRightSquareIcon size={12} color={theme.iconDash} />}
+                            label={t("dashboard.newPosts")}
+                            value={(newPosts.count)}
+                            sub={t("dashboard.postsInScope", { count: newPosts.postsViewed + newPosts.count })}
+                            icon={<MediaIcon size={30} color={theme.iconDash} />}
+                            rate={newPostsRate}
+                        />
+                        <StatCardParent
+                            label={t("dashboard.unread")}
+                            labelIcon={<ArrowUpRightSquareIcon size={12} color={theme.iconDash} />}
+                            value={String(unreadMessages.count)}
+                            sub={t("dashboard.messagesRead", { read: unreadMessages.messagesRead })}
+                            positive={unreadMessages.count > unreadMessages.messagesRead}
+                            icon={<MessagesIcon size={30} color={theme.iconDash} />}
+                            rate={unreadRate}
+                        />
+                    </View>
 
-                <RecentActivityCard activities={activities} />
-            </ScrollView>
+                    <UpcomingEventsCard
+                        events={events}
+                        onPressAllEvents={() => router.push('/event')}
+                    />
+
+                    <RecentActivityCard activities={activities} />
+                </ScrollView>
+            )}
         </View>
     );
 }

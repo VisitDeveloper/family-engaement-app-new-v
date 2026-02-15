@@ -34,8 +34,9 @@ function StatCard({ label, value, sub, positive, negative, rate, icon }: StatCar
             color: t.iconDash
         },
         statLabel: {
-            color: t.subText,
-            marginBottom: 10
+            color: t.text,
+            marginBottom: 10,
+            fontWeight: "400"
         },
         statSubText: {
             color: positive ? "green" : negative ? "red" : t.subText,

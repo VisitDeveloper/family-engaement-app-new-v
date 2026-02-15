@@ -6,7 +6,7 @@ import { ThemedText } from "../themed-text";
 interface StatCardProps {
     label: string;
     labelIcon?: React.ReactNode | React.ReactElement;
-    value: string;
+    value: string | number;
     sub: string;
     positive?: boolean;
     negative?: boolean;
@@ -38,7 +38,6 @@ function StatCardParent({ label, value, sub, positive, negative, rate, icon, lab
             color: t.iconDash
         },
         statLabel: {
-            marginBottom: 10,
             color: t.text
         },
         statSubText: {
@@ -62,13 +61,13 @@ function StatCardParent({ label, value, sub, positive, negative, rate, icon, lab
         <View style={styles.card}>
             <View style={styles.cardTitle}>
                 <ThemedText type="subtitle" style={styles.statValue}>
-                    {value}
+                    {typeof value === 'number' ? value.toLocaleString() : value}
                 </ThemedText>
                 {icon}
             </View>
-            <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: 5, marginTop: 10, marginBottom: 4 }}>
+            <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10, marginBottom: 4 }}>
                 <ThemedText style={styles.statLabel}>{label}</ThemedText>
-                <View>
+                <View style={{ marginTop: 4 }}>
                     {labelIcon}
                 </View>
             </View>

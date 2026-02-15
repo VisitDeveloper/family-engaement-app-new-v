@@ -10,3 +10,4 @@ export * from './event.types';
 export * from './post.types';
 export * from './resource.types';
 export * from './messaging.types';
+export * from './dashboard.types';

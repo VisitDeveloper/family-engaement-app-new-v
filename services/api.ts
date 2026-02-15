@@ -271,6 +271,27 @@ class ApiClient {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
+  /** GET request that returns response body as text (e.g. for CSV export). */
+  async getAsText(endpoint: string): Promise<string> {
+    const token = await this.getToken();
+    const headers = new Headers();
+    headers.set('Accept', 'text/csv, text/plain, */*');
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    const acceptLanguage = this.getLanguage ? this.getLanguage() : 'en';
+    headers.set('Accept-Language', acceptLanguage);
+    const url = `${this.baseURL}${endpoint}`;
+    const response = await fetch(url, { method: 'GET', headers });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw {
+        message: (data as { message?: string })?.message || `HTTP error! status: ${response.status}`,
+        status: response.status,
+        data,
+      } as ApiError;
+    }
+    return response.text();
+  }
+
   async post<T>(endpoint: string, body?: any, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
