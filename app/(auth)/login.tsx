@@ -73,7 +73,7 @@ export default function LoginScreen() {
         const response = await authService.login({ email, password });
 
         // Determine role from API response or from email (fallback)
-        let detectedRole: "admin" | "teacher" | "parent" | "student" | null = null;
+        let detectedRole: "admin" | "organization_manager" | "site_manager" | "teacher" | "parent" | "student" | null = null;
         if (response.user?.role) {
           detectedRole = response.user.role;
         } else {
@@ -88,8 +88,7 @@ export default function LoginScreen() {
             name:
               // response.user.name ||
               response.user.firstName || response.user.lastName
-                ? `${response.user.firstName || ""} ${
-                    response.user.lastName || ""
+                ? `${response.user.firstName || ""} ${response.user.lastName || ""
                   }`.trim()
                 : email.split("@")[0],
             // @ts-ignore
@@ -124,7 +123,7 @@ export default function LoginScreen() {
         });
 
         // After successful registration, log the user in
-        let detectedRole: "admin" | "teacher" | "parent" | "student" | null = null;
+        let detectedRole: "admin" | "organization_manager" | "site_manager" | "teacher" | "parent" | "student" | null = null;
         if (response.user?.role) {
           detectedRole = response.user.role;
         }
@@ -137,8 +136,7 @@ export default function LoginScreen() {
             name:
               // response.user.name ||
               response.user.firstName || response.user.lastName
-                ? `${response.user.firstName || ""} ${
-                    response.user.lastName || ""
+                ? `${response.user.firstName || ""} ${response.user.lastName || ""
                   }`.trim()
                 : email.split("@")[0],
             // @ts-ignore
@@ -274,9 +272,9 @@ export default function LoginScreen() {
               accessibilityLabel="Family App Logo"
             />
           </View>
-          <View style={[styles.switchContainer, { borderColor: theme.border }]}>
-            {/* MOVING TOGGLE */}
-            <Animated.View
+          {/* <View style={[styles.switchContainer, { borderColor: theme.border }]}> */}
+          {/* MOVING TOGGLE */}
+          {/* <Animated.View
               style={[
                 styles.switchThumb,
                 {
@@ -288,10 +286,10 @@ export default function LoginScreen() {
               <Text style={styles.switchThumbText}>
                 {activeTab === "login" ? "Login" : "Register"}
               </Text>
-            </Animated.View>
+            </Animated.View> */}
 
-            {/* CLICKABLE ZONES */}
-            <TouchableOpacity
+          {/* CLICKABLE ZONES */}
+          {/* <TouchableOpacity
               style={styles.switchZone}
               onPress={() => toggleSwitch("login")}
               accessibilityRole="button"
@@ -323,12 +321,13 @@ export default function LoginScreen() {
               >
                 Register
               </Text>
-            </TouchableOpacity>
-          </View>
+            </TouchableOpacity> */}
+          {/* </View> */}
 
           <ThemedText
             type="middleTitle"
             style={{
+              marginTop: 20,
               marginBottom: 5,
               fontWeight: 500,
               color: theme.text,
@@ -441,10 +440,10 @@ export default function LoginScreen() {
                 ? "Logging in"
                 : "Registering"
               : activeTab === "login"
-              ? "Login"
-              : "Register"}
+                ? "Login"
+                : "Register"}
             accessibilityState={{ disabled: loading }}
-            accessibilityHint={activeTab === "login" 
+            accessibilityHint={activeTab === "login"
               ? "Submit your login credentials"
               : "Submit your registration information"}
             style={{
@@ -467,8 +466,8 @@ export default function LoginScreen() {
                   ? "Logging in..."
                   : "Registering..."
                 : activeTab === "login"
-                ? "Login"
-                : "Register"}
+                  ? "Login"
+                  : "Register"}
             </Text>
           </TouchableOpacity>
         </View>
