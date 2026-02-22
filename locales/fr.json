@@ -497,6 +497,14 @@
     "quickMath": "Suggérer des activités mathématiques",
     "quickParent": "Générer une communication parent",
     "quickGoals": "Créer des objectifs d'apprentissage",
-    "uploadReport": "Télécharger le rapport d'évaluation"
+    "uploadReport": "Télécharger le rapport d'évaluation",
+    "uploadSuccess": "Fichier téléchargé et prêt pour la recherche.",
+    "manageData": "Gérer mes données",
+    "myDocuments": "Mes documents indexés",
+    "noDocuments": "Aucun document. Téléchargez un fichier ou ajoutez un lien/texte.",
+    "deleteDocument": "Supprimer",
+    "deleteDocumentConfirm": "Retirer ce document de l'assistant ? Il ne sera plus utilisé dans les réponses.",
+    "noResults": "Aucun document pertinent trouvé.",
+    "error": "Impossible de joindre l'assistant. Réessayez."
   }
 }

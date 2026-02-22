@@ -7,6 +7,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme.web';
 import { useThemedStyles } from '@/hooks/use-theme-style';
 import { detectSourceLanguage, SUPPORTED_LANGUAGES, translateText } from '@/services/translate.service';
+import { ragService, type IndexedDocument } from '@/services/rag.service';
 import { useStore } from '@/store';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -17,8 +18,11 @@ import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
     Alert,
+    Animated,
+    Clipboard,
     FlatList,
     KeyboardAvoidingView,
+    Linking,
     Modal,
     Platform,
     ScrollView,
@@ -37,7 +41,87 @@ const SYSTEM_GREETING = {
     timeKey: 'ai.justNow' as const,
 };
 
-type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string };
+type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; isTyping?: boolean; createdAt?: number };
+
+function formatMessageTime(ts: number): string {
+    const d = new Date(ts);
+    return d.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+}
+
+const URL_REGEX = /https?:\/\/[^\s]+/g;
+
+/** Characters that often appear after a URL in text and should not be part of the link */
+const URL_TRAILING_CHARS = /[.,;:!?)\]>}\]"']+$/;
+
+function trimUrlTrailing(url: string): string {
+    return url.replace(URL_TRAILING_CHARS, '');
+}
+
+type TextSegment = { type: 'text'; value: string } | { type: 'link'; value: string };
+
+function parseContentWithLinks(content: string): TextSegment[] {
+    const segments: TextSegment[] = [];
+    let lastIndex = 0;
+    let m: RegExpExecArray | null;
+    const re = new RegExp(URL_REGEX.source, 'g');
+    while ((m = re.exec(content)) !== null) {
+        if (m.index > lastIndex) {
+            segments.push({ type: 'text', value: content.slice(lastIndex, m.index) });
+        }
+        const raw = m[0];
+        const linkUrl = trimUrlTrailing(raw);
+        segments.push({ type: 'link', value: linkUrl });
+        lastIndex = m.index + raw.length;
+    }
+    if (lastIndex < content.length) {
+        segments.push({ type: 'text', value: content.slice(lastIndex) });
+    }
+    const raw = segments.length > 0 ? segments : ([{ type: 'text' as const, value: content }] as TextSegment[]);
+    // Remove angle brackets around links: "text <" before link, ">" after link
+    return raw.map((seg, i) => {
+        if (seg.type !== 'text') return seg;
+        let value = seg.value;
+        if (i + 1 < raw.length && raw[i + 1].type === 'link' && value.endsWith('<')) value = value.slice(0, -1);
+        if (i > 0 && raw[i - 1].type === 'link' && value.startsWith('>')) value = value.slice(1);
+        return { type: 'text' as const, value };
+    });
+}
+
+function TypingDots({ color }: { color: string }) {
+    const dot1 = useRef(new Animated.Value(0.3)).current;
+    const dot2 = useRef(new Animated.Value(0.3)).current;
+    const dot3 = useRef(new Animated.Value(0.3)).current;
+    useEffect(() => {
+        const loop = Animated.loop(
+            Animated.sequence([
+                Animated.parallel([
+                    Animated.timing(dot1, { toValue: 1, useNativeDriver: true, duration: 200 }),
+                    Animated.timing(dot2, { toValue: 0.3, useNativeDriver: true, duration: 200 }),
+                    Animated.timing(dot3, { toValue: 0.3, useNativeDriver: true, duration: 200 }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(dot1, { toValue: 0.3, useNativeDriver: true, duration: 200 }),
+                    Animated.timing(dot2, { toValue: 1, useNativeDriver: true, duration: 200 }),
+                    Animated.timing(dot3, { toValue: 0.3, useNativeDriver: true, duration: 200 }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(dot1, { toValue: 0.3, useNativeDriver: true, duration: 200 }),
+                    Animated.timing(dot2, { toValue: 0.3, useNativeDriver: true, duration: 200 }),
+                    Animated.timing(dot3, { toValue: 1, useNativeDriver: true, duration: 200 }),
+                ]),
+            ])
+        );
+        loop.start();
+        return () => loop.stop();
+    }, [dot1, dot2, dot3]);
+    return (
+        <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+            <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color, opacity: dot1 }} />
+            <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color, opacity: dot2 }} />
+            <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color, opacity: dot3 }} />
+        </View>
+    );
+}
 
 const QUICK_ACTION_KEYS = [
     { id: 'q1', textKey: 'ai.quickInterpret' as const },
@@ -61,7 +145,12 @@ const TeachingAssistantScreen = () => {
     const translatedCacheRef = useRef<Record<string, string>>({});
     const requestedTranslateRef = useRef<Set<string>>(new Set());
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const flatListRef = useRef<FlatList>(null);
     const router = useRouter();
+    const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+    const [indexedDocuments, setIndexedDocuments] = useState<IndexedDocument[]>([]);
+    const [loadingDocuments, setLoadingDocuments] = useState(false);
+    const [deletingFilename, setDeletingFilename] = useState<string | null>(null);
 
     const showInitialSections = chatMessages.length === 0;
     const insets = useSafeAreaInsets();
@@ -75,7 +164,7 @@ const TeachingAssistantScreen = () => {
         micButton: { backgroundColor: 'transparent' as const, padding: 10, borderRadius: 8, marginLeft: 5 },
     }));
     const chatMessageStyles = useThemedStyles((th) => ({
-        messageContainer: { marginVertical: 5, padding: 10, borderRadius: 10, maxWidth: '80%' },
+        messageContainer: { marginVertical: 5, padding: 10, borderRadius: 10, minWidth: 180, maxWidth: '80%' },
         myMessage: { backgroundColor: th.tint, alignSelf: 'flex-end' as const },
         otherMessage: { backgroundColor: th.panel, alignSelf: 'flex-start' as const },
         messageText: { color: '#fff' },
@@ -146,22 +235,107 @@ const TeachingAssistantScreen = () => {
                 type: '*/*',
                 copyToCacheDirectory: true,
             });
-            if (!result.canceled && result.assets[0]) {
-                // TODO: attach to AI context / send
-            }
+            if (result.canceled || !result.assets[0]) return;
+            const asset = result.assets[0];
+            const formData = new FormData();
+            // @ts-ignore - React Native FormData expects { uri, name, type }
+            formData.append('file', {
+                uri: asset.uri,
+                name: asset.name ?? 'document',
+                type: asset.mimeType ?? 'application/octet-stream',
+            });
+            await ragService.uploadFile(formData);
+            Alert.alert(t('common.success') || 'Success', t('ai.uploadSuccess'));
         } catch {
             Alert.alert(t('common.error') || 'Error', t('common.failedToPickDocument') || 'Failed to pick document');
         }
     };
 
-    const handleSend = () => {
-        const trimmed = inputText.trim();
+    const loadIndexedDocuments = async () => {
+        setLoadingDocuments(true);
+        try {
+            const res = await ragService.listDocuments();
+            setIndexedDocuments(res.documents ?? []);
+        } catch {
+            Alert.alert(t('common.error') || 'Error', t('ai.error') || 'Could not load documents');
+        } finally {
+            setLoadingDocuments(false);
+        }
+    };
+
+    const openDocumentsModal = () => {
+        setShowDocumentsModal(true);
+        loadIndexedDocuments();
+    };
+
+    const deleteIndexedDocument = (filename: string) => {
+        Alert.alert(
+            t('ai.deleteDocument') || 'Remove',
+            t('ai.deleteDocumentConfirm') || 'Remove this document from the assistant? It will no longer be used in answers.',
+            [
+                { text: t('common.cancel') || 'Cancel', style: 'cancel' },
+                {
+                    text: t('ai.deleteDocument') || 'Remove',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setDeletingFilename(filename);
+                        try {
+                            await ragService.deleteDocumentsByFilenames([filename]);
+                            await loadIndexedDocuments();
+                        } catch {
+                            Alert.alert(t('common.error') || 'Error', t('ai.error') || 'Could not remove document');
+                        } finally {
+                            setDeletingFilename(null);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const sendQuery = async (queryText: string) => {
+        const trimmed = queryText.trim();
         if (!trimmed || sending) return;
-        setChatMessages((prev) => [...prev, { id: `user-${Date.now()}`, role: 'user', content: trimmed }]);
+        const assistantId = `assistant-${Date.now()}`;
+        const now = Date.now();
+        setChatMessages((prev) => [...prev, { id: `user-${now}`, role: 'user', content: trimmed, createdAt: now }, { id: assistantId, role: 'assistant', content: '', isTyping: true }]);
         setInputText('');
         setSending(true);
-        // TODO: call AI and append assistant message
-        setSending(false);
+        try {
+            const { answer } = await ragService.query(trimmed, 5);
+            const content = answer?.trim() || t('ai.noResults');
+            setChatMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content, isTyping: false, createdAt: Date.now() } : m));
+            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+        } catch {
+            setChatMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: t('ai.error'), isTyping: false, createdAt: Date.now() } : m));
+            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const handleSend = () => sendQuery(inputText);
+
+    const copyToClipboard = (text: string) => {
+        Clipboard.setString(text);
+        Alert.alert(t('common.copiedToClipboard') || 'Copied to clipboard');
+    };
+
+    const regenerateReply = async (assistantId: string, userContent: string) => {
+        if (sending || !userContent.trim()) return;
+        setSending(true);
+        setChatMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: '', isTyping: true } : m));
+        try {
+            const { answer } = await ragService.query(userContent.trim(), 5);
+            const content = answer?.trim() || t('ai.noResults');
+            setChatMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content, isTyping: false, createdAt: Date.now() } : m));
+            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+        } catch {
+            setChatMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: t('ai.error'), isTyping: false, createdAt: Date.now() } : m));
+            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+        } finally {
+            setSending(false);
+        }
     };
 
     useEffect(() => {
@@ -198,7 +372,7 @@ const TeachingAssistantScreen = () => {
     type ListItem = typeof SYSTEM_GREETING | ChatMessage;
     const listData: ListItem[] = [SYSTEM_GREETING, ...chatMessages];
 
-    const renderItem = ({ item }: { item: ListItem }) => {
+    const renderItem = ({ item, index }: { item: ListItem; index: number }) => {
         if ('type' in item && item.type === 'system') {
             return (
                 <ThemedView lightColor={Colors.light.backgroundElementSecondary} darkColor={Colors.dark.backgroundElementSecondary} style={styles.greeting}>
@@ -206,15 +380,10 @@ const TeachingAssistantScreen = () => {
                     <View style={styles.timeContainer}>
                         <Text style={styles.time}>{t(SYSTEM_GREETING.timeKey)}</Text>
                         <ThemedView style={[styles.icongreeting, { backgroundColor: 'transparent' }]}>
-                            <TouchableOpacity style={{ paddingRight: 6 }} onPress={() => {
-                                // Clipboard(greetingDisplayText);
-                                Alert.alert(t('common.copiedToClipboard') || 'Copied to clipboard');
-                            }}>
+                            <TouchableOpacity style={{ paddingRight: 6 }} onPress={() => copyToClipboard(greetingDisplayText)}>
                                 <CopyIcon size={14} color={theme.subText} />
                             </TouchableOpacity>
-                            <TouchableOpacity style={{ paddingRight: 6 }} onPress={() => {
-                                // TODO: regenerate the message
-                            }}>
+                            <TouchableOpacity style={{ paddingRight: 6 }} onPress={() => sendQuery(t('ai.greeting'))}>
                                 <RegenerateIcon size={14} color={theme.subText} />
                             </TouchableOpacity>
                         </ThemedView>
@@ -224,9 +393,55 @@ const TeachingAssistantScreen = () => {
         }
         if ('role' in item && (item.role === 'user' || item.role === 'assistant')) {
             const isUser = item.role === 'user';
+            const isTyping = 'isTyping' in item && item.isTyping;
+            const createdAt = 'createdAt' in item ? item.createdAt : undefined;
             return (
                 <View style={[chatMessageStyles.messageContainer, isUser ? chatMessageStyles.myMessage : chatMessageStyles.otherMessage]}>
-                    <Text style={isUser ? chatMessageStyles.messageText : chatMessageStyles.messageOtherText}>{item.content}</Text>
+                    {isTyping ? (
+                        <TypingDots color={theme.text} />
+                    ) : (
+                        <Text style={isUser ? chatMessageStyles.messageText : chatMessageStyles.messageOtherText}>
+                            {parseContentWithLinks(item.content).map((seg, i) =>
+                                seg.type === 'link' ? (
+                                    <Text
+                                        key={i}
+                                        style={[
+                                            isUser ? styles.linkInMyMessage : styles.linkInOtherMessage,
+                                            isUser ? chatMessageStyles.messageText : [chatMessageStyles.messageOtherText, { color: theme.tint }]
+                                        ]}
+                                        onPress={() => Linking.openURL(seg.value)}
+                                    >
+                                        {seg.value}
+                                    </Text>
+                                ) : (
+                                    <Text key={i}>{seg.value}</Text>
+                                )
+                            )}
+                        </Text>
+                    )}
+                    {!isTyping && (
+                        <View style={styles.messageTimeRow}>
+                            <Text style={[styles.messageTime, { color: isUser ? 'rgba(255,255,255,0.8)' : theme.subText }]}>
+                                {createdAt != null && createdAt > 0 ? formatMessageTime(createdAt) : ''}
+                            </Text>
+                            {!isUser && (
+                                <View style={styles.messageActions}>
+                                    <TouchableOpacity style={styles.messageActionBtn} onPress={() => copyToClipboard(item.content)}>
+                                        <CopyIcon size={14} color={theme.subText} />
+                                    </TouchableOpacity>
+                                    {index > 0 && 'role' in listData[index - 1] && (listData[index - 1] as ChatMessage).role === 'user' && (
+                                        <TouchableOpacity
+                                            style={styles.messageActionBtn}
+                                            onPress={() => regenerateReply(item.id, (listData[index - 1] as ChatMessage).content)}
+                                            disabled={sending}
+                                        >
+                                            <RegenerateIcon size={14} color={theme.subText} />
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            )}
+                        </View>
+                    )}
                 </View>
             );
         }
@@ -255,6 +470,9 @@ const TeachingAssistantScreen = () => {
                             </View>
                         </View>
 
+                        <TouchableOpacity onPress={openDocumentsModal} style={{ padding: 4 }}>
+                            <Ionicons name="document-text-outline" size={22} color={theme.text} />
+                        </TouchableOpacity>
                         <TouchableOpacity onPress={() => setShowTranslateLangModal(true)}>
                             <TranslateIcon size={24} color={translateMessages ? theme.tint : theme.text} />
                         </TouchableOpacity>
@@ -263,6 +481,7 @@ const TeachingAssistantScreen = () => {
 
 
                 <FlatList
+                    ref={flatListRef}
                     data={listData}
                     keyExtractor={(item) => ('role' in item ? item.id : item.id)}
                     renderItem={renderItem}
@@ -277,14 +496,31 @@ const TeachingAssistantScreen = () => {
                         <View style={styles.quickActionsBlock}>
                             <Text style={[styles.quickActionsTitle, { color: theme.subText }]}>{t('ai.quickActionsTitle')}</Text>
                             {QUICK_ACTION_KEYS.map((q) => (
-                                <TouchableOpacity key={q.id} style={styles.actionButton}>
+                                <TouchableOpacity
+                                    key={q.id}
+                                    style={styles.actionButton}
+                                    onPress={() => sendQuery(t(q.textKey))}
+                                    disabled={sending}
+                                >
                                     <Text style={styles.actionText}>{t(q.textKey)}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
-                        <TouchableOpacity style={[styles.uploadButton, { marginBottom: 8 }]}>
+                        <TouchableOpacity
+                            style={[styles.uploadButton, { marginBottom: 8 }]}
+                            onPress={() => pickDocument()}
+                            disabled={sending}
+                        >
                             <ShareIcon size={16} color={Colors.light.tint} />
                             <Text style={styles.uploadText}>{t('ai.uploadReport')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.uploadButton, { marginBottom: 8, borderStyle: 'dashed' }]}
+                            onPress={openDocumentsModal}
+                            disabled={sending}
+                        >
+                            <Ionicons name="document-text-outline" size={18} color={Colors.light.tint} />
+                            <Text style={styles.uploadText}>{t('ai.manageData')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -292,7 +528,7 @@ const TeachingAssistantScreen = () => {
                 {/* Input — same as chat, no poll/announcement */}
                 <View style={[inputStyles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
                     <View style={inputStyles.inputWrapper}>
-                        <TouchableOpacity
+                        {/* <TouchableOpacity
                             style={inputStyles.attachmentButton}
                             onPress={() => setShowAttachingMenu(true)}
                             disabled={sending}
@@ -302,7 +538,7 @@ const TeachingAssistantScreen = () => {
                                 size={24}
                                 color={sending ? theme.subText : theme.text}
                             />
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                         <TextInput
                             style={inputStyles.input}
                             placeholder={t('placeholders.askAnything')}
@@ -315,7 +551,7 @@ const TeachingAssistantScreen = () => {
                             textAlignVertical="top"
                         />
                     </View>
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         style={inputStyles.micButton}
                         disabled={sending}
                     >
@@ -323,7 +559,7 @@ const TeachingAssistantScreen = () => {
                             color={theme.text || 'rgba(18, 18, 18, 1)'}
                             size={20}
                         />
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                     <TouchableOpacity
                         style={[inputStyles.sendButton, (sending || !inputText.trim()) && { opacity: 0.5 }]}
                         onPress={handleSend}
@@ -345,6 +581,66 @@ const TeachingAssistantScreen = () => {
                     onSelectFiles={handleSelectFiles}
                     isGroup={false}
                 />
+
+                {/* Manage indexed documents modal */}
+                <Modal
+                    visible={showDocumentsModal}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={() => setShowDocumentsModal(false)}
+                >
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }]}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setShowDocumentsModal(false)} />
+                        <TouchableOpacity
+                            activeOpacity={1}
+                            onPress={(e) => e.stopPropagation()}
+                            style={[styles.documentsModalBox, { backgroundColor: theme.panel || theme.bg, paddingBottom: insets.bottom + 16 }]}
+                        >
+                            <View style={[styles.documentsModalHeader, { borderBottomColor: theme.border }]}>
+                                <ThemedText type="defaultSemiBold" style={{ fontSize: 18 }}>{t('ai.myDocuments')}</ThemedText>
+                                <TouchableOpacity onPress={() => setShowDocumentsModal(false)} hitSlop={12}>
+                                    <Ionicons name="close" size={24} color={theme.text} />
+                                </TouchableOpacity>
+                            </View>
+                            {loadingDocuments ? (
+                                <View style={styles.documentsModalLoading}>
+                                    <ActivityIndicator size="large" color={theme.tint} />
+                                </View>
+                            ) : indexedDocuments.length === 0 ? (
+                                <Text style={[styles.documentsModalEmpty, { color: theme.subText }]}>{t('ai.noDocuments')}</Text>
+                            ) : (
+                                <FlatList
+                                    data={indexedDocuments}
+                                    keyExtractor={(item) => item.filename}
+                                    style={{ maxHeight: 320 }}
+                                    renderItem={({ item }) => {
+                                        const isDeleting = deletingFilename === item.filename;
+                                        const displayName = item.filename.length > 50 ? item.filename.slice(0, 47) + '…' : item.filename;
+                                        return (
+                                            <View style={[styles.documentRow, { borderBottomColor: theme.border }]}>
+                                                <View style={{ flex: 1, minWidth: 0 }}>
+                                                    <Text style={[styles.documentRowName, { color: theme.text }]} numberOfLines={2}>{displayName}</Text>
+                                                    <Text style={[styles.documentRowMeta, { color: theme.subText }]}>{item.chunk_count} {item.chunk_count === 1 ? 'chunk' : 'chunks'}</Text>
+                                                </View>
+                                                <TouchableOpacity
+                                                    style={[styles.documentRowDelete, isDeleting && { opacity: 0.6 }]}
+                                                    onPress={() => !isDeleting && deleteIndexedDocument(item.filename)}
+                                                    disabled={isDeleting}
+                                                >
+                                                    {isDeleting ? (
+                                                        <ActivityIndicator size="small" color={theme.tint} />
+                                                    ) : (
+                                                        <Ionicons name="trash-outline" size={22} color={theme.tint} />
+                                                    )}
+                                                </TouchableOpacity>
+                                            </View>
+                                        );
+                                    }}
+                                />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
 
                 {/* Translate messages modal */}
                 <Modal
@@ -498,6 +794,31 @@ const styles = StyleSheet.create({
         textAlign: 'left',
         marginTop: 15
     },
+    messageTimeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 8,
+        paddingBottom: 2
+    },
+    messageTime: {
+        fontSize: 10
+    },
+    messageActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4
+    },
+    messageActionBtn: {
+        padding: 4
+    },
+    linkInMyMessage: {
+        textDecorationLine: 'underline',
+        opacity: 0.95
+    },
+    linkInOtherMessage: {
+        textDecorationLine: 'underline'
+    },
     icongreeting: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -548,6 +869,14 @@ const styles = StyleSheet.create({
     translateModalActions: { marginTop: 20, gap: 10 },
     translateModalOffBtn: { paddingVertical: 10, alignItems: 'center', borderRadius: 10, borderWidth: 1 },
     translateModalApplyBtn: { paddingVertical: 14, alignItems: 'center', borderRadius: 10 },
+    documentsModalBox: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingHorizontal: 20 },
+    documentsModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12, borderBottomWidth: 1 },
+    documentsModalLoading: { paddingVertical: 40, alignItems: 'center' },
+    documentsModalEmpty: { paddingVertical: 32, textAlign: 'center', fontSize: 14 },
+    documentRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
+    documentRowName: { fontSize: 14 },
+    documentRowMeta: { fontSize: 12, marginTop: 2 },
+    documentRowDelete: { padding: 8, marginLeft: 8 },
 });
 
 export default TeachingAssistantScreen;

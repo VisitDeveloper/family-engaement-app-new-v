@@ -489,14 +489,14 @@ export default function MessagesScreen() {
         {/* Filter Buttons */}
         <View style={styles.filterContainer}>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() => router.push("/ai-assisstant")}
             style={[styles.filterBtn, { opacity: 0.5 }]}
             disabled={true}
           >
             <AiAssistantIcon size={16} color={theme.tint} />
             <Text>{t("ai.buttonLabel")}</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity
             onPress={() => router.push("/emergency")}
