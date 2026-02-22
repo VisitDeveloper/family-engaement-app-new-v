@@ -497,6 +497,14 @@
     "quickMath": "Suggest math activities",
     "quickParent": "Generate parent communication",
     "quickGoals": "Create learning goals",
-    "uploadReport": "Upload Assessment Report"
+    "uploadReport": "Upload Assessment Report",
+    "uploadSuccess": "File uploaded and ready for search.",
+    "manageData": "Manage my data",
+    "myDocuments": "My indexed documents",
+    "noDocuments": "No documents yet. Upload a file or add a link/text.",
+    "deleteDocument": "Remove",
+    "deleteDocumentConfirm": "Remove this document from the assistant? It will no longer be used in answers.",
+    "noResults": "No relevant documents found.",
+    "error": "Could not reach the assistant. Please try again."
   }
 }

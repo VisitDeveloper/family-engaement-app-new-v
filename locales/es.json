@@ -507,6 +507,14 @@
     "quickMath": "Sugerir actividades de matemáticas",
     "quickParent": "Generar comunicación con padres",
     "quickGoals": "Crear objetivos de aprendizaje",
-    "uploadReport": "Subir informe de evaluación"
+    "uploadReport": "Subir informe de evaluación",
+    "uploadSuccess": "Archivo subido y listo para buscar.",
+    "manageData": "Gestionar mis datos",
+    "myDocuments": "Mis documentos indexados",
+    "noDocuments": "Aún no hay documentos. Sube un archivo o añade un enlace/texto.",
+    "deleteDocument": "Quitar",
+    "deleteDocumentConfirm": "¿Quitar este documento del asistente? Ya no se usará en las respuestas.",
+    "noResults": "No se encontraron documentos relevantes.",
+    "error": "No se pudo conectar con el asistente. Inténtalo de nuevo."
   }
 }
