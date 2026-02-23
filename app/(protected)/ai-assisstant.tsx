@@ -7,7 +7,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme.web';
 import { useThemedStyles } from '@/hooks/use-theme-style';
 import { detectSourceLanguage, SUPPORTED_LANGUAGES, translateText } from '@/services/translate.service';
-import { ragService, type IndexedDocument } from '@/services/rag.service';
+import { ragService, type IndexedDocument, type RagDataQueryResponse } from '@/services/rag.service';
 import { useStore } from '@/store';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -41,7 +41,16 @@ const SYSTEM_GREETING = {
     timeKey: 'ai.justNow' as const,
 };
 
-type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; isTyping?: boolean; createdAt?: number };
+type ChatMessage = {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    isTyping?: boolean;
+    createdAt?: number;
+    /** When assistant used data query: rows for chart/report */
+    data?: Record<string, unknown>[];
+    chart_suggestion?: string | null;
+};
 
 function formatMessageTime(ts: number): string {
     const d = new Date(ts);
@@ -135,6 +144,8 @@ const TeachingAssistantScreen = () => {
     const [inputText, setInputText] = useState('');
     const [showAttachingMenu, setShowAttachingMenu] = useState(false);
     const [sending, setSending] = useState(false);
+    /** When true, send as data/report query (RAG generates SQL, runs on core DB, returns data for chart) */
+    const [useDataQuery, setUseDataQuery] = useState(false);
     const [translateMessages, setTranslateMessages] = useState(false);
     const [translateSource, setTranslateSource] = useState<'auto' | string>('auto');
     const [translateTarget, setTranslateTarget] = useState<string>('en');
@@ -302,12 +313,24 @@ const TeachingAssistantScreen = () => {
         setInputText('');
         setSending(true);
         try {
-            const { answer } = await ragService.query(trimmed, 5);
-            const content = answer?.trim() || t('ai.noResults');
-            setChatMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content, isTyping: false, createdAt: Date.now() } : m));
+            if (useDataQuery) {
+                const res: RagDataQueryResponse = await ragService.queryData(trimmed, 8);
+                const content = res.answer?.trim() || t('ai.noResults');
+                setChatMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === assistantId
+                            ? { ...m, content, isTyping: false, createdAt: Date.now(), data: res.data, chart_suggestion: res.chart_suggestion }
+                            : m
+                    )
+                );
+            } else {
+                const { answer } = await ragService.query(trimmed, 5);
+                const content = answer?.trim() || t('ai.noResults');
+                setChatMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content, isTyping: false, createdAt: Date.now() } : m)));
+            }
             setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
         } catch {
-            setChatMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: t('ai.error'), isTyping: false, createdAt: Date.now() } : m));
+            setChatMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: t('ai.error'), isTyping: false, createdAt: Date.now() } : m)));
             setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
         } finally {
             setSending(false);
@@ -321,17 +344,27 @@ const TeachingAssistantScreen = () => {
         Alert.alert(t('common.copiedToClipboard') || 'Copied to clipboard');
     };
 
-    const regenerateReply = async (assistantId: string, userContent: string) => {
+    const regenerateReply = async (assistantId: string, userContent: string, isDataQuery?: boolean) => {
         if (sending || !userContent.trim()) return;
         setSending(true);
-        setChatMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: '', isTyping: true } : m));
+        setChatMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: '', isTyping: true, data: undefined, chart_suggestion: undefined } : m)));
         try {
-            const { answer } = await ragService.query(userContent.trim(), 5);
-            const content = answer?.trim() || t('ai.noResults');
-            setChatMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content, isTyping: false, createdAt: Date.now() } : m));
+            if (isDataQuery) {
+                const res = await ragService.queryData(userContent.trim(), 8);
+                const content = res.answer?.trim() || t('ai.noResults');
+                setChatMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === assistantId ? { ...m, content, isTyping: false, createdAt: Date.now(), data: res.data, chart_suggestion: res.chart_suggestion } : m
+                    )
+                );
+            } else {
+                const { answer } = await ragService.query(userContent.trim(), 5);
+                const content = answer?.trim() || t('ai.noResults');
+                setChatMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content, isTyping: false, createdAt: Date.now() } : m)));
+            }
             setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
         } catch {
-            setChatMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: t('ai.error'), isTyping: false, createdAt: Date.now() } : m));
+            setChatMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: t('ai.error'), isTyping: false, createdAt: Date.now() } : m)));
             setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
         } finally {
             setSending(false);
@@ -395,29 +428,67 @@ const TeachingAssistantScreen = () => {
             const isUser = item.role === 'user';
             const isTyping = 'isTyping' in item && item.isTyping;
             const createdAt = 'createdAt' in item ? item.createdAt : undefined;
+            const hasData = !isUser && item.role === 'assistant' && 'data' in item && Array.isArray(item.data) && item.data.length > 0;
+            const dataRows = hasData ? (item as ChatMessage).data! : [];
+            const chartSuggestion = !isUser && 'chart_suggestion' in item ? (item as ChatMessage).chart_suggestion : undefined;
+            const columns = hasData && dataRows[0] ? Object.keys(dataRows[0]) : [];
             return (
                 <View style={[chatMessageStyles.messageContainer, isUser ? chatMessageStyles.myMessage : chatMessageStyles.otherMessage]}>
                     {isTyping ? (
                         <TypingDots color={theme.text} />
                     ) : (
-                        <Text style={isUser ? chatMessageStyles.messageText : chatMessageStyles.messageOtherText}>
-                            {parseContentWithLinks(item.content).map((seg, i) =>
-                                seg.type === 'link' ? (
-                                    <Text
-                                        key={i}
-                                        style={[
-                                            isUser ? styles.linkInMyMessage : styles.linkInOtherMessage,
-                                            isUser ? chatMessageStyles.messageText : [chatMessageStyles.messageOtherText, { color: theme.tint }]
-                                        ]}
-                                        onPress={() => Linking.openURL(seg.value)}
-                                    >
-                                        {seg.value}
-                                    </Text>
-                                ) : (
-                                    <Text key={i}>{seg.value}</Text>
-                                )
+                        <>
+                            <Text style={isUser ? chatMessageStyles.messageText : chatMessageStyles.messageOtherText}>
+                                {parseContentWithLinks(item.content).map((seg, i) =>
+                                    seg.type === 'link' ? (
+                                        <Text
+                                            key={i}
+                                            style={[
+                                                isUser ? styles.linkInMyMessage : styles.linkInOtherMessage,
+                                                isUser ? chatMessageStyles.messageText : [chatMessageStyles.messageOtherText, { color: theme.tint }]
+                                            ]}
+                                            onPress={() => Linking.openURL(seg.value)}
+                                        >
+                                            {seg.value}
+                                        </Text>
+                                    ) : (
+                                        <Text key={i}>{seg.value}</Text>
+                                    )
+                                )}
+                            </Text>
+                            {hasData && (
+                                <View style={[styles.dataTableWrap, { borderColor: theme.border ?? theme.subText + '40' }]}>
+                                    {chartSuggestion && (
+                                        <Text style={[styles.dataTableChartHint, { color: theme.subText }]}>
+                                            {t('ai.chartSuggestion') || 'Chart'}: {chartSuggestion}
+                                        </Text>
+                                    )}
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.dataTableScroll}>
+                                        <View>
+                                            <View style={[styles.dataTableRow, styles.dataTableHeader, { borderBottomColor: theme.border ?? theme.subText + '40' }]}>
+                                                {columns.map((col) => (
+                                                    <Text key={col} style={[styles.dataTableCell, styles.dataTableHeaderCell, { color: theme.subText }]} numberOfLines={1}>
+                                                        {col}
+                                                    </Text>
+                                                ))}
+                                            </View>
+                                            {dataRows.slice(0, 50).map((row, ri) => (
+                                                <View key={ri} style={[styles.dataTableRow, { borderBottomColor: theme.border ?? theme.subText + '20' }]}>
+                                                    {columns.map((col) => (
+                                                        <Text key={col} style={[styles.dataTableCell, { color: theme.text }]} numberOfLines={1}>
+                                                            {row[col] != null ? String(row[col]) : '—'}
+                                                        </Text>
+                                                    ))}
+                                                </View>
+                                            ))}
+                                            {dataRows.length > 50 && (
+                                                <Text style={[styles.dataTableMore, { color: theme.subText }]}>{t('ai.showingFirst50') || `Showing first 50 of ${dataRows.length}`}</Text>
+                                            )}
+                                        </View>
+                                    </ScrollView>
+                                </View>
                             )}
-                        </Text>
+                        </>
                     )}
                     {!isTyping && (
                         <View style={styles.messageTimeRow}>
@@ -432,7 +503,7 @@ const TeachingAssistantScreen = () => {
                                     {index > 0 && 'role' in listData[index - 1] && (listData[index - 1] as ChatMessage).role === 'user' && (
                                         <TouchableOpacity
                                             style={styles.messageActionBtn}
-                                            onPress={() => regenerateReply(item.id, (listData[index - 1] as ChatMessage).content)}
+                                            onPress={() => regenerateReply(item.id, (listData[index - 1] as ChatMessage).content, hasData)}
                                             disabled={sending}
                                         >
                                             <RegenerateIcon size={14} color={theme.subText} />
@@ -524,6 +595,24 @@ const TeachingAssistantScreen = () => {
                         </TouchableOpacity>
                     </View>
                 )}
+
+                {/* Query mode: document Q&A vs data/report */}
+                <View style={[styles.queryModeRow, { paddingHorizontal: 12, paddingBottom: 6 }]}>
+                    <TouchableOpacity
+                        style={[styles.queryModeBtn, !useDataQuery && { backgroundColor: theme.tint, opacity: 1 }]}
+                        onPress={() => setUseDataQuery(false)}
+                        disabled={sending}
+                    >
+                        <Text style={[styles.queryModeBtnText, { color: useDataQuery ? theme.subText : '#fff' }]}>{t('ai.modeDocuments') || 'پرسش از اسناد'}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.queryModeBtn, useDataQuery && { backgroundColor: theme.tint, opacity: 1 }]}
+                        onPress={() => setUseDataQuery(true)}
+                        disabled={sending}
+                    >
+                        <Text style={[styles.queryModeBtnText, { color: useDataQuery ? '#fff' : theme.subText }]}>{t('ai.modeDataReport') || 'گزارش از دیتا'}</Text>
+                    </TouchableOpacity>
+                </View>
 
                 {/* Input — same as chat, no poll/announcement */}
                 <View style={[inputStyles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
@@ -877,6 +966,17 @@ const styles = StyleSheet.create({
     documentRowName: { fontSize: 14 },
     documentRowMeta: { fontSize: 12, marginTop: 2 },
     documentRowDelete: { padding: 8, marginLeft: 8 },
+    dataTableWrap: { marginTop: 10, borderWidth: 1, borderRadius: 8, overflow: 'hidden' },
+    dataTableChartHint: { fontSize: 11, paddingHorizontal: 10, paddingTop: 6, paddingBottom: 2 },
+    dataTableScroll: { maxHeight: 220 },
+    dataTableRow: { flexDirection: 'row', borderBottomWidth: 1, paddingVertical: 6, paddingHorizontal: 8 },
+    dataTableHeader: { paddingVertical: 8 },
+    dataTableCell: { fontSize: 12, minWidth: 72, maxWidth: 140 },
+    dataTableHeaderCell: { fontWeight: '600', fontSize: 11 },
+    dataTableMore: { fontSize: 11, padding: 8, fontStyle: 'italic' },
+    queryModeRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+    queryModeBtn: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: 'transparent', opacity: 0.85 },
+    queryModeBtnText: { fontSize: 13 },
 });
 
 export default TeachingAssistantScreen;

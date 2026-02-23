@@ -11,6 +11,12 @@ export interface RagQueryResponse {
   results: RagDocument[];
 }
 
+export interface RagDataQueryResponse {
+  answer: string;
+  data: Record<string, unknown>[];
+  chart_suggestion?: string | null;
+}
+
 export interface RagUploadResponse {
   status: string;
   filename: string;
@@ -40,6 +46,11 @@ export interface RagIngestResponse {
 export const ragService = {
   async query(query: string, topK: number = 5): Promise<RagQueryResponse> {
     return apiClient.post<RagQueryResponse>('/rag/query', { query, top_k: topK });
+  },
+
+  /** RAG data query: uses schema/docs to generate SQL, runs on core DB, returns data for charts/reports */
+  async queryData(query: string, topK: number = 8): Promise<RagDataQueryResponse> {
+    return apiClient.post<RagDataQueryResponse>('/rag/query-data', { query, top_k: topK });
   },
 
   async uploadFile(formData: FormData): Promise<RagUploadResponse> {
