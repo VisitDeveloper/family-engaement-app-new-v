@@ -9,13 +9,13 @@ export interface DeepLinkRoute {
 /**
  * Parse a deep link URL and return the corresponding route
  * Supports the following deep link patterns:
- * - familyappengagement://chat/{chatID}
- * - familyappengagement://contact/{userId}?name=...&role=...&image=...
- * - familyappengagement://group/{chatID}
- * - familyappengagement://event/{id}
- * - familyappengagement://resource/{id}
- * - familyappengagement://feed/{id}
- * - familyappengagement://profile/{userId}
+ * - mebo://chat/{chatID}
+ * - mebo://contact/{userId}?name=...&role=...&image=...
+ * - mebo://group/{chatID}
+ * - mebo://event/{id}
+ * - mebo://resource/{id}
+ * - mebo://feed/{id}
+ * - mebo://profile/{userId}
  */
 export function parseDeepLink(url: string): DeepLinkRoute | null {
   try {

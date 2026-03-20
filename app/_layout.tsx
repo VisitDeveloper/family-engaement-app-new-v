@@ -35,12 +35,12 @@ export default function RootLayout() {
 
     // Otherwise, navigate based on type
     if (data.type === 'message' && data.conversationId) {
-      console.log(`familyappengagement://chat/${data.conversationId}`);
-      handleDeepLink(`familyappengagement://chat/${data.conversationId}`);
+      console.log(`mebo://chat/${data.conversationId}`);
+      handleDeepLink(`mebo://chat/${data.conversationId}`);
     } else if (data.type === 'emergency') {
       router.push('/(protected)/emergency-notifications');
     } else if (data.type === 'event' && data.eventId) {
-      handleDeepLink(`familyappengagement://event/${data.eventId}`);
+      handleDeepLink(`mebo://event/${data.eventId}`);
     }
   };
 

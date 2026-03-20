@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Family App Engagement",
+    "name": "MeBo",
     "slug": "family-app-engagment-new",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "familyappengagement",
+    "scheme": "mebo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -22,7 +22,6 @@
       }
     },
     "android": {
-      "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -47,7 +46,7 @@
           "autoVerify": true,
           "data": [
             {
-              "scheme": "familyappengagement"
+              "scheme": "mebo"
             }
           ],
           "category": [

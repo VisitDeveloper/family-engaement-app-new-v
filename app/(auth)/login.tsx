@@ -256,28 +256,28 @@ export default function LoginScreen() {
     <>
       {/* LOGIN BOX */}
       <View style={[styles.element, { borderColor: theme.border }]}>
-          <View>
-            <Image
-              source={
-                colorScheme === "dark"
-                  ? require("./../../assets/images/LOGO-light.png")
-                  : require("./../../assets/images/LOGO-primary.png")
-              }
-              style={{
-                width: "90%",
-                maxWidth: 250,
-                height: 60,
-                alignSelf: "center",
-                marginBottom: 5,
-              }}
-              resizeMode="contain"
-              accessibilityRole="image"
-              accessibilityLabel="Family App Logo"
-            />
-          </View>
-          {/* <View style={[styles.switchContainer, { borderColor: theme.border }]}> */}
-          {/* MOVING TOGGLE */}
-          {/* <Animated.View
+        <View>
+          <Image
+            source={
+              colorScheme === "dark"
+                ? require("./../../assets/images/LOGO-light.png")
+                : require("./../../assets/images/LOGO-primary.png")
+            }
+            style={{
+              width: "90%",
+              maxWidth: 250,
+              height: 60,
+              alignSelf: "center",
+              marginBottom: 5,
+            }}
+            resizeMode="contain"
+            accessibilityRole="image"
+            accessibilityLabel="Family App Logo"
+          />
+        </View>
+        {/* <View style={[styles.switchContainer, { borderColor: theme.border }]}> */}
+        {/* MOVING TOGGLE */}
+        {/* <Animated.View
               style={[
                 styles.switchThumb,
                 {
@@ -291,8 +291,8 @@ export default function LoginScreen() {
               </Text>
             </Animated.View> */}
 
-          {/* CLICKABLE ZONES */}
-          {/* <TouchableOpacity
+        {/* CLICKABLE ZONES */}
+        {/* <TouchableOpacity
               style={styles.switchZone}
               onPress={() => toggleSwitch("login")}
               accessibilityRole="button"
@@ -325,155 +325,155 @@ export default function LoginScreen() {
                 Register
               </Text>
             </TouchableOpacity> */}
-          {/* </View> */}
+        {/* </View> */}
 
+        <ThemedText
+          type="middleTitle"
+          style={{
+            marginTop: 20,
+            marginBottom: 5,
+            fontWeight: 500,
+            color: theme.text,
+            textAlign: "center",
+          }}
+        >
+          Where Families Come Together.
+        </ThemedText>
+
+        <View style={styles.messageBox}>
           <ThemedText
             type="middleTitle"
-            style={{
-              marginTop: 20,
-              marginBottom: 5,
-              fontWeight: 500,
-              color: theme.text,
-              textAlign: "center",
-            }}
+            style={{ marginBottom: 10, fontWeight: 500, color: theme.text }}
           >
-            Where Families Come Together.
+            Email
           </ThemedText>
 
+          <TextInput
+            style={styles.messageInput}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Please insert your email"
+            placeholderTextColor={theme.subText}
+            accessibilityLabel="Email"
+            accessibilityHint="Enter your email address"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            textContentType="emailAddress"
+          />
+          {errors.email && (
+            <ThemedText type="error">{errors.email}</ThemedText>
+          )}
+        </View>
+
+        <View style={styles.messageBox}>
+          <ThemedText
+            type="middleTitle"
+            style={{ marginBottom: 10, fontWeight: 500, color: theme.text }}
+          >
+            Password
+          </ThemedText>
+
+          <TextInput
+            secureTextEntry={true}
+            style={styles.messageInput}
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Please insert your password"
+            placeholderTextColor={theme.subText}
+            accessibilityLabel="Password"
+            accessibilityHint="Enter your password"
+            textContentType="password"
+            autoCapitalize="none"
+          />
+          {errors.password && (
+            <ThemedText type="error">{errors.password}</ThemedText>
+          )}
+        </View>
+
+        {activeTab === "register" && (
           <View style={styles.messageBox}>
             <ThemedText
               type="middleTitle"
               style={{ marginBottom: 10, fontWeight: 500, color: theme.text }}
             >
-              Email
-            </ThemedText>
-
-            <TextInput
-              style={styles.messageInput}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Please insert your email"
-              placeholderTextColor={theme.subText}
-              accessibilityLabel="Email"
-              accessibilityHint="Enter your email address"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              textContentType="emailAddress"
-            />
-            {errors.email && (
-              <ThemedText type="error">{errors.email}</ThemedText>
-            )}
-          </View>
-
-          <View style={styles.messageBox}>
-            <ThemedText
-              type="middleTitle"
-              style={{ marginBottom: 10, fontWeight: 500, color: theme.text }}
-            >
-              Password
+              Confirm Password
             </ThemedText>
 
             <TextInput
               secureTextEntry={true}
               style={styles.messageInput}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Please insert your password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Please insert your confirm password"
               placeholderTextColor={theme.subText}
-              accessibilityLabel="Password"
-              accessibilityHint="Enter your password"
+              accessibilityLabel="Confirm Password"
+              accessibilityHint="Re-enter your password to confirm"
               textContentType="password"
               autoCapitalize="none"
             />
-            {errors.password && (
-              <ThemedText type="error">{errors.password}</ThemedText>
+            {errors.confirmPassword && (
+              <ThemedText type="error">{errors.confirmPassword}</ThemedText>
             )}
           </View>
+        )}
 
-          {activeTab === "register" && (
-            <View style={styles.messageBox}>
-              <ThemedText
-                type="middleTitle"
-                style={{ marginBottom: 10, fontWeight: 500, color: theme.text }}
-              >
-                Confirm Password
-              </ThemedText>
+        {error && (
+          <View
+            style={{
+              marginTop: 10,
+              padding: 10,
+              backgroundColor: "#ffebee",
+              borderRadius: 5,
+            }}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+          >
+            <ThemedText type="error" style={{ textAlign: "center" }}>
+              {error}
+            </ThemedText>
+          </View>
+        )}
 
-              <TextInput
-                secureTextEntry={true}
-                style={styles.messageInput}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Please insert your confirm password"
-                placeholderTextColor={theme.subText}
-                accessibilityLabel="Confirm Password"
-                accessibilityHint="Re-enter your password to confirm"
-                textContentType="password"
-                autoCapitalize="none"
-              />
-              {errors.confirmPassword && (
-                <ThemedText type="error">{errors.confirmPassword}</ThemedText>
-              )}
-            </View>
-          )}
-
-          {error && (
-            <View
-              style={{
-                marginTop: 10,
-                padding: 10,
-                backgroundColor: "#ffebee",
-                borderRadius: 5,
-              }}
-              accessibilityRole="alert"
-              accessibilityLiveRegion="polite"
-            >
-              <ThemedText type="error" style={{ textAlign: "center" }}>
-                {error}
-              </ThemedText>
-            </View>
-          )}
-
-          <TouchableOpacity
-            onPress={handleLogin}
-            disabled={loading}
-            accessibilityRole="button"
-            accessibilityLabel={loading
+        <TouchableOpacity
+          onPress={handleLogin}
+          disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel={loading
+            ? activeTab === "login"
+              ? "Logging in"
+              : "Registering"
+            : activeTab === "login"
+              ? "Login"
+              : "Register"}
+          accessibilityState={{ disabled: loading }}
+          accessibilityHint={activeTab === "login"
+            ? "Submit your login credentials"
+            : "Submit your registration information"}
+          style={{
+            paddingHorizontal: 30,
+            paddingVertical: 12,
+            backgroundColor: loading ? theme.subText : theme.tint,
+            borderRadius: 10,
+            marginTop: 40,
+            alignSelf: "center",
+            opacity: loading ? 0.6 : 1,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          {loading && <ActivityIndicator size="small" color="#fff" />}
+          <Text style={{ color: "#fff", fontSize: 18 }}>
+            {loading
               ? activeTab === "login"
-                ? "Logging in"
-                : "Registering"
+                ? "Logging in..."
+                : "Registering..."
               : activeTab === "login"
                 ? "Login"
                 : "Register"}
-            accessibilityState={{ disabled: loading }}
-            accessibilityHint={activeTab === "login"
-              ? "Submit your login credentials"
-              : "Submit your registration information"}
-            style={{
-              paddingHorizontal: 30,
-              paddingVertical: 12,
-              backgroundColor: loading ? theme.subText : theme.tint,
-              borderRadius: 10,
-              marginTop: 40,
-              alignSelf: "center",
-              opacity: loading ? 0.6 : 1,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            {loading && <ActivityIndicator size="small" color="#fff" />}
-            <Text style={{ color: "#fff", fontSize: 18 }}>
-              {loading
-                ? activeTab === "login"
-                  ? "Logging in..."
-                  : "Registering..."
-                : activeTab === "login"
-                  ? "Login"
-                  : "Register"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+          </Text>
+        </TouchableOpacity>
+      </View>
     </>
   );
 

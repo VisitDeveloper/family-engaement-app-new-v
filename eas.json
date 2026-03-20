@@ -17,6 +17,9 @@
       }
     },
     "production": {
+      "android": {
+        "credentialsSource": "local"
+      },
       "ios": {
         "simulator": false
       }

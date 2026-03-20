@@ -160,14 +160,14 @@ class ApiClient {
 
       if (!response.ok) {
         // If refresh token was invalid
-          const safeMessage = this.sanitizeErrorMessage(
-            data.message,
-            response.status,
-            'Failed to refresh token'
-          );
+        const safeMessage = this.sanitizeErrorMessage(
+          data.message,
+          response.status,
+          'Failed to refresh token'
+        );
         this.processQueue(
           {
-              message: safeMessage,
+            message: safeMessage,
             status: response.status,
             data,
           },
@@ -207,9 +207,9 @@ class ApiClient {
   ): Promise<T> {
     const shouldSkipAuth = this.noAuthEndpoints.has(endpoint);
     const token = await this.getToken();
-    
+
     const headers = new Headers();
-    
+
     // Copy existing headers
     if (options.headers) {
       if (options.headers instanceof Headers) {
@@ -226,12 +226,12 @@ class ApiClient {
         });
       }
     }
-    
+
     // Don't set Content-Type for FormData, let the browser set it with boundary
     if (!(options.body instanceof FormData)) {
       headers.set('Content-Type', 'application/json');
     }
-    
+
     if (token && !shouldSkipAuth) {
       headers.set('Authorization', `Bearer ${token}`);
     }
@@ -260,7 +260,7 @@ class ApiClient {
         if (response.status === 401 && retryCount === 0 && !shouldSkipAuth) {
           // Try to refresh the token
           const newAccessToken = await this.refreshAccessToken();
-          
+
           if (newAccessToken) {
             // Retry request with new token
             return this.request<T>(endpoint, options, retryCount + 1);
@@ -269,7 +269,7 @@ class ApiClient {
             performAutoLogout().catch((logoutError) => {
               console.error('Error during auto logout:', logoutError);
             });
-            
+
             // Throw error so the original request fails
             const safeMessage = this.sanitizeErrorMessage(
               data.message,
@@ -284,7 +284,7 @@ class ApiClient {
             throw error;
           }
         }
-        
+
         const safeMessage = this.sanitizeErrorMessage(
           data.message,
           response.status,
@@ -295,7 +295,7 @@ class ApiClient {
           status: response.status,
           data,
         };
-        
+
         throw error;
       }
 
