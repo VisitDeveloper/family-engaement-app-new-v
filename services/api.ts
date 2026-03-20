@@ -13,6 +13,11 @@ class ApiClient {
   private baseURL: string;
   private getLanguage: (() => string) | null = null;
   private isRefreshing = false;
+  private readonly noAuthEndpoints = new Set([
+    '/auth/login',
+    '/auth/register',
+    '/auth/refresh',
+  ]);
   private failedQueue: {
     resolve: (value?: any) => void;
     reject: (reason?: any) => void;
@@ -98,6 +103,29 @@ class ApiClient {
     this.failedQueue = [];
   }
 
+  private sanitizeErrorMessage(
+    message: unknown,
+    status: number | undefined,
+    fallback: string
+  ): string {
+    const rawMessage = typeof message === 'string' ? message : '';
+    const normalized = rawMessage.toLowerCase();
+
+    // Never expose raw "unauthorized" backend messages to users.
+    if (normalized.includes('unauthorized')) {
+      if (status === 401 || status === 403) {
+        return 'Session expired. Please login again.';
+      }
+      return fallback;
+    }
+
+    if (rawMessage.trim().length > 0) {
+      return rawMessage;
+    }
+
+    return fallback;
+  }
+
   private async refreshAccessToken(): Promise<string | null> {
     if (this.isRefreshing) {
       // If we're currently refreshing, wait in the queue
@@ -132,9 +160,14 @@ class ApiClient {
 
       if (!response.ok) {
         // If refresh token was invalid
+          const safeMessage = this.sanitizeErrorMessage(
+            data.message,
+            response.status,
+            'Failed to refresh token'
+          );
         this.processQueue(
           {
-            message: data.message || 'Failed to refresh token',
+              message: safeMessage,
             status: response.status,
             data,
           },
@@ -172,6 +205,7 @@ class ApiClient {
     options: RequestInit = {},
     retryCount: number = 0
   ): Promise<T> {
+    const shouldSkipAuth = this.noAuthEndpoints.has(endpoint);
     const token = await this.getToken();
     
     const headers = new Headers();
@@ -198,7 +232,7 @@ class ApiClient {
       headers.set('Content-Type', 'application/json');
     }
     
-    if (token) {
+    if (token && !shouldSkipAuth) {
       headers.set('Authorization', `Bearer ${token}`);
     }
 
@@ -223,7 +257,7 @@ class ApiClient {
         console.log("data", data);
 
         // If error is 401 (Unauthorized) and we haven't retried yet
-        if (response.status === 401 && retryCount === 0) {
+        if (response.status === 401 && retryCount === 0 && !shouldSkipAuth) {
           // Try to refresh the token
           const newAccessToken = await this.refreshAccessToken();
           
@@ -237,8 +271,13 @@ class ApiClient {
             });
             
             // Throw error so the original request fails
+            const safeMessage = this.sanitizeErrorMessage(
+              data.message,
+              response.status,
+              'Session expired. Please login again.'
+            );
             const error: ApiError = {
-              message: data.message || 'Session expired. Please login again.',
+              message: safeMessage,
               status: response.status,
               data,
             };
@@ -246,8 +285,13 @@ class ApiClient {
           }
         }
         
+        const safeMessage = this.sanitizeErrorMessage(
+          data.message,
+          response.status,
+          `HTTP error! status: ${response.status}`
+        );
         const error: ApiError = {
-          message: data.message || `HTTP error! status: ${response.status}`,
+          message: safeMessage,
           status: response.status,
           data,
         };
@@ -283,8 +327,13 @@ class ApiClient {
     const response = await fetch(url, { method: 'GET', headers });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
+      const safeMessage = this.sanitizeErrorMessage(
+        (data as { message?: string })?.message,
+        response.status,
+        `HTTP error! status: ${response.status}`
+      );
       throw {
-        message: (data as { message?: string })?.message || `HTTP error! status: ${response.status}`,
+        message: safeMessage,
         status: response.status,
         data,
       } as ApiError;

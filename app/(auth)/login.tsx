@@ -12,12 +12,16 @@ import {
   Animated,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 export default function LoginScreen() {
   const setLoggedIn = useStore((s) => s.setLoggedIn);
@@ -248,11 +252,10 @@ export default function LoginScreen() {
     charCount: { color: theme.subText, textAlign: "right" },
   }));
 
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={[styles.container, { backgroundColor: theme.bg }]}>
-        {/* LOGIN BOX */}
-        <View style={[styles.element, { borderColor: theme.border }]}>
+  const scrollContent = (
+    <>
+      {/* LOGIN BOX */}
+      <View style={[styles.element, { borderColor: theme.border }]}>
           <View>
             <Image
               source={
@@ -471,7 +474,43 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+    </>
+  );
+
+  return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      {Platform.OS === "ios" ? (
+        <KeyboardAvoidingView
+          style={{ flex: 1, backgroundColor: theme.bg }}
+          behavior="padding"
+          keyboardVerticalOffset={0}
+        >
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={[
+              styles.container,
+              { backgroundColor: theme.bg, flexGrow: 1 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {scrollContent}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      ) : (
+        <KeyboardAwareScrollView
+          style={{ flex: 1, backgroundColor: theme.bg }}
+          contentContainerStyle={[
+            styles.container,
+            { backgroundColor: theme.bg, flexGrow: 1 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bottomOffset={24}
+        >
+          {scrollContent}
+        </KeyboardAwareScrollView>
+      )}
     </TouchableWithoutFeedback>
   );
 }

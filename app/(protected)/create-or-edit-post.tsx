@@ -20,12 +20,12 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  ScrollView,
   Switch,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
 const CreateOrEditPost = () => {
   const { t } = useTranslation();
@@ -575,9 +575,10 @@ const CreateOrEditPost = () => {
     <View style={styles.container}>
       <HeaderInnerPage title={isEditMode ? t("createPost.editPost") : t("createPost.newPost")} />
 
-      <ScrollView
+      <KeyboardAwareScrollViewPlatform
         style={styles.containerScrollBox}
         showsVerticalScrollIndicator={false}
+        bottomOffset={24}
       >
         <View style={styles.messageBox}>
           <ThemedText
@@ -878,7 +879,7 @@ const CreateOrEditPost = () => {
             </ThemedText>
           )}
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardAwareScrollViewPlatform>
     </View>
   );
 };

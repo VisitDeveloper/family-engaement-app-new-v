@@ -18,11 +18,11 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
 type Invitee = {
   id: string;
@@ -373,9 +373,10 @@ export default function CreateGroupScreen() {
         addstyles={{ marginBottom: 0 }}
       />
 
-      <ScrollView
+      <KeyboardAwareScrollViewPlatform
         style={styles.containerScrollView}
         showsVerticalScrollIndicator={false}
+        bottomOffset={24}
       >
         {/* Group Image + Name */}
         <View style={[styles.imageWrapper]}>
@@ -843,7 +844,7 @@ export default function CreateGroupScreen() {
             </View>
           )}
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardAwareScrollViewPlatform>
 
       <SelectListBottomSheet
         visible={listSheetOpen === "classrooms"}

@@ -16,11 +16,11 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
 const RESOURCE_TYPES: { value: ResourceType; labelKey: string }[] = [
   { value: "book", labelKey: "resource.categoryBook" },
@@ -228,10 +228,11 @@ export default function NewResourceScreen() {
         title={t("resource.newResource")}
         subTitle={t("resource.newResourceSubTitle")}
       />
-      <ScrollView
+      <KeyboardAwareScrollViewPlatform
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        bottomOffset={24}
       >
         <View style={styles.field}>
           <ThemedText style={styles.label}>{t("resource.formTitle")}</ThemedText>
@@ -372,7 +373,7 @@ export default function NewResourceScreen() {
             </ThemedText>
           )}
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardAwareScrollViewPlatform>
     </View>
   );
 }

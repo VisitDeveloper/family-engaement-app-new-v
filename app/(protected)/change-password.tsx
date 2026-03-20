@@ -17,11 +17,11 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
 export default function ChangePassword() {
   const { t } = useTranslation();
@@ -200,10 +200,11 @@ export default function ChangePassword() {
         addstyles={{ marginBottom: 0 }}
       />
 
-      <ScrollView
+      <KeyboardAwareScrollViewPlatform
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         style={styles.containerScrollView}
+        bottomOffset={24}
       >
         {/* Contact */}
         <View style={styles.card}>
@@ -504,7 +505,7 @@ export default function ChangePassword() {
             <ThemedText style={{ color: "#fff" }}>{t("changePassword.changePasswordButton")}</ThemedText>
           )}
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardAwareScrollViewPlatform>
     </View>
   );
 }

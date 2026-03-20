@@ -33,6 +33,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
 enum EventType {
   Conference = "Conference",
@@ -634,10 +635,11 @@ function CreateNewEvent() {
         title={isEditMode ? t("createEvent.editEvent") : t("createEvent.createNewEvent")}
       />
 
-      <ScrollView
+      <KeyboardAwareScrollViewPlatform
         style={styles.containerScrollView}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
+        bottomOffset={24}
       >
         {/* Contact */}
         <View style={styles.card}>
@@ -1210,7 +1212,7 @@ function CreateNewEvent() {
                 : t("createEvent.createEvent")}
           </ThemedText>
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardAwareScrollViewPlatform>
 
       <MapPicker
         visible={mapPickerVisible}

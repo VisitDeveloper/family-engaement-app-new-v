@@ -25,6 +25,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, Clipboard, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChatScreen() {
@@ -1237,8 +1238,8 @@ export default function ChatScreen() {
         <View style={styles.container}>
             <KeyboardAvoidingView
                 style={{ flex: 1, }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={0}
             >
                 <HeaderThreeSections
                     title={getConversationName()}
@@ -1312,7 +1313,9 @@ export default function ChatScreen() {
                 )}
 
                 {/* Input — parent cannot send in group chats */}
-                <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+                {Platform.OS === 'android' ? (
+                    <KeyboardStickyView offset={{ opened: -Math.max(insets.bottom, 10), closed: 0 }}>
+                        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
                     {isParentInGroup ? (
                         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
                             <Text style={{ fontSize: 13, color: theme.subText || theme.text + "99", textAlign: "center" }}>
@@ -1378,7 +1381,77 @@ export default function ChatScreen() {
                             </TouchableOpacity>
                         </>
                     )}
-                </View>
+                        </View>
+                    </KeyboardStickyView>
+                ) : (
+                    <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+                        {isParentInGroup ? (
+                            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+                                <Text style={{ fontSize: 13, color: theme.subText || theme.text + "99", textAlign: "center" }}>
+                                    Only teachers and admins can send messages in this group.
+                                </Text>
+                            </View>
+                        ) : (
+                            <>
+                                <View style={styles.inputWrapper}>
+                                    <TouchableOpacity
+                                        style={styles.attachmentButton}
+                                        onPress={() => setShowAttachingMenu(true)}
+                                        disabled={uploadingFile || sending}
+                                    >
+                                        <Ionicons
+                                            name="add"
+                                            size={24}
+                                            color={uploadingFile || sending ? theme.subText : theme.text}
+                                        />
+                                    </TouchableOpacity>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Type a message..."
+                                        placeholderTextColor={theme.subText || theme.text + '80'}
+                                        value={input}
+                                        onChangeText={setInput}
+                                        multiline={true}
+                                        blurOnSubmit={false}
+                                        editable={!sending && !uploadingFile}
+                                        accessibilityLabel="Message input"
+                                        accessibilityHint="Type your message here. Press Enter for a new line, use the send button to send."
+                                        accessibilityState={{ disabled: sending || uploadingFile }}
+                                        textAlignVertical="top"
+                                    />
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[styles.micButton, isRecording && { backgroundColor: theme.tint + '40' }]}
+                                    onPress={handleMicPress}
+                                    disabled={sending || uploadingFile}
+                                    accessibilityLabel={isRecording ? 'Stop and send voice message' : 'Record voice message'}
+                                >
+                                    <VoiceIcon
+                                        color={isRecording ? theme.tint : (theme.text || 'rgba(18, 18, 18, 1)')}
+                                        size={20}
+                                    />
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.sendButton, (sending || uploadingFile || !input.trim()) && { opacity: 0.5 }]}
+                                    onPress={handleSendMessage}
+                                    disabled={sending || uploadingFile || !input.trim()}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Send message"
+                                    accessibilityHint="Double tap to send your message"
+                                    accessibilityState={{ disabled: sending || uploadingFile || !input.trim() }}
+                                >
+                                    {(sending || uploadingFile) ? (
+                                        <ActivityIndicator size="small" color="#fff" />
+                                    ) : (
+                                        <SendIcon color="#fff" size={16} />
+                                    )}
+                                </TouchableOpacity>
+                            </>
+                        )}
+                    </View>
+                )}
 
                 {/* Upload Progress Indicator */}
                 {uploadingFile && uploadingFileName && (

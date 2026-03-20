@@ -6,8 +6,15 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as Linking from "expo-linking";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, LogBox, View } from "react-native";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  LogBox,
+  Platform,
+  View,
+} from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 
 // Disable LogBox
 LogBox.ignoreAllLogs();
@@ -96,7 +103,19 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
-        <Slot />
+        <KeyboardProvider>
+          {Platform.OS === "ios" ? (
+            <KeyboardAvoidingView
+              style={{ flex: 1 }}
+              behavior="padding"
+              keyboardVerticalOffset={0}
+            >
+              <Slot />
+            </KeyboardAvoidingView>
+          ) : (
+            <Slot />
+          )}
+        </KeyboardProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
