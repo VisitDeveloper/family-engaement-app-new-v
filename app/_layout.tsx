@@ -25,6 +25,12 @@ export default function RootLayout() {
   const isLoggedIn = useStore((s) => s.isLoggedIn);
   const [isMounted, setIsMounted] = useState(false);
 
+  const handleIncomingDeepLink = (url: string) => {
+    const isVerifyLink = url.includes("verify-email");
+    if (!isLoggedIn && !isVerifyLink) return;
+    handleDeepLink(url);
+  };
+
   // Handler for notification clicks
   const handleNotificationClick = (data: PushNotificationData) => {
     // If deepLink exists, use it
@@ -66,12 +72,12 @@ export default function RootLayout() {
   // Deep link: handle initial URL when app is launched via deep link
   // Supports: chat, contact, group, event, resource, feed, profile
   useEffect(() => {
-    if (!isMounted || !isLoggedIn) return;
+    if (!isMounted) return;
 
     const handleInitialUrl = async () => {
       const url = await Linking.getInitialURL();
       if (!url) return;
-      handleDeepLink(url);
+      handleIncomingDeepLink(url);
     };
 
     handleInitialUrl();
@@ -79,10 +85,8 @@ export default function RootLayout() {
 
   // When app is already open and user opens a deep link
   useEffect(() => {
-    if (!isLoggedIn) return;
-
     const sub = Linking.addEventListener("url", (event) => {
-      handleDeepLink(event.url);
+      handleIncomingDeepLink(event.url);
     });
 
     return () => sub.remove();

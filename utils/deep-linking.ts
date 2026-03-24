@@ -16,6 +16,7 @@ export interface DeepLinkRoute {
  * - mebo://resource/{id}
  * - mebo://feed/{id}
  * - mebo://profile/{userId}
+ * - mebo://verify-email?code=123456
  */
 export function parseDeepLink(url: string): DeepLinkRoute | null {
   try {
@@ -87,6 +88,17 @@ export function parseDeepLink(url: string): DeepLinkRoute | null {
       return {
         pathname: "/user-profile",
         params: { userId: profileMatch[1] },
+      };
+    }
+
+    // Email verification: /verify-email?code=123456
+    if (path === "verify-email") {
+      const params: Record<string, string> = {};
+      if (queryParams.code) params.code = String(queryParams.code);
+      if (queryParams.fallback) params.fallback = String(queryParams.fallback);
+      return {
+        pathname: "/(auth)/verify-email",
+        params,
       };
     }
 

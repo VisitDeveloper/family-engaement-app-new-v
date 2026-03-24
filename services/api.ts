@@ -17,6 +17,7 @@ class ApiClient {
     '/auth/login',
     '/auth/register',
     '/auth/refresh',
+    '/auth/verify-email',
   ]);
   private failedQueue: {
     resolve: (value?: any) => void;

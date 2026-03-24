@@ -40,6 +40,7 @@ export type UserProfile = ProfileResponseDto & { phone?: string;[key: string]: u
 export interface AuthService {
   login(credentials: LoginRequest): Promise<AuthResponse>;
   register(data: RegisterRequest): Promise<AuthResponse>;
+  verifyEmail(code: string): Promise<AuthResponse>;
   logout(): Promise<void>;
   refreshToken(refreshToken: string): Promise<RefreshTokenResponse>;
   changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse>;
@@ -119,6 +120,37 @@ class AuthServiceImpl implements AuthService {
       const apiError = error as ApiError;
       throw {
         message: apiError.message || "Registration failed. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async verifyEmail(code: string): Promise<AuthResponse> {
+    try {
+      const response = await apiClient.post<AuthResponse>("/auth/verify-email", {
+        code,
+      });
+
+      const accessToken = response.access_token || response.data?.access_token;
+      const refreshToken = response.refresh_token || response.data?.refresh_token;
+
+      if (accessToken) {
+        await apiClient.setAuthToken(accessToken);
+      }
+      if (refreshToken) {
+        await apiClient.setRefreshToken(refreshToken);
+      }
+
+      if (response.data?.user && !response.user) {
+        response.user = response.data.user;
+      }
+
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message: apiError.message || "Email verification failed. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
