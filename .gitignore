@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+# Expo / EAS (never commit signing exports)
+credentials.json
+
 # Expo
 .expo/
 dist/
@@ -30,7 +33,8 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files (never commit real URLs or passwords)
+.env
 .env*.local
 
 # typescript

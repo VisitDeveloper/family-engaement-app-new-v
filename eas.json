@@ -17,11 +17,15 @@
       }
     },
     "production": {
-      "android": {
-        "credentialsSource": "local"
+      "env": {
+        "EXPO_PUBLIC_ENV": "production"
       },
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "autoIncrement": true
+      },
+      "android": {
+        "autoIncrement": true
       }
     }
   },
