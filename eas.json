@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 5.2.0"
+    "version": ">= 5.2.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -18,7 +19,8 @@
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_ENV": "production"
+        "EXPO_PUBLIC_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "https://ca-backend-highscope-home.salmonrock-ff34e0c0.eastus2.azurecontainerapps.io"
       },
       "ios": {
         "simulator": false,
