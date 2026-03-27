@@ -304,7 +304,7 @@ class ApiClient {
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw {
-          message: 'Network error. Please check your connection.',
+          message: 'Network error. Please check your connection. API_URL ' + process.env.EXPO_PUBLIC_API_URL,
           status: 0,
         } as ApiError;
       }
