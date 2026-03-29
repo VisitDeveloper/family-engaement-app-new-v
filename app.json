@@ -2,7 +2,7 @@
   "expo": {
     "name": "MeBo",
     "slug": "family-app-engagment-new",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mebo",
