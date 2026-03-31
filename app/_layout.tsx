@@ -8,6 +8,7 @@ import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   LogBox,
   Platform,
@@ -63,8 +64,10 @@ export default function RootLayout() {
     const inAuthGroup = segments[0] === "(auth)";
 
     if (isLoggedIn && inAuthGroup) {
+      Keyboard.dismiss();
       router.replace("/(protected)/(tabs)");
     } else if (!isLoggedIn && !inAuthGroup) {
+      Keyboard.dismiss();
       router.replace("/(auth)/login");
     }
   }, [isLoggedIn, segments, isMounted]);

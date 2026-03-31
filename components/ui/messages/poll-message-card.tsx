@@ -346,11 +346,8 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     borderColor: "#A846C3",
     maxWidth: "100%",
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.15,
-    // shadowRadius: 6,
-    elevation: 3,
+    // Keep card flat on Android too (avoid default raised/3D look).
+    elevation: 0,
     minWidth: 256
   },
   cardLeft: {
