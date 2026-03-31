@@ -5,6 +5,7 @@ import { Image } from "expo-image";
 import { TouchableOpacity, View } from "react-native";
 import { ThemedText } from "../../themed-text";
 import { formatTimeAgoShort } from "@/utils/format-time-ago";
+import { getDisplayName } from "@/utils/user-name";
 
 interface ReplyItemProps {
   reply: CommentResponseDto;
@@ -19,13 +20,11 @@ export function ReplyItem({ reply, commentLikes, onLike }: ReplyItemProps) {
   const likesCount =
     commentLikes[reply.id]?.likesCount ?? reply.likesCount ?? 0;
 
-  const authorName =
-    reply.author.firstName && reply.author.lastName
-      ? `${reply.author.firstName} ${reply.author.lastName}`
-      : reply.author.firstName ||
-        reply.author.lastName ||
-        reply.author.email ||
-        "Unknown";
+  const authorName = getDisplayName(
+    reply.author.firstName,
+    reply.author.lastName,
+    reply.author.email || "Unknown"
+  );
 
   return (
     <View

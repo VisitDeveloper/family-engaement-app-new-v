@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useStore } from "@/store";
+import { getDisplayName } from "@/utils/user-name";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
@@ -42,9 +43,7 @@ export default function ProfileScreen() {
           style={styles.avatar}
         />
         <Text style={styles.name}>
-          {`${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
-            user?.name ||
-            ""}
+          {getDisplayName(user?.firstName, user?.lastName, user?.name || "")}
         </Text>
         <Text style={styles.relation}>
           {user?.childName ? user.childName : ""}

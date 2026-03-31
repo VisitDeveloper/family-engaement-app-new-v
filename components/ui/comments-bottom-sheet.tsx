@@ -6,7 +6,7 @@ import {
   BottomSheetModal,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, View } from "react-native";
+import { Alert, Keyboard, Platform, View } from "react-native";
 import { ThemedText } from "../themed-text";
 import { CommentInput } from "./comments/comment-input";
 import { CommentItem } from "./comments/comment-item";
@@ -92,16 +92,39 @@ export default function CommentsBottomSheet({
     Record<string, CommentResponseDto[]>
   >({});
 
-  // Snap points for bottom sheet - only 90%
-  const snapPoints = useMemo(() => ["90%"], []);
+  // Open comments sheet near full-screen height
+  const snapPoints = useMemo(() => ["95%"], []);
 
   // Handle sheet changes
   useEffect(() => {
     if (visible) {
-      setTimeout(() => bottomSheetRef.current?.present(), 100);
+      setTimeout(() => {
+        bottomSheetRef.current?.present();
+        // Ensure it opens at the maximum snap point immediately.
+        requestAnimationFrame(() => bottomSheetRef.current?.expand());
+      }, 100);
     } else {
       bottomSheetRef.current?.dismiss();
     }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const resetSheetPosition = () => {
+      bottomSheetRef.current?.snapToIndex(0);
+    };
+
+    const keyboardDidHideSub = Keyboard.addListener("keyboardDidHide", resetSheetPosition);
+    const keyboardWillHideSub =
+      Platform.OS === "ios"
+        ? Keyboard.addListener("keyboardWillHide", resetSheetPosition)
+        : null;
+
+    return () => {
+      keyboardDidHideSub.remove();
+      keyboardWillHideSub?.remove();
+    };
   }, [visible]);
 
   // Fetch comments when sheet opens
@@ -574,6 +597,7 @@ export default function CommentsBottomSheet({
       ref={bottomSheetRef}
       index={0}
       snapPoints={snapPoints}
+      enableDynamicSizing={false}
       onChange={handleSheetChanges}
       enablePanDownToClose
       backdropComponent={renderBackdrop}
@@ -582,8 +606,8 @@ export default function CommentsBottomSheet({
       }}
       handleIndicatorStyle={{ backgroundColor: theme.subText }}
       keyboardBehavior="interactive"
-      keyboardBlurBehavior="none"
-      android_keyboardInputMode="adjustResize"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustPan"
     >
       <View style={{ flex: 1 }}>
         <BottomSheetFlatList<CommentResponseDto>

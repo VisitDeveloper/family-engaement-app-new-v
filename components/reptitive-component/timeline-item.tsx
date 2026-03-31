@@ -7,6 +7,7 @@ import {
 import { likeService } from "@/services/like.service";
 import { useStore } from "@/store";
 import { formatTimeAgoShort } from "@/utils/format-time-ago";
+import { getDisplayName, getInitials } from "@/utils/user-name";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -717,10 +718,11 @@ export default function TimelineItem({
           ) : (
             <View style={styles.avatar}>
               <ThemedText type="subText" style={{ color: theme.text }}>
-                {props.author?.firstName?.charAt(0) +
-                  "" +
-                  props.author?.lastName?.charAt(0).trim().toUpperCase() ||
-                  props.author?.email?.charAt(0)}
+                {getInitials(
+                  props.author?.firstName,
+                  props.author?.lastName,
+                  props.author?.email
+                )}
               </ThemedText>
             </View>
           )}
@@ -1166,13 +1168,11 @@ export default function TimelineItem({
                                 fontSize: 12,
                               }}
                             >
-                              {commentItem.author.firstName &&
-                                commentItem.author.lastName
-                                ? `${commentItem.author.firstName} ${commentItem.author.lastName}`
-                                : commentItem.author.firstName ||
-                                commentItem.author.lastName ||
-                                commentItem.author.email ||
-                                "Unknown"}
+                              {getDisplayName(
+                                commentItem.author.firstName,
+                                commentItem.author.lastName,
+                                commentItem.author.email || "Unknown"
+                              )}
                             </ThemedText>
                             <ThemedText
                               type="subLittleText"
@@ -1359,13 +1359,11 @@ export default function TimelineItem({
                                           fontSize: 12,
                                         }}
                                       >
-                                        {reply.author.firstName &&
-                                          reply.author.lastName
-                                          ? `${reply.author.firstName} ${reply.author.lastName}`
-                                          : reply.author.firstName ||
-                                          reply.author.lastName ||
-                                          reply.author.email ||
-                                          "Unknown"}
+                                        {getDisplayName(
+                                          reply.author.firstName,
+                                          reply.author.lastName,
+                                          reply.author.email || "Unknown"
+                                        )}
                                       </ThemedText>
                                       <ThemedText
                                         type="subLittleText"
@@ -1646,13 +1644,11 @@ export default function TimelineItem({
                               fontSize: 12,
                             }}
                           >
-                            {commentItem.author.firstName &&
-                              commentItem.author.lastName
-                              ? `${commentItem.author.firstName} ${commentItem.author.lastName}`
-                              : commentItem.author.firstName ||
-                              commentItem.author.lastName ||
-                              commentItem.author.email ||
-                              "Unknown"}
+                            {getDisplayName(
+                              commentItem.author.firstName,
+                              commentItem.author.lastName,
+                              commentItem.author.email || "Unknown"
+                            )}
                           </ThemedText>
                           <ThemedText
                             type="subText"

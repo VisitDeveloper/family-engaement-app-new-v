@@ -11,6 +11,7 @@ import {
   TimeSlotDto,
 } from "@/services/event.service";
 import { useStore } from "@/store";
+import { getDisplayName, getInitials } from "@/utils/user-name";
 import {
   AntDesign,
   Feather,
@@ -664,16 +665,12 @@ const EventDetailScreen = () => {
 
             {/* Invitees List */}
             {displayedInvitees.map((invitee) => {
-              const firstName = invitee.firstName || "";
-              const lastName = invitee.lastName || "";
-              const fullName =
-                `${firstName} ${lastName}`.trim() ||
-                invitee.email?.split("@")[0] ||
-                t("event.unknown");
-              const initials =
-                firstName && lastName
-                  ? `${firstName[0]}${lastName[0]}`.toUpperCase()
-                  : fullName.substring(0, 2).toUpperCase();
+              const fullName = getDisplayName(
+                invitee.firstName,
+                invitee.lastName,
+                invitee.email?.split("@")[0] || t("event.unknown")
+              );
+              const initials = getInitials(invitee.firstName, invitee.lastName, fullName);
 
               // Determine RSVP icon
               const rsvpStatus = invitee.rsvpStatus as string;

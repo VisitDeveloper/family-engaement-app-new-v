@@ -5,6 +5,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
+import { getDisplayName, getInitials } from "@/utils/user-name";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -219,9 +220,7 @@ export default function NewMessageScreen() {
           })
           .map((user) => ({
             id: user.id,
-            name:
-              `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-              user.email,
+            name: getDisplayName(user.firstName, user.lastName, user.email),
             role:
               user.role === "teacher"
                 ? "Teacher"
@@ -229,9 +228,7 @@ export default function NewMessageScreen() {
                   ? "Parent"
                   : "Student",
             image: user.profilePicture || null,
-            initials:
-              `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""
-                }`.toUpperCase() || user.email[0].toUpperCase(),
+            initials: getInitials(user.firstName, user.lastName, user.email),
           }));
 
         if (append) {

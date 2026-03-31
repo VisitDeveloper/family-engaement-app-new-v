@@ -5,6 +5,7 @@ import type {
   ProfileResponseDto,
   ProfilesResponse,
   RefreshTokenResponse,
+  RequestPhoneChangeOtpRequest,
   SwitchProfileBody,
   SwitchProfileResponse,
   UpdateProfilePictureResponse,
@@ -12,6 +13,8 @@ import type {
   UpdateSettingsRequest,
   UserResponseDto,
   UserSettings,
+  VerifyPhoneChangeOtpRequest,
+  VerifyPhoneChangeOtpResponse,
 } from "@/types";
 import { unregisterPushTokenOnLogout } from "@/utils/pushNotifications";
 import { apiClient, ApiError } from "./api";
@@ -49,6 +52,8 @@ export interface AuthService {
   /** PATCH /auth/settings — only send fields to update */
   updateSettings(body: UpdateSettingsRequest): Promise<{ settings: UserSettings }>;
   updateProfilePicture(imageUri: string): Promise<UpdateProfilePictureResponse>;
+  requestPhoneChangeOtp(body: RequestPhoneChangeOtpRequest): Promise<{ message: string }>;
+  verifyPhoneChangeOtp(body: VerifyPhoneChangeOtpRequest): Promise<VerifyPhoneChangeOtpResponse>;
   /** GET /auth/profiles — list of profiles the user can switch to */
   getProfiles(): Promise<ProfilesResponse>;
   /** POST /auth/switch-profile — switch active profile; updates stored tokens */
@@ -334,6 +339,44 @@ class AuthServiceImpl implements AuthService {
         message:
           apiError.message ||
           "Failed to update profile picture. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async requestPhoneChangeOtp(
+    body: RequestPhoneChangeOtpRequest
+  ): Promise<{ message: string }> {
+    try {
+      return await apiClient.post<{ message: string }>(
+        "/auth/profile/phone/request-otp",
+        body
+      );
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message || "Failed to send verification code. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async verifyPhoneChangeOtp(
+    body: VerifyPhoneChangeOtpRequest
+  ): Promise<VerifyPhoneChangeOtpResponse> {
+    try {
+      return await apiClient.post<VerifyPhoneChangeOtpResponse>(
+        "/auth/profile/phone/verify-otp",
+        body
+      );
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message || "Failed to verify code. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

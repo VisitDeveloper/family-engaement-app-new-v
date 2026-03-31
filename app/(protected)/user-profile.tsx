@@ -1,24 +1,33 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
+import EditNameBottomSheet from "@/components/ui/edit-name-bottom-sheet";
+import { PencilIcon } from "@/components/ui/icons/messages-icons";
 import { PasswordIcon, PhoneIcon } from "@/components/ui/icons/settings-icons";
+import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
 import { authService, UserProfile } from "@/services/auth.service";
 import { useStore } from "@/store";
+import { getDisplayName } from "@/utils/user-name";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import CountryPicker, {
+  Country,
+  CountryCode,
+} from "react-native-country-picker-modal";
 import {
   ActivityIndicator,
   Alert,
   Image,
-  ScrollView,
+  Platform,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -27,12 +36,24 @@ export default function ProfileScreen() {
   const setUser = useStore((s) => s.setUser);
   const setUserSettingsFromProfile = useStore((s) => s.setUserSettingsFromProfile);
   const setAppLanguage = useStore((s) => s.setAppLanguage);
-  const role = useStore((state) => state.role);
+  const insets = useSafeAreaInsets();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
+  const [savingProfile, setSavingProfile] = useState<boolean>(false);
+  const [requestingPhoneOtp, setRequestingPhoneOtp] = useState<boolean>(false);
+  const [verifyingPhoneOtp, setVerifyingPhoneOtp] = useState<boolean>(false);
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
+  const [phoneInput, setPhoneInput] = useState<string>("");
+  const [phoneOtpCode, setPhoneOtpCode] = useState<string>("");
+  const [phoneOtpRequested, setPhoneOtpRequested] = useState<boolean>(false);
+  const [phoneOtpCooldownSeconds, setPhoneOtpCooldownSeconds] = useState<number>(0);
+  const [countryCode, setCountryCode] = useState<CountryCode>("US");
+  const [callingCode, setCallingCode] = useState<string>("1");
+  const [showNameSheet, setShowNameSheet] = useState<boolean>(false);
 
   const styles = useThemedStyles((theme) => ({
     container: { flex: 1, padding: 10, paddingTop: 0, paddingHorizontal: 0, backgroundColor: theme.bg },
@@ -63,6 +84,14 @@ export default function ProfileScreen() {
     },
     name: { textAlign: "center", marginTop: 8, color: theme.text },
     subText: { textAlign: "center", marginBottom: 6, color: theme.subText },
+    nameEditRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      marginTop: 8,
+      marginBottom: 4,
+    },
     badge: {
       alignSelf: "center",
       paddingHorizontal: 12,
@@ -75,7 +104,6 @@ export default function ProfileScreen() {
     },
     row: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
     sectionTitle: { marginLeft: 6, color: theme.text },
-    // fontSize: 14,
     label: { marginTop: 8, marginBottom: 4, color: theme.subText },
     input: {
       borderWidth: 1,
@@ -137,14 +165,17 @@ export default function ProfileScreen() {
           updatedAt: response.updatedAt,
         };
         setProfile(profileData);
+        setFirstName(profileData.firstName || "");
+        setLastName(profileData.lastName || "");
+        setPhoneInput(profileData.phoneNumber || profileData.phone || "");
         // Update user in store
         const userData = {
           ...profileData,
-          name:
-            profileData.firstName || profileData.lastName
-              ? `${profileData.firstName || ""} ${profileData.lastName || ""
-                }`.trim()
-              : profileData.email?.split("@")[0] || "",
+          name: getDisplayName(
+            profileData.firstName,
+            profileData.lastName,
+            profileData.email?.split("@")[0] || ""
+          ),
         };
         setUser(userData);
         if (response.settings) {
@@ -183,6 +214,15 @@ export default function ProfileScreen() {
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  useEffect(() => {
+    if (phoneOtpCooldownSeconds <= 0) return;
+    const timeout = setTimeout(() => {
+      setPhoneOtpCooldownSeconds((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [phoneOtpCooldownSeconds]);
 
   const handleUpdateProfilePicture = useCallback(async () => {
     try {
@@ -232,6 +272,9 @@ export default function ProfileScreen() {
           updatedAt: response.user.updatedAt,
         };
         setProfile(profileData);
+        setFirstName(profileData.firstName || "");
+        setLastName(profileData.lastName || "");
+        setPhoneInput(profileData.phoneNumber || profileData.phone || "");
 
         // Update user in store
         const userData = {
@@ -250,15 +293,18 @@ export default function ProfileScreen() {
           profilePicture: response.profilePicture,
         };
         setProfile(updatedProfile);
+        setFirstName(updatedProfile.firstName || "");
+        setLastName(updatedProfile.lastName || "");
+        setPhoneInput(updatedProfile.phoneNumber || updatedProfile.phone || "");
 
         // Update user in store
         const userData = {
           ...updatedProfile,
-          name:
-            updatedProfile.firstName || updatedProfile.lastName
-              ? `${updatedProfile.firstName || ""} ${updatedProfile.lastName || ""
-                }`.trim()
-              : updatedProfile.email?.split("@")[0] || "",
+          name: getDisplayName(
+            updatedProfile.firstName,
+            updatedProfile.lastName,
+            updatedProfile.email?.split("@")[0] || ""
+          ),
         };
         setUser(userData);
       }
@@ -294,6 +340,213 @@ export default function ProfileScreen() {
       setUploading(false);
     }
   }, [profile, setUser, router, fetchProfile, t]);
+
+  const handleUpdateProfileInfo = useCallback(async () => {
+    if (!profile) return;
+
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+
+    if (!trimmedFirstName && !trimmedLastName) {
+      Alert.alert(t("common.error"), t("userProfile.nameRequired"));
+      return;
+    }
+
+    setSavingProfile(true);
+    try {
+      const updated = await authService.updateProfile({
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+      });
+
+      const updatedProfile: UserProfile = {
+        ...profile,
+        ...updated,
+        phone: updated.phoneNumber || profile.phone,
+      };
+      setProfile(updatedProfile);
+      setFirstName(updatedProfile.firstName || "");
+      setLastName(updatedProfile.lastName || "");
+
+      const userData = {
+        ...updatedProfile,
+        name: getDisplayName(
+          updatedProfile.firstName,
+          updatedProfile.lastName,
+          updatedProfile.email?.split("@")[0] || ""
+        ),
+      };
+      setUser(userData);
+
+      Alert.alert(t("common.success"), t("userProfile.profileUpdatedSuccess"));
+      setShowNameSheet(false);
+    } catch (err) {
+      const apiError = err as ApiError;
+      Alert.alert(
+        t("common.error"),
+        apiError.message || t("userProfile.failedUpdateProfile")
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  }, [firstName, lastName, profile, setUser, t]);
+
+  const normalizePhoneNumber = useCallback((rawPhone: string): string => {
+    const trimmed = rawPhone.trim();
+    if (!trimmed) return "";
+
+    let normalized = trimmed.replace(/[\s\-()]/g, "");
+    if (normalized.startsWith("00")) {
+      normalized = `+${normalized.slice(2)}`;
+    }
+    if (!normalized.startsWith("+")) {
+      normalized = `+${normalized}`;
+    }
+    return normalized;
+  }, []);
+
+  const buildInternationalPhone = useCallback(
+    (rawPhone: string): string => {
+      const trimmed = rawPhone.trim();
+      if (!trimmed) return "";
+
+      // If user already typed country prefix (+...), keep it.
+      if (trimmed.startsWith("+") || trimmed.startsWith("00")) {
+        return normalizePhoneNumber(trimmed);
+      }
+
+      const localDigits = trimmed.replace(/\D/g, "");
+      if (!localDigits) return "";
+      return `+${callingCode}${localDigits}`;
+    },
+    [callingCode, normalizePhoneNumber]
+  );
+
+  const isValidInternationalPhone = useCallback((phone: string): boolean => {
+    return /^\+[1-9]\d{6,14}$/.test(phone);
+  }, []);
+
+  const handlePhoneInputChange = useCallback((value: string) => {
+    setPhoneInput(value);
+    setPhoneOtpRequested(false);
+    setPhoneOtpCode("");
+    setPhoneOtpCooldownSeconds(0);
+  }, []);
+
+  const handleRequestPhoneOtp = useCallback(async () => {
+    if (!profile) return;
+
+    const normalizedPhone = buildInternationalPhone(phoneInput);
+    const currentPhone = normalizePhoneNumber(profile.phoneNumber || profile.phone || "");
+
+    if (!normalizedPhone) {
+      Alert.alert(t("common.error"), t("userProfile.phoneRequired"));
+      return;
+    }
+
+    if (!isValidInternationalPhone(normalizedPhone)) {
+      Alert.alert(t("common.error"), t("userProfile.invalidPhoneNumber"));
+      return;
+    }
+
+    if (normalizedPhone === currentPhone) {
+      Alert.alert(t("common.error"), t("userProfile.phoneNoChanges"));
+      return;
+    }
+
+    if (phoneOtpCooldownSeconds > 0) {
+      Alert.alert(
+        t("common.error"),
+        t("userProfile.phoneOtpResendCooldown", { seconds: phoneOtpCooldownSeconds })
+      );
+      return;
+    }
+
+    setRequestingPhoneOtp(true);
+    try {
+      const response = await authService.requestPhoneChangeOtp({
+        phoneNumber: normalizedPhone,
+      });
+      setPhoneOtpRequested(true);
+      setPhoneOtpCooldownSeconds(60);
+      Alert.alert(
+        t("common.success"),
+        response.message || t("userProfile.phoneOtpSent")
+      );
+    } catch (err) {
+      const apiError = err as ApiError;
+      if (apiError.status === 409) {
+        Alert.alert(t("common.error"), t("userProfile.phoneAlreadyInUse"));
+      } else {
+        Alert.alert(
+          t("common.error"),
+          apiError.message || t("userProfile.failedUpdatePhone")
+        );
+      }
+    } finally {
+      setRequestingPhoneOtp(false);
+    }
+  }, [
+    buildInternationalPhone,
+    isValidInternationalPhone,
+    normalizePhoneNumber,
+    phoneInput,
+    phoneOtpCooldownSeconds,
+    profile,
+    t,
+  ]);
+
+  const handleVerifyPhoneOtp = useCallback(async () => {
+    if (!profile) return;
+
+    const normalizedOtp = phoneOtpCode.trim();
+    if (!normalizedOtp || normalizedOtp.length !== 6) {
+      Alert.alert(t("common.error"), t("userProfile.phoneOtpInvalid"));
+      return;
+    }
+
+    setVerifyingPhoneOtp(true);
+    try {
+      const response = await authService.verifyPhoneChangeOtp({
+        code: normalizedOtp,
+      });
+
+      const updatedProfile: UserProfile = {
+        ...profile,
+        phoneNumber: response.phoneNumber,
+        phone: response.phoneNumber,
+      };
+      setProfile(updatedProfile);
+      setPhoneInput(response.phoneNumber);
+      setPhoneOtpCode("");
+      setPhoneOtpRequested(false);
+      setPhoneOtpCooldownSeconds(0);
+
+      const userData = {
+        ...updatedProfile,
+        name: getDisplayName(
+          updatedProfile.firstName,
+          updatedProfile.lastName,
+          updatedProfile.email?.split("@")[0] || ""
+        ),
+      };
+      setUser(userData);
+
+      Alert.alert(t("common.success"), t("userProfile.phoneUpdatedSuccess"));
+    } catch (err) {
+      const apiError = err as ApiError;
+      if (apiError.status === 409) {
+        Alert.alert(t("common.error"), t("userProfile.phoneAlreadyInUse"));
+      } else {
+        Alert.alert(
+          t("common.error"),
+          apiError.message || t("userProfile.phoneOtpInvalid")
+        );
+      }
+    } finally {
+      setVerifyingPhoneOtp(false);
+    }
+  }, [phoneOtpCode, profile, setUser, t]);
 
   if (loading) {
     return (
@@ -340,8 +593,15 @@ export default function ProfileScreen() {
 
   const displayName =
     profile?.name || profile?.firstName || profile?.lastName
-      ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
+      ? getDisplayName(
+        profile.firstName,
+        profile.lastName,
+        profile.email?.split("@")[0] || t("userProfile.user")
+      )
       : profile?.email?.split("@")[0] || t("userProfile.user");
+  const hasNameChanges =
+    (firstName.trim() !== (profile?.firstName || "").trim()) ||
+    (lastName.trim() !== (profile?.lastName || "").trim());
 
   return (
     <View style={styles.container}>
@@ -350,7 +610,15 @@ export default function ProfileScreen() {
         addstyles={{ marginBottom: 0 }}
       />
 
-      <ScrollView style={styles.containerScrollView}>
+      <KeyboardAwareScrollViewPlatform
+        style={styles.containerScrollView}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + (Platform.OS === "android" ? 56 : 24),
+        }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        bottomOffset={Platform.OS === "android" ? 28 : 0}
+      >
         {/* User Info */}
         <View style={styles.card}>
           <Image
@@ -372,9 +640,21 @@ export default function ProfileScreen() {
               <Feather name="camera" size={18} color="#fff" />
             )}
           </TouchableOpacity>
-          <ThemedText type="subtitle" style={styles.name}>
-            {displayName}
-          </ThemedText>
+          <View style={styles.nameEditRow}>
+            <ThemedText type="subtitle" style={styles.name}>
+              {displayName}
+            </ThemedText>
+            <TouchableOpacity
+              onPress={() => {
+                setFirstName(profile?.firstName || "");
+                setLastName(profile?.lastName || "");
+                setShowNameSheet(true);
+              }}
+              disabled={savingProfile}
+            >
+              <PencilIcon size={14} color={theme.tint} />
+            </TouchableOpacity>
+          </View>
           <ThemedText type="subText" style={styles.subText}>
             {profile?.role === "parent" && profile.childName
               ? `${t("userProfile.parentPrefix")}${profile.childName}`
@@ -424,6 +704,8 @@ export default function ProfileScreen() {
             style={[
               styles.input,
               {
+                height: 44,
+                paddingVertical: 0,
                 color: theme.text,
                 borderColor: theme.border,
                 backgroundColor: theme.panel,
@@ -441,6 +723,8 @@ export default function ProfileScreen() {
             style={[
               styles.input,
               {
+                height: 44,
+                paddingVertical: 0,
                 flexDirection: "row",
                 alignItems: "center",
                 borderColor: theme.border,
@@ -448,21 +732,106 @@ export default function ProfileScreen() {
               },
             ]}
           >
-            {profile?.phoneNumber || profile?.phone ? (
-              <>
-                <ThemedText style={{ color: theme.text, marginRight: 8 }}>
-                  +1
-                </ThemedText>
-                <ThemedText style={{ color: theme.text }}>
-                  {profile.phoneNumber || profile.phone}
-                </ThemedText>
-              </>
-            ) : (
-              <ThemedText style={{ color: theme.subText }}>
-                {t("userProfile.noPhoneNumberAvailable")}
-              </ThemedText>
-            )}
+            <View style={{ marginRight: 4, transform: [{ scale: 0.85 }] }}>
+              <CountryPicker
+                countryCode={countryCode}
+                withFilter
+                withFlag
+                withCallingCode
+                withCallingCodeButton
+                onSelect={(country: Country) => {
+                  setCountryCode(country.cca2);
+                  setCallingCode(country.callingCode?.[0] || "1");
+                }}
+              />
+            </View>
+            <TextInput
+              style={{ flex: 1, color: theme.text, paddingVertical: 0 }}
+              value={phoneInput}
+              onChangeText={handlePhoneInputChange}
+              editable={!requestingPhoneOtp && !verifyingPhoneOtp}
+              keyboardType="phone-pad"
+              placeholder={t("userProfile.noPhoneNumberAvailable")}
+              placeholderTextColor={theme.subText}
+            />
           </View>
+          <TouchableOpacity
+            onPress={handleRequestPhoneOtp}
+            style={[styles.changeBtn, { borderColor: theme.border }]}
+            disabled={requestingPhoneOtp || verifyingPhoneOtp || phoneOtpCooldownSeconds > 0}
+          >
+            <ThemedText
+              type="middleTitle"
+              style={{ color: theme.text, fontWeight: "500" }}
+            >
+              {requestingPhoneOtp
+                ? t("common.loading")
+                : phoneOtpCooldownSeconds > 0
+                  ? t("userProfile.resendPhoneOtpIn", { seconds: phoneOtpCooldownSeconds })
+                  : t("userProfile.sendPhoneOtp")}
+            </ThemedText>
+            {requestingPhoneOtp ? (
+              <ActivityIndicator size="small" color={theme.text} />
+            ) : (
+              <Feather name="mail" size={18} color={theme.text} />
+            )}
+          </TouchableOpacity>
+          {phoneOtpRequested && (
+            <>
+              <ThemedText type="subText" style={styles.label}>
+                {t("userProfile.phoneOtpCode")}
+              </ThemedText>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    color: theme.text,
+                    borderColor: theme.border,
+                    backgroundColor: theme.panel,
+                  },
+                ]}
+                value={phoneOtpCode}
+                onChangeText={setPhoneOtpCode}
+                editable={!verifyingPhoneOtp}
+                keyboardType="number-pad"
+                maxLength={6}
+                placeholder={t("userProfile.phoneOtpPlaceholder")}
+                placeholderTextColor={theme.subText}
+              />
+              <TouchableOpacity
+                onPress={handleVerifyPhoneOtp}
+                style={[styles.changeBtn, { borderColor: theme.border }]}
+                disabled={verifyingPhoneOtp}
+              >
+                <ThemedText
+                  type="middleTitle"
+                  style={{ color: theme.text, fontWeight: "500" }}
+                >
+                  {verifyingPhoneOtp ? t("common.loading") : t("userProfile.verifyPhoneOtp")}
+                </ThemedText>
+                {verifyingPhoneOtp ? (
+                  <ActivityIndicator size="small" color={theme.text} />
+                ) : (
+                  <Feather name="check-circle" size={18} color={theme.text} />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleRequestPhoneOtp}
+                style={[styles.changeBtn, { borderColor: theme.border }]}
+                disabled={requestingPhoneOtp || verifyingPhoneOtp || phoneOtpCooldownSeconds > 0}
+              >
+                <ThemedText
+                  type="middleTitle"
+                  style={{ color: theme.text, fontWeight: "500" }}
+                >
+                  {phoneOtpCooldownSeconds > 0
+                    ? t("userProfile.resendPhoneOtpIn", { seconds: phoneOtpCooldownSeconds })
+                    : t("userProfile.resendPhoneOtp")}
+                </ThemedText>
+                <Feather name="refresh-cw" size={18} color={theme.text} />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
         {/* Manage Password */}
@@ -486,7 +855,22 @@ export default function ProfileScreen() {
             <Feather name="chevron-right" size={18} color={theme.text} />
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollViewPlatform>
+      <EditNameBottomSheet
+        visible={showNameSheet}
+        onClose={() => {
+          setShowNameSheet(false);
+          setFirstName(profile?.firstName || "");
+          setLastName(profile?.lastName || "");
+        }}
+        firstName={firstName}
+        lastName={lastName}
+        onChangeFirstName={setFirstName}
+        onChangeLastName={setLastName}
+        onSubmit={handleUpdateProfileInfo}
+        canSubmit={hasNameChanges}
+        isSubmitting={savingProfile}
+      />
     </View>
   );
 }

@@ -9,6 +9,7 @@ import { likeService } from "@/services/like.service";
 import { PostResponseDto, postService } from "@/services/post.service";
 import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
+import { getDisplayName } from "@/utils/user-name";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -307,7 +308,13 @@ const TimelineScreen = () => {
 
       <View style={{ paddingHorizontal: 10 }}>
         <HeaderTabItem
-          title={t("tabs.timelineTitle", { name: user?.firstName || "" })}
+          title={t("tabs.timelineTitle", {
+            name: getDisplayName(
+              user?.firstName,
+              "",
+              t("common.user", { defaultValue: "User" })
+            ),
+          })}
           subTitle={t("tabs.timelineSubTitle")}
           buttonIcon={<EventIcon size={16} color={theme.tint} />}
           buttonLink="/event"
@@ -449,13 +456,11 @@ const TimelineScreen = () => {
               }
             >
               {posts.map((post) => {
-                const authorName =
-                  post.author.firstName && post.author.lastName
-                    ? `${post.author.firstName} ${post.author.lastName}`
-                    : post.author.firstName ||
-                    post.author.lastName ||
-                    post.author.email ||
-                    "Unknown";
+                const authorName = getDisplayName(
+                  post.author.firstName,
+                  post.author.lastName,
+                  post.author.email || t("common.unknown")
+                );
 
                 return (
                   <TimelineItem

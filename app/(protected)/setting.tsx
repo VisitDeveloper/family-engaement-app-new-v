@@ -7,6 +7,7 @@ import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import i18n from "@/i18n";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
+import { getDisplayName } from "@/utils/user-name";
 import {
   AntDesign,
   Ionicons
@@ -203,7 +204,11 @@ export default function SettingsScreen() {
             />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <ThemedText type="subtitle" style={{ color: theme.text }}>
-                {user?.firstName + " " + user?.lastName || "User"}
+                {getDisplayName(
+                  user?.firstName,
+                  user?.lastName,
+                  user?.name || t("common.user", { defaultValue: "User" })
+                )}
               </ThemedText>
 
               {user?.childName ? (

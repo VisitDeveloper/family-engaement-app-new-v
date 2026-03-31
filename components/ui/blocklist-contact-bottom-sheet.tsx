@@ -5,6 +5,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
 import type { UserListItemDto } from "@/types";
+import { getDisplayName, getInitials } from "@/utils/user-name";
 import {
   BottomSheetFlatList,
   BottomSheetModal,
@@ -238,12 +239,13 @@ export default function BlocklistContactBottomSheet({
 
   const renderRow: ListRenderItem<UserListItemDto> = useCallback(
     ({ item }) => {
-      const displayName =
-        item.firstName && item.lastName
-          ? `${item.firstName} ${item.lastName}`
-          : item.firstName || item.lastName || item.email;
+      const displayName = getDisplayName(
+        item.firstName,
+        item.lastName,
+        item.email || t("common.unknown")
+      );
 
-      const initials = `${item.firstName?.[0] || ""}${item.lastName?.[0] || ""}`.toUpperCase();
+      const initials = getInitials(item.firstName, item.lastName, displayName);
 
       const isBlocked = blockedUserIds.includes(item.id);
       const isAllowed = allowedUserIds.includes(item.id);

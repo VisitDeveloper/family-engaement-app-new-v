@@ -158,3 +158,16 @@ export interface SwitchProfileResponse {
   user: UserResponseDto;
   message: string;
 }
+
+export interface RequestPhoneChangeOtpRequest {
+  phoneNumber: string;
+}
+
+export interface VerifyPhoneChangeOtpRequest {
+  code: string;
+}
+
+export interface VerifyPhoneChangeOtpResponse {
+  message: string;
+  phoneNumber: string;
+}

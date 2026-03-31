@@ -4,10 +4,12 @@ import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import {
   BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetTextInput,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Keyboard, Platform, Text, TouchableOpacity, View } from "react-native";
 
 interface CreatePollBottomSheetProps {
   visible: boolean;
@@ -131,6 +133,25 @@ export default function CreatePollBottomSheet({
     }
   }, [visible]);
 
+  useEffect(() => {
+    if (!visible) return;
+
+    const resetSheetPosition = () => {
+      bottomSheetRef.current?.snapToIndex(0);
+    };
+
+    const keyboardDidHideSub = Keyboard.addListener("keyboardDidHide", resetSheetPosition);
+    const keyboardWillHideSub =
+      Platform.OS === "ios"
+        ? Keyboard.addListener("keyboardWillHide", resetSheetPosition)
+        : null;
+
+    return () => {
+      keyboardDidHideSub.remove();
+      keyboardWillHideSub?.remove();
+    };
+  }, [visible]);
+
   const handleSheetChanges = useCallback(
     (index: number) => {
       if (index === -1) {
@@ -248,6 +269,10 @@ export default function CreatePollBottomSheet({
         backgroundColor: "#FFFFFF",
       }}
       handleIndicatorStyle={{ backgroundColor: theme.subText }}
+      keyboardBehavior={Platform.OS === "ios" ? "interactive" : "fillParent"}
+      keyboardBlurBehavior="restore"
+      enableDynamicSizing={false}
+      android_keyboardInputMode="adjustResize"
     >
       <BottomSheetView style={styles.container}>
         <View style={styles.header}>
@@ -261,9 +286,12 @@ export default function CreatePollBottomSheet({
           </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           <Text style={[styles.sectionLabel, styles.sectionLabelFirst]}>Poll Description</Text>
-          <TextInput
+          <BottomSheetTextInput
             style={styles.input}
             placeholder="What are your thoughts on DAP??"
             placeholderTextColor="#BBBBBB"
@@ -276,7 +304,7 @@ export default function CreatePollBottomSheet({
           <Text style={styles.sectionLabel}>Options</Text>
           {options.map((option, index) => (
             <View key={index} style={styles.optionContainer}>
-              <TextInput
+              <BottomSheetTextInput
                 style={styles.optionInput}
                 placeholder={index === 0 ? "I like it." : index === 1 ? "I don't like it." : "No opinion."}
                 placeholderTextColor="#BBBBBB"
@@ -318,7 +346,7 @@ export default function CreatePollBottomSheet({
               <Text style={styles.submitButtonText}>Create Poll</Text>
             )}
           </TouchableOpacity>
-        </ScrollView>
+        </BottomSheetScrollView>
       </BottomSheetView>
     </BottomSheetModal>
   );

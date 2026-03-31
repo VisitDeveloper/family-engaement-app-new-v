@@ -6,6 +6,7 @@ import { useBlocklist } from "@/hooks/use-blocklist";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import type { UserListItemDto } from "@/types";
+import { getDisplayName, getInitials } from "@/utils/user-name";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Image, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -146,7 +147,7 @@ export default function BlocklistScreen() {
         }
 
         // Fallback to initials
-        const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
+        const initials = getInitials(user.firstName, user.lastName);
         return (
             <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarText}>{initials || '?'}</Text>
@@ -159,9 +160,11 @@ export default function BlocklistScreen() {
         type: 'blocked' | 'allowed',
         onAction: () => void
     ) => {
-        const displayName = user.firstName && user.lastName
-            ? `${user.firstName} ${user.lastName}`
-            : user.firstName || user.lastName || user.email;
+        const displayName = getDisplayName(
+            user.firstName,
+            user.lastName,
+            user.email || t("common.unknown")
+        );
 
         return (
             <View style={styles.contactItem}>

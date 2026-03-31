@@ -8,6 +8,7 @@ import { likeService } from "@/services/like.service";
 import { PostResponseDto, postService } from "@/services/post.service";
 import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
+import { getDisplayName } from "@/utils/user-name";
 import { usePathname, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
@@ -166,13 +167,11 @@ const FeedDetailScreen = () => {
     );
   }
 
-  const authorName =
-    post.author.firstName && post.author.lastName
-      ? `${post.author.firstName} ${post.author.lastName}`
-      : post.author.firstName ||
-        post.author.lastName ||
-        post.author.email ||
-        "Unknown";
+  const authorName = getDisplayName(
+    post.author.firstName,
+    post.author.lastName,
+    post.author.email || t("common.unknown")
+  );
 
   return (
     <View style={styles.container}>

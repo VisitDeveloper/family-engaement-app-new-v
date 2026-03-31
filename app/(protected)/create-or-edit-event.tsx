@@ -19,6 +19,7 @@ import {
 import { ParentDto, userService } from "@/services/user.service";
 import { useStore } from "@/store";
 import { enumToOptions } from "@/utils/make-array-for-select-box";
+import { getDisplayName, getInitials } from "@/utils/user-name";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -62,15 +63,12 @@ type Invitee = {
 
 // Helper function to convert ParentDto to Invitee
 const convertParentToInvitee = (parent: ParentDto): Invitee => {
-  const firstName = parent.firstName || "";
-  const lastName = parent.lastName || "";
-  const name = `${firstName} ${lastName}`.trim() || parent.email.split("@")[0];
-
-  // Generate initials from name
-  const initials =
-    firstName && lastName
-      ? `${firstName[0]}${lastName[0]}`.toUpperCase()
-      : name.substring(0, 2).toUpperCase();
+  const name = getDisplayName(
+    parent.firstName,
+    parent.lastName,
+    parent.email.split("@")[0]
+  );
+  const initials = getInitials(parent.firstName, parent.lastName, name);
 
   return {
     id: parent.id,

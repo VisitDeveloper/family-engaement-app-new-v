@@ -9,6 +9,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
+import { getDisplayName, getInitials } from "@/utils/user-name";
 import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
@@ -182,9 +183,7 @@ export default function CreateGroupScreen() {
         .filter((user) => user.id !== currentUserId)
         .map((user) => ({
           id: user.id,
-          name:
-            `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-            user.email,
+          name: getDisplayName(user.firstName, user.lastName, user.email),
           subtitle:
             user.role === "admin"
               ? "Admin"
@@ -192,9 +191,7 @@ export default function CreateGroupScreen() {
                 ? "Teacher"
                 : "Parent",
           avatar: user.profilePicture || null,
-          initials:
-            `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""
-              }`.toUpperCase() || user.email[0].toUpperCase(),
+          initials: getInitials(user.firstName, user.lastName, user.email),
           isAdmin: user.role === "admin",
           role: user.role,
           lastOnline: user.lastOnline,

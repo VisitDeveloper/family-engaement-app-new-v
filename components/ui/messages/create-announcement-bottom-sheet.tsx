@@ -4,10 +4,12 @@ import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import {
   BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetTextInput,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Keyboard, Platform, Text, TouchableOpacity, View } from "react-native";
 
 interface CreateAnnouncementBottomSheetProps {
   visible: boolean;
@@ -99,6 +101,25 @@ export default function CreateAnnouncementBottomSheet({
     }
   }, [visible]);
 
+  useEffect(() => {
+    if (!visible) return;
+
+    const resetSheetPosition = () => {
+      bottomSheetRef.current?.snapToIndex(0);
+    };
+
+    const keyboardDidHideSub = Keyboard.addListener("keyboardDidHide", resetSheetPosition);
+    const keyboardWillHideSub =
+      Platform.OS === "ios"
+        ? Keyboard.addListener("keyboardWillHide", resetSheetPosition)
+        : null;
+
+    return () => {
+      keyboardDidHideSub.remove();
+      keyboardWillHideSub?.remove();
+    };
+  }, [visible]);
+
   const handleSheetChanges = useCallback(
     (index: number) => {
       if (index === -1) {
@@ -175,6 +196,10 @@ export default function CreateAnnouncementBottomSheet({
         backgroundColor: "#FFFFFF",
       }}
       handleIndicatorStyle={{ backgroundColor: theme.subText }}
+      keyboardBehavior={Platform.OS === "ios" ? "interactive" : "fillParent"}
+      keyboardBlurBehavior="restore"
+      enableDynamicSizing={false}
+      android_keyboardInputMode="adjustResize"
     >
       <BottomSheetView style={styles.container}>
         <View style={styles.header}>
@@ -188,9 +213,12 @@ export default function CreateAnnouncementBottomSheet({
           </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           <Text style={[styles.sectionLabel, styles.sectionLabelFirst]}>Announcement Content</Text>
-          <TextInput
+          <BottomSheetTextInput
             style={styles.input}
             placeholder="We are excited to invite you all for an informative session on parenting tips and resources. See the video below for more details!"
             placeholderTextColor="#BBBBBB"
@@ -211,7 +239,7 @@ export default function CreateAnnouncementBottomSheet({
               <Text style={styles.submitButtonText}>Send Announcement</Text>
             )}
           </TouchableOpacity>
-        </ScrollView>
+        </BottomSheetScrollView>
       </BottomSheetView>
     </BottomSheetModal>
   );

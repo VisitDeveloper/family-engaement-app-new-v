@@ -3,6 +3,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
+import { getDisplayName } from "@/utils/user-name";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -30,10 +31,11 @@ export default function VerifyEmailScreen() {
       if (response.user) {
         useStore.getState().setUser({
           ...response.user,
-          name:
-            response.user.firstName || response.user.lastName
-              ? `${response.user.firstName || ""} ${response.user.lastName || ""}`.trim()
-              : response.user.email.split("@")[0],
+          name: getDisplayName(
+            response.user.firstName,
+            response.user.lastName,
+            response.user.email.split("@")[0]
+          ),
         });
         useStore.getState().setRole(response.user.role);
       }

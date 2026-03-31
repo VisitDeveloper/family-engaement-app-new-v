@@ -1,7 +1,9 @@
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
+import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { Image } from "expo-image";
-import { TextInput, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "../../themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 
@@ -20,6 +22,7 @@ export function CommentInput({
 }: CommentInputProps) {
   const theme = useStore((state) => state.theme);
   const user = useStore((state) => state.user);
+  const insets = useSafeAreaInsets();
 
   const styles = useThemedStyles(
     (t) =>
@@ -53,7 +56,7 @@ export function CommentInput({
         flexDirection: "column",
         alignItems: "flex-end",
         gap: 8,
-        paddingBottom: 16,
+        paddingBottom: Math.max(insets.bottom, 12),
       }}
     >
       <View style={styles.inputContainer}>
@@ -69,7 +72,7 @@ export function CommentInput({
         ) : (
           <Ionicons name="person-circle" size={32} color={theme.subText} />
         )}
-        <TextInput
+        <BottomSheetTextInput
           style={styles.commentInput}
           value={comment}
           onChangeText={setComment}
@@ -83,7 +86,7 @@ export function CommentInput({
           multiline
         />
       </View>
-      <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
         <TouchableOpacity
           onPress={onSubmit}
           disabled={!comment.trim() || isSubmitting}

@@ -8,6 +8,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 export type KeyboardAwareScrollViewPlatformProps = ScrollViewProps & {
   bottomOffset?: number;
@@ -22,15 +23,31 @@ export function KeyboardAwareScrollViewPlatform({
   contentContainerStyle,
   ...props
 }: KeyboardAwareScrollViewPlatformProps) {
+  if (Platform.OS === "android") {
+    return (
+      <KeyboardAwareScrollView
+        style={style}
+        contentContainerStyle={contentContainerStyle}
+        bottomOffset={bottomOffset}
+        keyboardShouldPersistTaps="handled"
+        {...props}
+      >
+        {children}
+      </KeyboardAwareScrollView>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? bottomOffset : 0}
+      behavior="padding"
+      keyboardVerticalOffset={bottomOffset}
     >
       <ScrollView
         style={style}
         contentContainerStyle={contentContainerStyle}
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
         {...props}
       >
         {children}

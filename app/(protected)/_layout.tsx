@@ -3,6 +3,7 @@ import { apiClient } from "@/services/api";
 import { authService } from "@/services/auth.service";
 import type { StoreUser } from "@/store";
 import { useStore } from "@/store";
+import { getDisplayName } from "@/utils/user-name";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -56,10 +57,11 @@ export default function RootLayout() {
       .then((response) => {
         if (cancelled) return;
         const store = useStore.getState();
-        const name =
-          response.firstName || response.lastName
-            ? `${response.firstName ?? ""} ${response.lastName ?? ""}`.trim()
-            : response.email?.split("@")[0] ?? "";
+        const name = getDisplayName(
+          response.firstName,
+          response.lastName,
+          response.email?.split("@")[0] ?? ""
+        );
         const userData: StoreUser = {
           id: response.id,
           name,

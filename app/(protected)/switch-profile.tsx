@@ -5,6 +5,7 @@ import { ApiError } from "@/services/api";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
 import type { CurrentProfile, ProfileItem, SwitchProfileBody } from "@/types";
+import { getDisplayName, getInitials as getSafeInitials } from "@/utils/user-name";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -208,9 +209,7 @@ export default function SwitchProfileScreen() {
   }));
 
   const getInitials = (firstName?: string, lastName?: string) => {
-    const first = firstName?.charAt(0) || "";
-    const second = lastName?.charAt(0) || "";
-    return (first + second).toUpperCase() || "U";
+    return getSafeInitials(firstName, lastName, "U");
   };
 
   const getProfileDisplayName = useCallback(
@@ -264,10 +263,11 @@ export default function SwitchProfileScreen() {
         const data = await authService.switchProfile(profileToSwitchBody(profile));
 
         const u = data.user;
-        const name =
-          u.firstName || u.lastName
-            ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim()
-            : u.email?.split("@")[0] ?? "";
+        const name = getDisplayName(
+          u.firstName,
+          u.lastName,
+          u.email?.split("@")[0] ?? ""
+        );
 
         setUser({
           id: u.id,
@@ -337,7 +337,11 @@ export default function SwitchProfileScreen() {
       }
       : null);
 
-  const fullName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
+  const fullName = getDisplayName(
+    user?.firstName,
+    user?.lastName,
+    user?.email?.split("@")[0] || ""
+  );
   const initials = getInitials(user?.firstName, user?.lastName);
 
   return (

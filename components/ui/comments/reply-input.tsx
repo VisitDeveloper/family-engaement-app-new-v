@@ -1,8 +1,9 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
+import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { Image } from "expo-image";
-import { TextInput, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import { ThemedText } from "../../themed-text";
 
 interface ReplyInputProps {
@@ -76,7 +77,7 @@ export function ReplyInput({
               color={theme.subText}
             />
           )}
-          <TextInput
+          <BottomSheetTextInput
             style={[
               styles.commentInput,
               { height: 36, fontSize: 13, flex: 1 },

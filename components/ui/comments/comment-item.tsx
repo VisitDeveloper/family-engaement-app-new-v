@@ -1,6 +1,7 @@
 import { CommentResponseDto } from "@/services/comment.service";
 import { useStore } from "@/store";
 import { formatTimeAgoShort } from "@/utils/format-time-ago";
+import { getDisplayName } from "@/utils/user-name";
 import { EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { TouchableOpacity, View } from "react-native";
@@ -34,13 +35,11 @@ export function CommentItem({
   const likesCount =
     commentLikes[comment.id]?.likesCount ?? comment.likesCount ?? 0;
 
-  const authorName =
-    comment.author.firstName && comment.author.lastName
-      ? `${comment.author.firstName} ${comment.author.lastName}`
-      : comment.author.firstName ||
-        comment.author.lastName ||
-        comment.author.email ||
-        "Unknown";
+  const authorName = getDisplayName(
+    comment.author.firstName,
+    comment.author.lastName,
+    comment.author.email || "Unknown"
+  );
 
   return (
     <View

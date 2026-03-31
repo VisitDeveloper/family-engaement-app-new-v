@@ -4,6 +4,7 @@ import { EmergencyIcon } from '@/components/ui/icons/messages-icons';
 import { useThemedStyles } from '@/hooks/use-theme-style';
 import { EmergencyMessageDto, messagingService } from '@/services/messaging.service';
 import { useStore } from '@/store';
+import { getDisplayName } from '@/utils/user-name';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -154,8 +155,11 @@ const EmergencyNotificationsScreen = () => {
 
     const getSenderName = (message: EmergencyMessageDto): string => {
         if (message.createdBy) {
-            const fullName = `${message.createdBy.firstName || ''} ${message.createdBy.lastName || ''}`.trim();
-            return fullName || message.createdBy.email || t('emergency.unknownSender') || 'Unknown';
+            return getDisplayName(
+                message.createdBy.firstName,
+                message.createdBy.lastName,
+                message.createdBy.email || t('emergency.unknownSender') || 'Unknown'
+            );
         }
         return t('emergency.unknownSender') || 'Unknown';
     };

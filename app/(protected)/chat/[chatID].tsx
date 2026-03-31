@@ -16,6 +16,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ConversationResponseDto, MessageResponseDto, messagingService, PollResponseDto } from "@/services/messaging.service";
 import { detectSourceLanguage, SUPPORTED_LANGUAGES, translateText } from "@/services/translate.service";
 import { useStore } from "@/store";
+import { getDisplayName } from "@/utils/user-name";
 import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio, ResizeMode, Video } from "expo-av";
@@ -1162,7 +1163,11 @@ export default function ChatScreen() {
         if (conversation.type === 'direct' && conversation.participants) {
             const otherParticipant = conversation.participants.find((p: any) => p.user.id !== currentUserId);
             if (otherParticipant) {
-                return `${otherParticipant.user.firstName || ''} ${otherParticipant.user.lastName || ''}`.trim() || otherParticipant.user.email;
+                return getDisplayName(
+                    otherParticipant.user.firstName,
+                    otherParticipant.user.lastName,
+                    otherParticipant.user.email
+                );
             }
         } else if (conversation.type === 'group' && conversation.name) {
             return conversation.name;
@@ -1255,7 +1260,11 @@ export default function ChatScreen() {
                                 } else if (conversation.type === 'direct' && conversation.participants) {
                                     const other = conversation.participants.find((p: any) => p.user?.id !== currentUserId);
                                     if (other?.user?.id) {
-                                        const name = `${other.user.firstName || ''} ${other.user.lastName || ''}`.trim() || other.user.email || '';
+                                        const name = getDisplayName(
+                                            other.user.firstName,
+                                            other.user.lastName,
+                                            other.user.email || ''
+                                        );
                                         router.push({
                                             pathname: '/contact-profile/[userId]',
                                             params: {

@@ -4,6 +4,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
+import { getDisplayName } from "@/utils/user-name";
 import type { ConversationResponseDto, ProfileResponseDto } from "@/types";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -41,7 +42,11 @@ export default function ContactProfileScreen() {
 
   // Use fetched profile data, fallback to URL params if available
   const displayName = userProfile
-    ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim() || userProfile.email?.split("@")[0] || "User"
+    ? getDisplayName(
+      userProfile.firstName,
+      userProfile.lastName,
+      userProfile.email?.split("@")[0] || "User"
+    )
     : nameParam || "User";
   const displayRole = userProfile?.role || roleParam || "";
   const avatarUri = userProfile?.profilePicture || (imageParam && imageParam !== "" ? imageParam : null);
