@@ -44,6 +44,8 @@ export interface AuthService {
   login(credentials: LoginRequest): Promise<AuthResponse>;
   register(data: RegisterRequest): Promise<AuthResponse>;
   verifyEmail(code: string): Promise<AuthResponse>;
+  forgetPassword(email: string): Promise<{ message: string }>;
+  resetPassword(token: string, newPassword: string): Promise<{ message: string }>;
   logout(): Promise<void>;
   refreshToken(refreshToken: string): Promise<RefreshTokenResponse>;
   changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse>;
@@ -156,6 +158,35 @@ class AuthServiceImpl implements AuthService {
       const apiError = error as ApiError;
       throw {
         message: apiError.message || "Email verification failed. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async forgetPassword(email: string): Promise<{ message: string }> {
+    try {
+      return await apiClient.post<{ message: string }>("/auth/forget-password", { email });
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message: apiError.message || "Failed to send reset password email. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    try {
+      return await apiClient.post<{ message: string }>("/auth/reset-password", {
+        token,
+        newPassword,
+      });
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message: apiError.message || "Failed to reset password. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

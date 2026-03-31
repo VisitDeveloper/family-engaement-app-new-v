@@ -154,6 +154,47 @@ familyappengagement://profile/123e4567-e89b-12d3-a456-426614174000
 
 ---
 
+### 8. Verify Email
+
+**Format:**
+```
+familyappengagement://verify-email?code={code}&fallback={url}
+```
+
+**Parameters:**
+- `code` (optional): Verification code
+- `fallback` (optional): Fallback URL if app cannot complete verification
+
+**Example:**
+```
+familyappengagement://verify-email?code=123456
+```
+
+**App Route:**
+- `/(auth)/verify-email`
+
+---
+
+### 9. Reset Password
+
+**Format:**
+```
+familyappengagement://reset-password?token={token}
+```
+
+**Parameters:**
+- `token` (required): Reset password token from email
+
+**Example:**
+```
+familyappengagement://reset-password?token=abc123def456
+```
+
+**App Route:**
+- `/(auth)/reset-password`
+
+---
+
 ## Backend Usage
 
 ### Example: Sending Chat Link in Notification

@@ -17,6 +17,7 @@ export interface DeepLinkRoute {
  * - mebo://feed/{id}
  * - mebo://profile/{userId}
  * - mebo://verify-email?code=123456
+ * - mebo://reset-password?token=abc123
  */
 export function parseDeepLink(url: string): DeepLinkRoute | null {
   try {
@@ -98,6 +99,16 @@ export function parseDeepLink(url: string): DeepLinkRoute | null {
       if (queryParams.fallback) params.fallback = String(queryParams.fallback);
       return {
         pathname: "/(auth)/verify-email",
+        params,
+      };
+    }
+
+    // Reset password: /reset-password?token=...
+    if (path === "reset-password") {
+      const params: Record<string, string> = {};
+      if (queryParams.token) params.token = String(queryParams.token);
+      return {
+        pathname: "/(auth)/reset-password",
         params,
       };
     }

@@ -17,6 +17,84 @@
     "support": "Support",
     "termsOfService": "Terms of Service"
   },
+  "auth": {
+    "common": {
+      "invalidEmailTitle": "Invalid email",
+      "invalidEmailMessage": "Please enter a valid email address.",
+      "requestFailedTitle": "Request failed",
+      "tryAgain": "Please try again.",
+      "backToLogin": "Back to login",
+      "cancel": "Cancel"
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Password"
+    },
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Where Families Come Together.",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "forgotPassword": "Forgot password?",
+      "openForgotPasswordHint": "Open forgot password screen",
+      "submit": "Login",
+      "submitHint": "Submit your login credentials",
+      "loggingIn": "Logging in...",
+      "helper": "Use the account provided by your organization.",
+      "genericError": "An error occurred. Please try again."
+    },
+    "forgot": {
+      "title": "Forgot Password",
+      "subtitle": "Enter your email and we will send you a password reset link.",
+      "emailHint": "Enter your email to receive reset link",
+      "helper": "Use the same email you use for login.",
+      "successTitle": "Reset link sent",
+      "successMessage": "If this email exists, a reset link has been sent.",
+      "successHelper": "If the account exists, a reset email has been sent.",
+      "sendButton": "Send reset link",
+      "sending": "Sending...",
+      "cooldown": "Resend in {{seconds}}s",
+      "haveToken": "I already have a reset token"
+    },
+    "reset": {
+      "title": "Reset Password",
+      "subtitle": "Paste your reset token and set a new password.",
+      "tokenLabel": "Reset Token",
+      "tokenPlaceholder": "Paste reset token",
+      "newPasswordLabel": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm new password",
+      "showNewPassword": "Show new password",
+      "hideNewPassword": "Hide new password",
+      "showConfirmPassword": "Show confirm password",
+      "hideConfirmPassword": "Hide confirm password",
+      "passwordRule": "Password must be at least 6 characters.",
+      "strength": {
+        "weak": "Strength: Weak",
+        "medium": "Strength: Medium",
+        "strong": "Strength: Strong"
+      },
+      "submit": "Reset password",
+      "resetting": "Resetting...",
+      "successTitle": "Password updated",
+      "successMessage": "Your password has been reset successfully.",
+      "failedTitle": "Reset failed",
+      "invalidTokenTitle": "Invalid or expired link",
+      "invalidTokenMessage": "This reset link is invalid or expired. Request a new one.",
+      "requestNewLink": "Request new link"
+    },
+    "verify": {
+      "title": "Verify your email",
+      "subtitle": "Enter the 6-digit code from your email.",
+      "codePlaceholder": "123456",
+      "submit": "Verify",
+      "invalidCodeTitle": "Invalid code",
+      "invalidCodeMessage": "Verification code must be 6 digits.",
+      "failedTitle": "Verification failed",
+      "openWebVerification": "Open web verification"
+    }
+  },
   "settings": {
     "title": "Settings",
     "subTitle": "Manage your app preferences and account",

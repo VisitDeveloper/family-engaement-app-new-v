@@ -17,6 +17,84 @@
     "support": "Soporte",
     "termsOfService": "Términos de servicio"
   },
+  "auth": {
+    "common": {
+      "invalidEmailTitle": "Correo inválido",
+      "invalidEmailMessage": "Por favor ingresa un correo electrónico válido.",
+      "requestFailedTitle": "Solicitud fallida",
+      "tryAgain": "Por favor intenta de nuevo.",
+      "backToLogin": "Volver al login",
+      "cancel": "Cancelar"
+    },
+    "fields": {
+      "email": "Correo electrónico",
+      "password": "Contraseña"
+    },
+    "login": {
+      "title": "Bienvenido de nuevo",
+      "subtitle": "Donde las familias se unen.",
+      "showPassword": "Mostrar contraseña",
+      "hidePassword": "Ocultar contraseña",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "openForgotPasswordHint": "Abrir pantalla de contraseña olvidada",
+      "submit": "Iniciar sesión",
+      "submitHint": "Enviar tus credenciales de acceso",
+      "loggingIn": "Iniciando sesión...",
+      "helper": "Usa la cuenta proporcionada por tu organización.",
+      "genericError": "Ocurrió un error. Inténtalo de nuevo."
+    },
+    "forgot": {
+      "title": "Olvidé mi contraseña",
+      "subtitle": "Ingresa tu correo y te enviaremos un enlace para restablecerla.",
+      "emailHint": "Ingresa tu correo para recibir el enlace",
+      "helper": "Usa el mismo correo con el que inicias sesión.",
+      "successTitle": "Enlace enviado",
+      "successMessage": "Si este correo existe, se envió un enlace de restablecimiento.",
+      "successHelper": "Si la cuenta existe, se envió un correo de restablecimiento.",
+      "sendButton": "Enviar enlace",
+      "sending": "Enviando...",
+      "cooldown": "Reenviar en {{seconds}}s",
+      "haveToken": "Ya tengo un token de restablecimiento"
+    },
+    "reset": {
+      "title": "Restablecer contraseña",
+      "subtitle": "Pega tu token y define una nueva contraseña.",
+      "tokenLabel": "Token de restablecimiento",
+      "tokenPlaceholder": "Pega el token",
+      "newPasswordLabel": "Nueva contraseña",
+      "newPasswordPlaceholder": "Ingresa la nueva contraseña",
+      "confirmPasswordLabel": "Confirmar contraseña",
+      "confirmPasswordPlaceholder": "Confirma la nueva contraseña",
+      "showNewPassword": "Mostrar nueva contraseña",
+      "hideNewPassword": "Ocultar nueva contraseña",
+      "showConfirmPassword": "Mostrar confirmación",
+      "hideConfirmPassword": "Ocultar confirmación",
+      "passwordRule": "La contraseña debe tener al menos 6 caracteres.",
+      "strength": {
+        "weak": "Seguridad: Débil",
+        "medium": "Seguridad: Media",
+        "strong": "Seguridad: Fuerte"
+      },
+      "submit": "Restablecer contraseña",
+      "resetting": "Restableciendo...",
+      "successTitle": "Contraseña actualizada",
+      "successMessage": "Tu contraseña se restableció correctamente.",
+      "failedTitle": "Error al restablecer",
+      "invalidTokenTitle": "Enlace inválido o expirado",
+      "invalidTokenMessage": "Este enlace es inválido o expiró. Solicita uno nuevo.",
+      "requestNewLink": "Solicitar nuevo enlace"
+    },
+    "verify": {
+      "title": "Verifica tu correo",
+      "subtitle": "Ingresa el código de 6 dígitos enviado a tu correo.",
+      "codePlaceholder": "123456",
+      "submit": "Verificar",
+      "invalidCodeTitle": "Código inválido",
+      "invalidCodeMessage": "El código de verificación debe tener 6 dígitos.",
+      "failedTitle": "Error de verificación",
+      "openWebVerification": "Abrir verificación web"
+    }
+  },
   "settings": {
     "title": "Ajustes",
     "subTitle": "Gestiona tus preferencias y cuenta",

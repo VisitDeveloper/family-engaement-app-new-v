@@ -1,14 +1,18 @@
+import AuthLanguageSwitcher from "@/components/ui/auth-language-switcher";
 import { ThemedText } from "@/components/themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
+import { trackAuthEvent } from "@/utils/analytics";
 import { getDisplayName } from "@/utils/user-name";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, Linking, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function VerifyEmailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ code?: string; fallback?: string }>();
   const theme = useStore((state) => state.theme);
@@ -17,15 +21,20 @@ export default function VerifyEmailScreen() {
   const [loading, setLoading] = useState(false);
   const [triedAuto, setTriedAuto] = useState(false);
 
+  useEffect(() => {
+    trackAuthEvent("verify_email_screen_view");
+  }, []);
+
   const normalizedCode = useMemo(() => code.replace(/\D/g, "").slice(0, 6), [code]);
 
   const verify = async (candidateCode: string) => {
     const finalCode = candidateCode.replace(/\D/g, "").slice(0, 6);
     if (finalCode.length !== 6) {
-      Alert.alert("Invalid code", "Verification code must be 6 digits.");
+      Alert.alert(t("auth.verify.invalidCodeTitle"), t("auth.verify.invalidCodeMessage"));
       return;
     }
     setLoading(true);
+    trackAuthEvent("verify_email_attempt");
     try {
       const response = await authService.verifyEmail(finalCode);
       if (response.user) {
@@ -40,10 +49,12 @@ export default function VerifyEmailScreen() {
         useStore.getState().setRole(response.user.role);
       }
       setLoggedIn(true);
+      trackAuthEvent("verify_email_success");
       router.replace("/(protected)/(tabs)");
     } catch (err) {
       const apiError = err as ApiError;
-      Alert.alert("Verification failed", apiError.message || "Please try again.");
+      trackAuthEvent("verify_email_failed", { status: apiError.status ?? null });
+      Alert.alert(t("auth.verify.failedTitle"), apiError.message || t("auth.common.tryAgain"));
     } finally {
       setLoading(false);
     }
@@ -108,10 +119,10 @@ export default function VerifyEmailScreen() {
     <View style={styles.container}>
       <View style={styles.card}>
         <ThemedText type="middleTitle" style={{ color: theme.text }}>
-          Verify your email
+          {t("auth.verify.title")}
         </ThemedText>
         <ThemedText style={{ marginTop: 8, color: theme.subText }}>
-          Enter the 6-digit code from your email.
+          {t("auth.verify.subtitle")}
         </ThemedText>
         <TextInput
           style={styles.input}
@@ -119,7 +130,7 @@ export default function VerifyEmailScreen() {
           onChangeText={setCode}
           keyboardType="number-pad"
           maxLength={6}
-          placeholder="123456"
+          placeholder={t("auth.verify.codePlaceholder")}
           placeholderTextColor={theme.subText}
         />
         <TouchableOpacity
@@ -130,14 +141,17 @@ export default function VerifyEmailScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={{ color: "#fff", fontWeight: "600" }}>Verify</Text>
+            <Text style={{ color: "#fff", fontWeight: "600" }}>{t("auth.verify.submit")}</Text>
           )}
         </TouchableOpacity>
         {typeof params.fallback === "string" && params.fallback ? (
           <TouchableOpacity style={styles.secondary} onPress={() => void openFallback()}>
-            <Text style={{ color: theme.text, fontWeight: "600" }}>Open web verification</Text>
+            <Text style={{ color: theme.text, fontWeight: "600" }}>{t("auth.verify.openWebVerification")}</Text>
           </TouchableOpacity>
         ) : null}
+      </View>
+      <View>
+        <AuthLanguageSwitcher />
       </View>
     </View>
   );

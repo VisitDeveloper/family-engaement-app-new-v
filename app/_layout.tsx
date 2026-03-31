@@ -28,7 +28,8 @@ export default function RootLayout() {
 
   const handleIncomingDeepLink = (url: string) => {
     const isVerifyLink = url.includes("verify-email");
-    if (!isLoggedIn && !isVerifyLink) return;
+    const isResetPasswordLink = url.includes("reset-password");
+    if (!isLoggedIn && !isVerifyLink && !isResetPasswordLink) return;
     handleDeepLink(url);
   };
 

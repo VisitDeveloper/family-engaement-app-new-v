@@ -412,6 +412,18 @@ export default function ChatScreen() {
             });
 
             if (!result.canceled && result.assets[0]) {
+                const selectedVideo = result.assets[0];
+                const durationMs = selectedVideo.duration ?? 0;
+                const maxVideoDurationMs = 60 * 1000; // 1 minute
+
+                if (durationMs > maxVideoDurationMs) {
+                    Alert.alert(
+                        "Video too long",
+                        "Please select a video up to 1 minute."
+                    );
+                    return;
+                }
+
                 await uploadAndSendFile(result.assets[0].uri, 'video', result.assets[0].mimeType || 'video/mp4');
             }
         } catch (error: any) {
@@ -419,6 +431,17 @@ export default function ChatScreen() {
             Alert.alert("Error", "Failed to pick video");
         }
     };
+
+    const handleOpenAttachmentMenu = useCallback(() => {
+        if (uploadingFile) {
+            Alert.alert("Upload in progress", "Please wait until the current upload finishes.");
+            return;
+        }
+        if (sending) {
+            return;
+        }
+        setShowAttachingMenu(true);
+    }, [sending, uploadingFile]);
 
     const pickDocument = async () => {
         try {
@@ -1336,13 +1359,13 @@ export default function ChatScreen() {
                                     <View style={styles.inputWrapper}>
                                         <TouchableOpacity
                                             style={styles.attachmentButton}
-                                            onPress={() => setShowAttachingMenu(true)}
-                                            disabled={uploadingFile || sending}
+                                            onPress={handleOpenAttachmentMenu}
+                                            disabled={sending}
                                         >
                                             <Ionicons
                                                 name="add"
                                                 size={24}
-                                                color={uploadingFile || sending ? theme.subText : theme.text}
+                                                color={theme.text}
                                             />
                                         </TouchableOpacity>
                                         <TextInput
@@ -1405,13 +1428,13 @@ export default function ChatScreen() {
                                 <View style={styles.inputWrapper}>
                                     <TouchableOpacity
                                         style={styles.attachmentButton}
-                                        onPress={() => setShowAttachingMenu(true)}
-                                        disabled={uploadingFile || sending}
+                                        onPress={handleOpenAttachmentMenu}
+                                        disabled={sending}
                                     >
                                         <Ionicons
                                             name="add"
                                             size={24}
-                                            color={uploadingFile || sending ? theme.subText : theme.text}
+                                            color={theme.text}
                                         />
                                     </TouchableOpacity>
                                     <TextInput

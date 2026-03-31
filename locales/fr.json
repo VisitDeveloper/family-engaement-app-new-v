@@ -17,6 +17,84 @@
     "support": "Support",
     "termsOfService": "Conditions d'utilisation"
   },
+  "auth": {
+    "common": {
+      "invalidEmailTitle": "E-mail invalide",
+      "invalidEmailMessage": "Veuillez saisir une adresse e-mail valide.",
+      "requestFailedTitle": "Échec de la demande",
+      "tryAgain": "Veuillez réessayer.",
+      "backToLogin": "Retour à la connexion",
+      "cancel": "Annuler"
+    },
+    "fields": {
+      "email": "E-mail",
+      "password": "Mot de passe"
+    },
+    "login": {
+      "title": "Bon retour",
+      "subtitle": "Là où les familles se retrouvent.",
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe",
+      "forgotPassword": "Mot de passe oublié ?",
+      "openForgotPasswordHint": "Ouvrir l'écran mot de passe oublié",
+      "submit": "Connexion",
+      "submitHint": "Envoyer vos identifiants de connexion",
+      "loggingIn": "Connexion...",
+      "helper": "Utilisez le compte fourni par votre organisation.",
+      "genericError": "Une erreur est survenue. Veuillez réessayer."
+    },
+    "forgot": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Entrez votre e-mail et nous vous enverrons un lien de réinitialisation.",
+      "emailHint": "Entrez votre e-mail pour recevoir le lien",
+      "helper": "Utilisez le même e-mail que pour la connexion.",
+      "successTitle": "Lien envoyé",
+      "successMessage": "Si cet e-mail existe, un lien a été envoyé.",
+      "successHelper": "Si le compte existe, un e-mail de réinitialisation a été envoyé.",
+      "sendButton": "Envoyer le lien",
+      "sending": "Envoi...",
+      "cooldown": "Renvoyer dans {{seconds}}s",
+      "haveToken": "J'ai déjà un jeton de réinitialisation"
+    },
+    "reset": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Collez votre jeton et définissez un nouveau mot de passe.",
+      "tokenLabel": "Jeton de réinitialisation",
+      "tokenPlaceholder": "Collez le jeton",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "newPasswordPlaceholder": "Entrez le nouveau mot de passe",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "confirmPasswordPlaceholder": "Confirmez le nouveau mot de passe",
+      "showNewPassword": "Afficher le nouveau mot de passe",
+      "hideNewPassword": "Masquer le nouveau mot de passe",
+      "showConfirmPassword": "Afficher la confirmation",
+      "hideConfirmPassword": "Masquer la confirmation",
+      "passwordRule": "Le mot de passe doit contenir au moins 6 caractères.",
+      "strength": {
+        "weak": "Force : Faible",
+        "medium": "Force : Moyenne",
+        "strong": "Force : Forte"
+      },
+      "submit": "Réinitialiser le mot de passe",
+      "resetting": "Réinitialisation...",
+      "successTitle": "Mot de passe mis à jour",
+      "successMessage": "Votre mot de passe a été réinitialisé avec succès.",
+      "failedTitle": "Échec de la réinitialisation",
+      "invalidTokenTitle": "Lien invalide ou expiré",
+      "invalidTokenMessage": "Ce lien est invalide ou expiré. Demandez-en un nouveau.",
+      "requestNewLink": "Demander un nouveau lien"
+    },
+    "verify": {
+      "title": "Vérifiez votre e-mail",
+      "subtitle": "Entrez le code à 6 chiffres reçu par e-mail.",
+      "codePlaceholder": "123456",
+      "submit": "Vérifier",
+      "invalidCodeTitle": "Code invalide",
+      "invalidCodeMessage": "Le code de vérification doit contenir 6 chiffres.",
+      "failedTitle": "Échec de la vérification",
+      "openWebVerification": "Ouvrir la vérification web"
+    }
+  },
   "settings": {
     "title": "Paramètres",
     "subTitle": "Gérez vos préférences et votre compte",
