@@ -1,4 +1,5 @@
 // app/school-calendar.tsx (or any path you want)
+import { feedback } from "@/lib/feedback";
 import HeaderThreeSections from "@/components/reptitive-component/header-three-sections";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -22,17 +23,7 @@ import {
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Helper function to format date (uses t for month names)
@@ -175,14 +166,14 @@ const openLocationInMaps = async (event: EventResponseDto, t: (key: string) => s
       if (canOpen) {
         await Linking.openURL(url);
       } else {
-        Alert.alert(t("common.error"), t("event.mapsError"));
+        feedback.toast.error(t("common.error"), t("event.mapsError"));
       }
     } catch (error) {
       console.error("Error opening maps:", error);
-      Alert.alert(t("common.error"), t("event.mapsFailed"));
+      feedback.toast.error(t("common.error"), t("event.mapsFailed"));
     }
   } else {
-    Alert.alert(t("event.noLocation"), t("event.noLocationDesc"));
+    feedback.toast.info(t("event.noLocation"), t("event.noLocationDesc"));
   }
 };
 
@@ -321,7 +312,7 @@ const SchoolCalendarScreen = () => {
       const errorMessage =
         err.message || t("event.failedLoadEvents");
       setError(errorMessage);
-      Alert.alert(t("common.error"), errorMessage);
+      feedback.toast.error(t("common.error"), errorMessage);
       console.error("Error fetching events:", err);
     } finally {
       setLoading(false);
@@ -524,7 +515,7 @@ const SchoolCalendarScreen = () => {
           : status === "maybe"
             ? t("buttons.maybe")
             : t("buttons.notGoing");
-      Alert.alert(t("common.success"), t("event.rsvpUpdated", { status: statusText }));
+      feedback.toast.success(t("common.success"), t("event.rsvpUpdated", { status: statusText }));
       // Refresh events
       await fetchEvents();
       // Close modal if time slot was selected
@@ -532,10 +523,7 @@ const SchoolCalendarScreen = () => {
         closeTimeSlotModal();
       }
     } catch (err: any) {
-      Alert.alert(
-        t("common.error"),
-        err.message || t("event.failedUpdateRsvp")
-      );
+      feedback.toast.error(t("common.error"), err.message || t("event.failedUpdateRsvp"));
       console.error("Error updating RSVP:", err);
     } finally {
       setSubmitting(null);
@@ -563,7 +551,7 @@ const SchoolCalendarScreen = () => {
 
   const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
     setOpenDropdownEventId(null);
-    Alert.alert(
+    feedback.alert(
       t("event.deleteEvent"),
       t("event.deleteEventConfirm", { title: eventTitle }),
       [
@@ -578,15 +566,12 @@ const SchoolCalendarScreen = () => {
             try {
               setDeletingEventId(eventId);
               await eventService.delete(eventId);
-              Alert.alert(t("common.success"), t("event.eventDeleted"));
+              feedback.toast.success(t("common.success"), t("event.eventDeleted"));
               // Refresh events
               await fetchEvents();
             } catch (error: any) {
               console.error("Error deleting event:", error);
-              Alert.alert(
-                t("common.error"),
-                error.message || t("event.failedDeleteEvent")
-              );
+              feedback.toast.error(t("common.error"), error.message || t("event.failedDeleteEvent"));
             } finally {
               setDeletingEventId(null);
             }

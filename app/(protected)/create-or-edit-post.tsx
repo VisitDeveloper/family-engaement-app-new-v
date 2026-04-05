@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { FileIcon, MediaIcon } from "@/components/ui/icons/messages-icons";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
@@ -16,15 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Switch,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, Switch, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
 const CreateOrEditPost = () => {
@@ -227,10 +220,7 @@ const CreateOrEditPost = () => {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          t("createPost.permissionRequired"),
-          t("createPost.needCameraRollPermission")
-        );
+        feedback.toast.info(t("createPost.permissionRequired"), t("createPost.needCameraRollPermission"));
         return;
       }
 
@@ -247,7 +237,7 @@ const CreateOrEditPost = () => {
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert(t("common.error"), t("createPost.failedPickImage"));
+      feedback.toast.error(t("common.error"), t("createPost.failedPickImage"));
     }
   };
 
@@ -264,7 +254,7 @@ const CreateOrEditPost = () => {
       }
     } catch (error) {
       console.error("Error picking document:", error);
-      Alert.alert(t("common.error"), t("createPost.failedPickDocument"));
+      feedback.toast.error(t("common.error"), t("createPost.failedPickDocument"));
     }
   };
 
@@ -304,7 +294,7 @@ const CreateOrEditPost = () => {
       setClassrooms(mappedClassrooms);
     } catch (error: any) {
       console.error("Error loading classrooms:", error);
-      Alert.alert(t("common.error"), t("createPost.failedLoadClassrooms"));
+      feedback.toast.error(t("common.error"), t("createPost.failedLoadClassrooms"));
     } finally {
       setLoadingClassrooms(false);
     }
@@ -377,7 +367,7 @@ const CreateOrEditPost = () => {
       }
     } catch (error: any) {
       console.error("Error loading post:", error);
-      Alert.alert(t("common.error"), t("createPost.failedLoadPost"));
+      feedback.toast.error(t("common.error"), t("createPost.failedLoadPost"));
       router.back();
     } finally {
       setLoadingPost(false);
@@ -523,29 +513,17 @@ const CreateOrEditPost = () => {
       // Create or update post
       if (isEditMode && postId) {
         await postService.update(postId, postData);
-        Alert.alert(t("common.success"), t("createPost.postUpdated"), [
-          {
-            text: t("common.ok"),
-            onPress: () => {
-              router.back();
-            },
-          },
-        ]);
+        feedback.toast.success(t("common.success"), t("createPost.postUpdated"));
+        router.back();
       } else {
         await postService.create(postData);
-        Alert.alert(t("common.success"), t("createPost.postCreated"), [
-          {
-            text: t("common.ok"),
-            onPress: () => {
-              router.back();
-            },
-          },
-        ]);
+        feedback.toast.success(t("common.success"), t("createPost.postCreated"));
+        router.back();
       }
     } catch (error: any) {
       const errorMessage =
         error.message || t("createPost.failedUpdateOrCreate");
-      Alert.alert(t("common.error"), errorMessage);
+      feedback.toast.error(t("common.error"), errorMessage);
       console.error(
         `Error ${isEditMode ? "updating" : "creating"} post:`,
         error

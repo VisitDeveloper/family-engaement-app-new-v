@@ -1,4 +1,5 @@
 import HeaderInnerPage from '@/components/reptitive-component/header-inner-page';
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from '@/components/themed-text';
 import Rating from '@/components/ui/rating';
 import { useThemedStyles } from '@/hooks/use-theme-style';
@@ -7,7 +8,7 @@ import { useStore } from '@/store';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, TouchableOpacity, View } from "react-native";
 
 const RatingScreen = () => {
     const { id } = useLocalSearchParams();
@@ -27,7 +28,6 @@ const RatingScreen = () => {
             setRating(resourceItem.userRating);
         }
     }, [resourceItem?.userRating]);
-
 
     const styles = useThemedStyles((t) => ({
         container: { flex: 1, padding: 10, backgroundColor: t.bg },
@@ -98,12 +98,12 @@ const RatingScreen = () => {
 
     const handleRatingSubmit = async () => {
         if (!rating || rating === 0) {
-            Alert.alert("Error", "Please select a rating first.");
+            feedback.toast.error("Error", "Please select a rating first.");
             return;
         }
 
         if (!id || typeof id !== 'string') {
-            Alert.alert("Error", "Invalid resource ID.");
+            feedback.toast.error("Error", "Invalid resource ID.");
             return;
         }
 
@@ -145,23 +145,15 @@ const RatingScreen = () => {
                 }
             }
             
-            Alert.alert("Success", "Rating submitted successfully!", [
-                {
-                    text: "OK",
-                    onPress: () => router.back(),
-                },
-            ]);
+            feedback.toast.success("Success", "Rating submitted successfully!");
+            router.back();
         } catch (error: any) {
             console.error('Error submitting rating:', error);
-            Alert.alert(
-                "Error",
-                error.message || "Failed to submit rating. Please try again."
-            );
+            feedback.toast.error("Error", error.message || "Failed to submit rating. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
     };
-
 
     return (
         <View style={styles.container}>

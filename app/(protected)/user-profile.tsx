@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import EditNameBottomSheet from "@/components/ui/edit-name-bottom-sheet";
 import { PencilIcon } from "@/components/ui/icons/messages-icons";
@@ -18,15 +19,7 @@ import CountryPicker, {
   Country,
   CountryCode,
 } from "react-native-country-picker-modal";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Platform,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, Platform, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
@@ -193,18 +186,8 @@ export default function ProfileScreen() {
 
       // If error is 401 or 403, token is invalid
       if (apiError.status === 401 || apiError.status === 403) {
-        Alert.alert(
-          t("userProfile.sessionExpired"),
-          t("userProfile.sessionExpiredMessage"),
-          [
-            {
-              text: t("common.ok"),
-              onPress: () => {
-                router.replace("/(auth)/login");
-              },
-            },
-          ]
-        );
+        feedback.toast.error(t("userProfile.sessionExpired"), t("userProfile.sessionExpiredMessage"));
+        router.replace("/(auth)/login");
       }
     } finally {
       setLoading(false);
@@ -230,10 +213,7 @@ export default function ProfileScreen() {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          t("userProfile.permissionRequired"),
-          t("userProfile.cameraRollPermissionMessage")
-        );
+        feedback.toast.info(t("userProfile.permissionRequired"), t("userProfile.cameraRollPermissionMessage"));
         return;
       }
 
@@ -313,28 +293,18 @@ export default function ProfileScreen() {
       // This ensures everything is updated everywhere
       await fetchProfile();
 
-      Alert.alert(t("common.success"), t("userProfile.profilePictureUpdatedSuccess"));
+      feedback.toast.success(t("common.success"), t("userProfile.profilePictureUpdatedSuccess"));
     } catch (err) {
       const apiError = err as ApiError;
       const errorMessage =
         apiError.message ||
         t("userProfile.failedUpdateProfilePicture");
-      Alert.alert(t("common.error"), errorMessage);
+      feedback.toast.error(t("common.error"), errorMessage);
 
       // If error is 401 or 403, token is invalid
       if (apiError.status === 401 || apiError.status === 403) {
-        Alert.alert(
-          t("userProfile.sessionExpired"),
-          t("userProfile.sessionExpiredMessage"),
-          [
-            {
-              text: t("common.ok"),
-              onPress: () => {
-                router.replace("/(auth)/login");
-              },
-            },
-          ]
-        );
+        feedback.toast.error(t("userProfile.sessionExpired"), t("userProfile.sessionExpiredMessage"));
+        router.replace("/(auth)/login");
       }
     } finally {
       setUploading(false);
@@ -348,7 +318,7 @@ export default function ProfileScreen() {
     const trimmedLastName = lastName.trim();
 
     if (!trimmedFirstName && !trimmedLastName) {
-      Alert.alert(t("common.error"), t("userProfile.nameRequired"));
+      feedback.toast.error(t("common.error"), t("userProfile.nameRequired"));
       return;
     }
 
@@ -378,14 +348,11 @@ export default function ProfileScreen() {
       };
       setUser(userData);
 
-      Alert.alert(t("common.success"), t("userProfile.profileUpdatedSuccess"));
+      feedback.toast.success(t("common.success"), t("userProfile.profileUpdatedSuccess"));
       setShowNameSheet(false);
     } catch (err) {
       const apiError = err as ApiError;
-      Alert.alert(
-        t("common.error"),
-        apiError.message || t("userProfile.failedUpdateProfile")
-      );
+      feedback.toast.error(t("common.error"), apiError.message || t("userProfile.failedUpdateProfile"));
     } finally {
       setSavingProfile(false);
     }
@@ -440,25 +407,22 @@ export default function ProfileScreen() {
     const currentPhone = normalizePhoneNumber(profile.phoneNumber || profile.phone || "");
 
     if (!normalizedPhone) {
-      Alert.alert(t("common.error"), t("userProfile.phoneRequired"));
+      feedback.toast.error(t("common.error"), t("userProfile.phoneRequired"));
       return;
     }
 
     if (!isValidInternationalPhone(normalizedPhone)) {
-      Alert.alert(t("common.error"), t("userProfile.invalidPhoneNumber"));
+      feedback.toast.error(t("common.error"), t("userProfile.invalidPhoneNumber"));
       return;
     }
 
     if (normalizedPhone === currentPhone) {
-      Alert.alert(t("common.error"), t("userProfile.phoneNoChanges"));
+      feedback.toast.error(t("common.error"), t("userProfile.phoneNoChanges"));
       return;
     }
 
     if (phoneOtpCooldownSeconds > 0) {
-      Alert.alert(
-        t("common.error"),
-        t("userProfile.phoneOtpResendCooldown", { seconds: phoneOtpCooldownSeconds })
-      );
+      feedback.toast.error(t("common.error"), t("userProfile.phoneOtpResendCooldown", { seconds: phoneOtpCooldownSeconds }));
       return;
     }
 
@@ -469,19 +433,13 @@ export default function ProfileScreen() {
       });
       setPhoneOtpRequested(true);
       setPhoneOtpCooldownSeconds(60);
-      Alert.alert(
-        t("common.success"),
-        response.message || t("userProfile.phoneOtpSent")
-      );
+      feedback.toast.success(t("common.success"), response.message || t("userProfile.phoneOtpSent"));
     } catch (err) {
       const apiError = err as ApiError;
       if (apiError.status === 409) {
-        Alert.alert(t("common.error"), t("userProfile.phoneAlreadyInUse"));
+        feedback.toast.error(t("common.error"), t("userProfile.phoneAlreadyInUse"));
       } else {
-        Alert.alert(
-          t("common.error"),
-          apiError.message || t("userProfile.failedUpdatePhone")
-        );
+        feedback.toast.error(t("common.error"), apiError.message || t("userProfile.failedUpdatePhone"));
       }
     } finally {
       setRequestingPhoneOtp(false);
@@ -501,7 +459,7 @@ export default function ProfileScreen() {
 
     const normalizedOtp = phoneOtpCode.trim();
     if (!normalizedOtp || normalizedOtp.length !== 6) {
-      Alert.alert(t("common.error"), t("userProfile.phoneOtpInvalid"));
+      feedback.toast.error(t("common.error"), t("userProfile.phoneOtpInvalid"));
       return;
     }
 
@@ -532,16 +490,13 @@ export default function ProfileScreen() {
       };
       setUser(userData);
 
-      Alert.alert(t("common.success"), t("userProfile.phoneUpdatedSuccess"));
+      feedback.toast.success(t("common.success"), t("userProfile.phoneUpdatedSuccess"));
     } catch (err) {
       const apiError = err as ApiError;
       if (apiError.status === 409) {
-        Alert.alert(t("common.error"), t("userProfile.phoneAlreadyInUse"));
+        feedback.toast.error(t("common.error"), t("userProfile.phoneAlreadyInUse"));
       } else {
-        Alert.alert(
-          t("common.error"),
-          apiError.message || t("userProfile.phoneOtpInvalid")
-        );
+        feedback.toast.error(t("common.error"), apiError.message || t("userProfile.phoneOtpInvalid"));
       }
     } finally {
       setVerifyingPhoneOtp(false);

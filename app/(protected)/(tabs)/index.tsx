@@ -1,4 +1,5 @@
 import RoleGuard from "@/components/check-permisions";
+import { feedback } from "@/lib/feedback";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
 import { FAB } from "@/components/ui/fab";
@@ -12,18 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Image, Platform, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Contact {
@@ -289,7 +279,7 @@ export default function MessagesScreen() {
       setConversations(convs.conversations);
     } catch (error: any) {
       console.error("Error loading conversations:", error);
-      Alert.alert("Error", error.message || "Failed to load conversations");
+      feedback.toast.error("Error", error.message || "Failed to load conversations");
     } finally {
       setLoading(false);
     }

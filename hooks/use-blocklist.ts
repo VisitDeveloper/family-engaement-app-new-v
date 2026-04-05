@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { feedback } from "@/lib/feedback";
 import { blocklistService } from '../services/blocklist.service';
 import type { UserListItemDto } from '@/types';
-import { Alert } from 'react-native';
 
 interface UseBlocklistReturn {
   blockedUsers: UserListItemDto[];
@@ -36,7 +36,7 @@ export const useBlocklist = (): UseBlocklistReturn => {
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to load contact lists';
       setError(errorMessage);
-      Alert.alert('Error', errorMessage);
+      feedback.toast.error('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -57,9 +57,9 @@ export const useBlocklist = (): UseBlocklistReturn => {
       const blockListResponse = await blocklistService.getBlockList();
       setBlockedUsers(blockListResponse.items);
       
-      Alert.alert('Success', 'User blocked successfully');
+      feedback.toast.success('Success', 'User blocked successfully');
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to block user');
+      feedback.toast.error('Error', err.message || 'Failed to block user');
       throw err;
     }
   }, []);
@@ -74,9 +74,9 @@ export const useBlocklist = (): UseBlocklistReturn => {
       // Also remove from allowed list if exists
       setAllowedUsers((prev) => prev.filter((user) => user.id !== userId));
       
-      Alert.alert('Success', 'User unblocked successfully');
+      feedback.toast.success('Success', 'User unblocked successfully');
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to unblock user');
+      feedback.toast.error('Error', err.message || 'Failed to unblock user');
       throw err;
     }
   }, []);
@@ -92,9 +92,9 @@ export const useBlocklist = (): UseBlocklistReturn => {
       const allowListResponse = await blocklistService.getAllowList();
       setAllowedUsers(allowListResponse.items);
       
-      Alert.alert('Success', 'User added to allow list');
+      feedback.toast.success('Success', 'User added to allow list');
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to add user to allow list');
+      feedback.toast.error('Error', err.message || 'Failed to add user to allow list');
       throw err;
     }
   }, []);
@@ -109,9 +109,9 @@ export const useBlocklist = (): UseBlocklistReturn => {
       // Also ensure user is not in blocked list
       setBlockedUsers((prev) => prev.filter((user) => user.id !== userId));
       
-      Alert.alert('Success', 'User removed from allow list');
+      feedback.toast.success('Success', 'User removed from allow list');
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to remove user from allow list');
+      feedback.toast.error('Error', err.message || 'Failed to remove user from allow list');
       throw err;
     }
   }, []);

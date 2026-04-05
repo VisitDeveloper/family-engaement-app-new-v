@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import Badge from "@/components/ui/badge";
 import Divider from "@/components/ui/divider";
@@ -15,14 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
 type Invitee = {
@@ -199,7 +193,7 @@ export default function CreateGroupScreen() {
       setData(mappedContacts);
     } catch (error: any) {
       console.error("Error loading contacts:", error);
-      Alert.alert(t("common.error"), error.message || t("createGroup.failedLoadContacts"));
+      feedback.toast.error(t("common.error"), error.message || t("createGroup.failedLoadContacts"));
     } finally {
       setLoadingContacts(false);
     }
@@ -285,10 +279,7 @@ export default function CreateGroupScreen() {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "Sorry, we need camera roll permissions to select images!"
-        );
+        feedback.toast.info("Permission Required", "Sorry, we need camera roll permissions to select images!");
         return;
       }
 
@@ -310,13 +301,13 @@ export default function CreateGroupScreen() {
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert(t("common.error"), t("createGroup.failedPickImage"));
+      feedback.toast.error(t("common.error"), t("createGroup.failedPickImage"));
     }
   };
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
-      Alert.alert(t("common.error"), t("createGroup.pleaseEnterGroupName"));
+      feedback.toast.error(t("common.error"), t("createGroup.pleaseEnterGroupName"));
       return;
     }
 
@@ -357,7 +348,7 @@ export default function CreateGroupScreen() {
       });
     } catch (error: any) {
       console.error("Error creating group:", error);
-      Alert.alert(t("common.error"), error.message || t("createGroup.failedCreateGroup"));
+      feedback.toast.error(t("common.error"), error.message || t("createGroup.failedCreateGroup"));
     } finally {
       setCreating(false);
     }
@@ -582,7 +573,6 @@ export default function CreateGroupScreen() {
                     </View>
                   </View>
 
-
                   {selectedGroup.includes(room.id) ? (
                     <CheckedboxIcon
                       size={22}
@@ -776,7 +766,6 @@ export default function CreateGroupScreen() {
                       </ThemedText>
                     </View>
                   </View>
-
 
                   {selected.includes(person.id) ? (
                     <CheckedboxIcon

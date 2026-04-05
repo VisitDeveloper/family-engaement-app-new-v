@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { CheckMarkCircleFillIcon, QuestionMarkCircleFillIcon, XMarkCircleFillIcon } from "@/components/ui/icons/event-icons";
@@ -18,19 +19,11 @@ import {
   FontAwesome6,
   MaterialIcons,
 } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import * as Location from "expo-location";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Linking,
-  Platform,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, Linking, Platform, ScrollView, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Helper function to format date (uses t for month names)
@@ -190,7 +183,7 @@ const EventDetailScreen = () => {
       const errorMessage =
         err.message || t("createEvent.failedLoadEvent");
       setError(errorMessage);
-      Alert.alert(t("common.error"), errorMessage);
+      feedback.toast.error(t("common.error"), errorMessage);
       console.error("Error fetching event:", err);
     } finally {
       setLoading(false);
@@ -200,6 +193,28 @@ const EventDetailScreen = () => {
   useEffect(() => {
     fetchEvent();
   }, [fetchEvent]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS === "web") {
+        return;
+      }
+
+      let cancelled = false;
+
+      (async () => {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (cancelled || status === "granted") {
+          return;
+        }
+        await Location.requestForegroundPermissionsAsync();
+      })();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
 
   const handleRSVP = async (status: RSVPStatus, timeSlotId?: string) => {
     if (!event) return;
@@ -217,14 +232,11 @@ const EventDetailScreen = () => {
           : status === "maybe"
             ? t("buttons.maybe")
             : t("buttons.notGoing");
-      Alert.alert(t("common.success"), t("event.rsvpUpdated", { status: statusText }));
+      feedback.toast.success(t("common.success"), t("event.rsvpUpdated", { status: statusText }));
       // Refresh event data
       await fetchEvent();
     } catch (err: any) {
-      Alert.alert(
-        t("common.error"),
-        err.message || t("event.failedUpdateRsvp")
-      );
+      feedback.toast.error(t("common.error"), err.message || t("event.failedUpdateRsvp"));
       console.error("Error updating RSVP:", err);
     } finally {
       setSubmitting(false);
@@ -266,14 +278,14 @@ const EventDetailScreen = () => {
         if (canOpen) {
           await Linking.openURL(url);
         } else {
-          Alert.alert(t("common.error"), t("event.mapsError"));
+          feedback.toast.error(t("common.error"), t("event.mapsError"));
         }
       } catch (error) {
         console.error("Error opening maps:", error);
-        Alert.alert(t("common.error"), t("event.mapsFailed"));
+        feedback.toast.error(t("common.error"), t("event.mapsFailed"));
       }
     } else {
-      Alert.alert(t("event.noLocation"), t("event.noLocationDesc"));
+      feedback.toast.info(t("event.noLocation"), t("event.noLocationDesc"));
     }
   };
 
@@ -660,8 +672,6 @@ const EventDetailScreen = () => {
                 </View>
               </View>
             </View>
-
-
 
             {/* Invitees List */}
             {displayedInvitees.map((invitee) => {

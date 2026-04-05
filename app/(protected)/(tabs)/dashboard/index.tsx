@@ -1,4 +1,5 @@
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
+import { feedback } from "@/lib/feedback";
 import StatCard from "@/components/reptitive-component/stat-card-admin";
 import { ThemedText } from "@/components/themed-text";
 import { ChartLineUptrendIcon, Person2FillIcon } from "@/components/ui/icons/dashboard.icons";
@@ -12,17 +13,7 @@ import { Redirect, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DimensionValue } from "react-native";
-import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  RefreshControl,
-  ScrollView,
-  Share,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Platform, RefreshControl, ScrollView, Share, Text, TouchableOpacity, View } from "react-native";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -69,10 +60,7 @@ export default function Dashboard() {
         title: t("dashboard.exportTitle"),
       });
     } catch (err) {
-      Alert.alert(
-        t("common.error", "Error"),
-        (err as { message?: string })?.message ?? t("dashboard.exportFailed")
-      );
+      feedback.toast.error(t("common.error", "Error"), (err as { message?: string })?.message ?? t("dashboard.exportFailed"));
     } finally {
       setExporting(false);
     }

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { feedback } from "@/lib/feedback";
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { Platform, Alert } from 'react-native';
+import { Platform } from "react-native";
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pushNotificationService } from '@/services/pushNotification.service';
@@ -116,7 +117,7 @@ export function usePushNotifications(
     } catch (error: any) {
       console.error('Error registering token:', error);
       if (error.status === 401) {
-        Alert.alert('Error', 'Please login again');
+        feedback.toast.error('Error', 'Please login again');
       }
     }
   };
@@ -219,10 +220,7 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
   // If permission was not granted
   if (finalStatus !== 'granted') {
     if (__DEV__) {
-      Alert.alert(
-        'Permission Required',
-        'To receive notifications, you must grant the necessary permission'
-      );
+      feedback.toast.info('Permission Required', 'To receive notifications, you must grant the necessary permission');
     }
     return null;
   }
@@ -257,7 +255,7 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
   } catch (error) {
     console.error('❌ Error getting Expo Push Token:', error);
     if (__DEV__) {
-      Alert.alert('Error', 'Failed to get token');
+      feedback.toast.error('Error', 'Failed to get token');
     }
   }
 

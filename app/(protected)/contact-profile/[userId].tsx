@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import { SmallUsersIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
@@ -9,15 +10,7 @@ import type { ConversationResponseDto, ProfileResponseDto } from "@/types";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function ContactProfileScreen() {
   const router = useRouter();
@@ -140,7 +133,7 @@ export default function ContactProfileScreen() {
       }
     } catch (error: any) {
       console.error("Error creating/opening conversation:", error);
-      Alert.alert("Error", error.message || "Failed to open conversation");
+      feedback.toast.error("Error", error.message || "Failed to open conversation");
     } finally {
       setSending(false);
     }

@@ -1,4 +1,5 @@
 import RoleGuard from "@/components/check-permisions";
+import { feedback } from "@/lib/feedback";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import TimelineItem from "@/components/reptitive-component/timeline-item";
 import { ThemedText } from "@/components/themed-text";
@@ -13,19 +14,7 @@ import { getDisplayName } from "@/utils/user-name";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  RefreshControl,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TimelineScreen = () => {
@@ -265,7 +254,7 @@ const TimelineScreen = () => {
         const errorMessage =
           err.message || t("common.error");
         setError(errorMessage);
-        Alert.alert(t("common.error"), errorMessage);
+        feedback.toast.error(t("common.error"), errorMessage);
         console.error("Error fetching posts:", err);
       } finally {
         setLoading(false);
@@ -573,10 +562,10 @@ const TimelineScreen = () => {
                     onDelete={async () => {
                       try {
                         await postService.delete(post.id);
-                        Alert.alert(t("common.success"), t("timeline.postDeletedSuccess"));
+                        feedback.toast.success(t("common.success"), t("timeline.postDeletedSuccess"));
                         fetchPosts(tabsData[activeTab].filter);
                       } catch (error: any) {
-                        Alert.alert(t("common.error"), error.message || t("timeline.failedDeletePost"));
+                        feedback.toast.error(t("common.error"), error.message || t("timeline.failedDeletePost"));
                         console.error("Error deleting post:", error);
                       }
                     }}

@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { FileIcon, MediaIcon } from "@/components/ui/icons/messages-icons";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
@@ -12,15 +13,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
 
 const RESOURCE_TYPES: { value: ResourceType; labelKey: string }[] = [
   { value: "book", labelKey: "resource.categoryBook" },
@@ -54,10 +47,7 @@ export default function EditResourceScreen() {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          t("resource.permissionRequired"),
-          t("resource.needCameraRollPermission")
-        );
+        feedback.toast.info(t("resource.permissionRequired"), t("resource.needCameraRollPermission"));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -70,7 +60,7 @@ export default function EditResourceScreen() {
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert(t("common.error"), t("resource.failedPickImage"));
+      feedback.toast.error(t("common.error"), t("resource.failedPickImage"));
     }
   };
 
@@ -85,7 +75,7 @@ export default function EditResourceScreen() {
       }
     } catch (error) {
       console.error("Error picking document:", error);
-      Alert.alert(t("common.error"), t("resource.failedPickDocument"));
+      feedback.toast.error(t("common.error"), t("resource.failedPickDocument"));
     }
   };
 
@@ -107,10 +97,7 @@ export default function EditResourceScreen() {
       const isAdmin = user?.role === "admin";
       const isCreator = !!user?.id && !!creatorId && user.id === creatorId;
       if (!isAdmin && !isCreator) {
-        Alert.alert(
-          t("common.error"),
-          t("resource.editNotAllowed") || "You are not allowed to edit this resource."
-        );
+        feedback.toast.error(t("common.error"), t("resource.editNotAllowed") || "You are not allowed to edit this resource.");
         router.back();
         return;
       }
@@ -124,10 +111,7 @@ export default function EditResourceScreen() {
       setSelectedImage(null);
       setSelectedFile(null);
     } catch (err: any) {
-      Alert.alert(
-        t("common.error"),
-        err?.message || t("resource.failedLoad")
-      );
+      feedback.toast.error(t("common.error"), err?.message || t("resource.failedLoad"));
       router.back();
     } finally {
       setLoading(false);
@@ -193,7 +177,7 @@ export default function EditResourceScreen() {
     if (!id) return;
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
-      Alert.alert(t("common.error"), t("resource.titleRequired"));
+      feedback.toast.error(t("common.error"), t("resource.titleRequired"));
       return;
     }
 
@@ -256,20 +240,10 @@ export default function EditResourceScreen() {
         updatedAt: updated.updatedAt,
       });
 
-      Alert.alert(t("common.success"), t("resource.updatedSuccess"), [
-        {
-          text: t("common.ok"),
-          onPress: () => {
-            // Defer so Alert can dismiss and layout is ready (avoids "navigate before mounting")
-            setTimeout(() => router.back(), 0);
-          },
-        },
-      ]);
+      feedback.toast.success(t("common.success"), t("resource.updatedSuccess"));
+      setTimeout(() => router.back(), 0);
     } catch (err: any) {
-      Alert.alert(
-        t("common.error"),
-        err?.message || t("resource.failedUpdate")
-      );
+      feedback.toast.error(t("common.error"), err?.message || t("resource.failedUpdate"));
     } finally {
       setSubmitting(false);
     }

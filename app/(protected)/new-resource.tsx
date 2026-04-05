@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { FileIcon, MediaIcon } from "@/components/ui/icons/messages-icons";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
@@ -12,14 +13,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
 const RESOURCE_TYPES: { value: ResourceType; labelKey: string }[] = [
@@ -49,10 +43,7 @@ export default function NewResourceScreen() {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          t("resource.permissionRequired"),
-          t("resource.needCameraRollPermission")
-        );
+        feedback.toast.info(t("resource.permissionRequired"), t("resource.needCameraRollPermission"));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -65,7 +56,7 @@ export default function NewResourceScreen() {
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert(t("common.error"), t("resource.failedPickImage"));
+      feedback.toast.error(t("common.error"), t("resource.failedPickImage"));
     }
   };
 
@@ -80,7 +71,7 @@ export default function NewResourceScreen() {
       }
     } catch (error) {
       console.error("Error picking document:", error);
-      Alert.alert(t("common.error"), t("resource.failedPickDocument"));
+      feedback.toast.error(t("common.error"), t("resource.failedPickDocument"));
     }
   };
 
@@ -145,7 +136,7 @@ export default function NewResourceScreen() {
   const handleSubmit = async () => {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
-      Alert.alert(t("common.error"), t("resource.titleRequired"));
+      feedback.toast.error(t("common.error"), t("resource.titleRequired"));
       return;
     }
 
@@ -209,14 +200,10 @@ export default function NewResourceScreen() {
         updatedAt: created.updatedAt,
       });
 
-      Alert.alert(t("common.success"), t("resource.createdSuccess"), [
-        { text: t("common.ok"), onPress: () => router.back() },
-      ]);
+      feedback.toast.success(t("common.success"), t("resource.createdSuccess"));
+      router.back();
     } catch (err: any) {
-      Alert.alert(
-        t("common.error"),
-        err?.message || t("resource.failedCreate")
-      );
+      feedback.toast.error(t("common.error"), err?.message || t("resource.failedCreate"));
     } finally {
       setSubmitting(false);
     }

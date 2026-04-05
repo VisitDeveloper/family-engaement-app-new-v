@@ -1,3 +1,4 @@
+import { FeedbackHost } from "@/components/feedback/feedback-host";
 import { PushNotificationData, usePushNotifications } from "@/hooks/use-push-notifications";
 import "@/i18n";
 import { useStore } from "@/store";
@@ -103,6 +104,7 @@ export default function RootLayout() {
           <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
             <ActivityIndicator size="large" />
           </View>
+          <FeedbackHost />
         </BottomSheetModalProvider>
       </GestureHandlerRootView>
     );
@@ -124,6 +126,7 @@ export default function RootLayout() {
             <Slot />
           )}
         </KeyboardProvider>
+        <FeedbackHost />
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );

@@ -329,7 +329,23 @@
     "failedLoadEvent": "Échec du chargement de l'événement. Veuillez réessayer.",
     "failedCreateOrUpdate": "Échec de la création/mise à jour de l'événement. Veuillez réessayer.",
     "loadingParents": "Chargement des contacts...",
-    "noParentsFound": "Aucun contact trouvé"
+    "noParentsFound": "Aucun contact trouvé",
+    "locationPermissionTitle": "Localisation requise",
+    "locationPermissionRequired": "Cette autorisation est obligatoire pour créer un événement. Activez la localisation dans les réglages de l’appareil, puis réessayez."
+  },
+  "mapPicker": {
+    "title": "Choisir un lieu",
+    "webUnavailable": "La carte n’est pas disponible sur le web. Utilisez l’application mobile pour choisir un lieu.",
+    "markerTitle": "Lieu sélectionné",
+    "locationSelected": "Lieu sélectionné",
+    "tapMapToSelect": "Touchez la carte pour choisir un lieu",
+    "myLocation": "Ma position",
+    "permissionDeniedTitle": "Autorisation refusée",
+    "permissionDeniedCurrentLocation": "L’accès à la localisation est requis pour utiliser votre position actuelle.",
+    "locationErrorTitle": "Erreur",
+    "locationErrorMessage": "Impossible d’obtenir votre position actuelle.",
+    "noLocationTitle": "Aucun lieu sélectionné",
+    "noLocationMessage": "Veuillez sélectionner un lieu sur la carte."
   },
   "event": {
     "schoolCalendar": "Calendrier scolaire",

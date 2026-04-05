@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import Divider from "@/components/ui/divider";
 import { Person2WithPlusIcon, SmallUsersIcon } from "@/components/ui/icons/messages-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
@@ -10,15 +11,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 
 interface GroupItem {
   id: string;
@@ -162,7 +155,7 @@ export default function NewMessageScreen() {
       setGroups(mappedGroups);
     } catch (error: any) {
       console.error("Error loading groups:", error);
-      Alert.alert(t("common.error"), error.message || t("newMessage.failedLoadGroups"));
+      feedback.toast.error(t("common.error"), error.message || t("newMessage.failedLoadGroups"));
     } finally {
       setLoadingGroups(false);
     }
@@ -245,7 +238,7 @@ export default function NewMessageScreen() {
       } catch (error: any) {
         console.error("Error loading contacts:", error);
         if (!append) {
-          Alert.alert(t("common.error"), error.message || t("newMessage.failedLoadContacts"));
+          feedback.toast.error(t("common.error"), error.message || t("newMessage.failedLoadContacts"));
         }
       } finally {
         setLoadingContacts(false);

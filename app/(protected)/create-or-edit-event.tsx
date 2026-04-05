@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import Badge from "@/components/ui/badge";
 import DatePicker from "@/components/ui/date-picker";
@@ -21,19 +22,11 @@ import { useStore } from "@/store";
 import { enumToOptions } from "@/utils/make-array-for-select-box";
 import { getDisplayName, getInitials } from "@/utils/user-name";
 import { Feather } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import * as Location from "expo-location";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  Switch,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, Platform, ScrollView, Switch, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
 enum EventType {
@@ -151,10 +144,7 @@ function CreateNewEvent() {
       setParents(invitees);
     } catch (error: any) {
       console.error("Error fetching parents:", error);
-      Alert.alert(
-        t("common.error"),
-        error.message || t("createEvent.failedLoadParents")
-      );
+      feedback.toast.error(t("common.error"), error.message || t("createEvent.failedLoadParents"));
     } finally {
       setLoadingParents(false);
     }
@@ -163,6 +153,36 @@ function CreateNewEvent() {
   useEffect(() => {
     fetchParents();
   }, [fetchParents]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS === "web") {
+        return;
+      }
+
+      let cancelled = false;
+
+      (async () => {
+        const { status: existing } = await Location.getForegroundPermissionsAsync();
+        let finalStatus = existing;
+        if (existing !== "granted") {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          finalStatus = status;
+        }
+        if (cancelled) {
+          return;
+        }
+        if (!isEditMode && finalStatus !== "granted") {
+          feedback.toast.info(t("createEvent.locationPermissionTitle"), t("createEvent.locationPermissionRequired"));
+          router.back();
+        }
+      })();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [isEditMode, router, t])
+  );
 
   // Load event data if in edit mode
   const loadEventData = useCallback(async () => {
@@ -271,10 +291,7 @@ function CreateNewEvent() {
       }
     } catch (error: any) {
       console.error("Error loading event:", error);
-      Alert.alert(
-        t("common.error"),
-        error.message || t("createEvent.failedLoadEvent")
-      );
+      feedback.toast.error(t("common.error"), error.message || t("createEvent.failedLoadEvent"));
       router.back();
     } finally {
       setLoadingEvent(false);
@@ -398,27 +415,16 @@ function CreateNewEvent() {
 
       if (isEditMode && eventId) {
         await eventService.update(eventId, eventData);
-        Alert.alert(t("common.success"), t("createEvent.eventUpdated"), [
-          {
-            text: t("common.ok"),
-            onPress: () => router.back(),
-          },
-        ]);
+        feedback.toast.success(t("common.success"), t("createEvent.eventUpdated"));
+        router.back();
       } else {
         await eventService.create(eventData);
-        Alert.alert(t("common.success"), t("createEvent.eventCreated"), [
-          {
-            text: t("common.ok"),
-            onPress: () => router.back(),
-          },
-        ]);
+        feedback.toast.success(t("common.success"), t("createEvent.eventCreated"));
+        router.back();
       }
     } catch (error: any) {
       console.error(`Error ${isEditMode ? "updating" : "creating"} event:`, error);
-      Alert.alert(
-        t("common.error"),
-        error.message || t("createEvent.failedCreateOrUpdate")
-      );
+      feedback.toast.error(t("common.error"), error.message || t("createEvent.failedCreateOrUpdate"));
     } finally {
       setLoading(false);
     }
@@ -1170,7 +1176,6 @@ function CreateNewEvent() {
                       </ThemedText>
                     </View>
                   </View>
-
 
                   {selected.includes(person.id) ? (
                     <CheckedboxIcon

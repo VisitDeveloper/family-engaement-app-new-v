@@ -1,4 +1,5 @@
 // app/feed/[id].tsx
+import { feedback } from "@/lib/feedback";
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import TimelineItem from "@/components/reptitive-component/timeline-item";
 import { ThemedText } from "@/components/themed-text";
@@ -12,15 +13,7 @@ import { getDisplayName } from "@/utils/user-name";
 import { usePathname, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const FeedDetailScreen = () => {
@@ -67,7 +60,7 @@ const FeedDetailScreen = () => {
       const errorMessage =
         err.message || t("common.error");
       setError(errorMessage);
-      Alert.alert(t("common.error"), errorMessage);
+      feedback.toast.error(t("common.error"), errorMessage);
       console.error("Error fetching post:", err);
     } finally {
       setLoading(false);
@@ -241,10 +234,10 @@ const FeedDetailScreen = () => {
           onDelete={async () => {
             try {
               await postService.delete(post.id);
-              Alert.alert(t("common.success"), t("feed.postDeletedSuccess"));
+              feedback.toast.success(t("common.success"), t("feed.postDeletedSuccess"));
               router.back();
             } catch (error: any) {
-              Alert.alert(t("common.error"), error.message || t("feed.failedDeletePost"));
+              feedback.toast.error(t("common.error"), error.message || t("feed.failedDeletePost"));
               console.error("Error deleting post:", error);
             }
           }}

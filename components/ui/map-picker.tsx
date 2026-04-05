@@ -1,18 +1,12 @@
 import { ThemedText } from "@/components/themed-text";
+import { feedback } from "@/lib/feedback";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    Platform,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { ActivityIndicator, Modal, Platform, TouchableOpacity, View } from "react-native";
 import { MapView, Marker } from "./map-view-wrapper";
 
 // Define Region type manually
@@ -55,6 +49,23 @@ export default function MapPicker({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!visible || Platform.OS === "web") {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { status } = await Location.getForegroundPermissionsAsync();
+      if (cancelled || status === "granted") {
+        return;
+      }
+      await Location.requestForegroundPermissionsAsync();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible]);
+
+  useEffect(() => {
     if (initialLatitude && initialLongitude) {
       setSelectedLatitude(initialLatitude);
       setSelectedLongitude(initialLongitude);
@@ -72,10 +83,7 @@ export default function MapPicker({
       setLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission Denied",
-          "Location permission is required to use your current location."
-        );
+        feedback.toast.info(t("mapPicker.permissionDeniedTitle"), t("mapPicker.permissionDeniedCurrentLocation"));
         setLoading(false);
         return;
       }
@@ -93,7 +101,7 @@ export default function MapPicker({
       });
     } catch (error) {
       console.error("Error getting location:", error);
-      Alert.alert("Error", "Failed to get your current location.");
+      feedback.toast.error(t("mapPicker.locationErrorTitle"), t("mapPicker.locationErrorMessage"));
     } finally {
       setLoading(false);
     }
@@ -141,10 +149,7 @@ export default function MapPicker({
       onSelectLocation(selectedLatitude, selectedLongitude, locationName);
       onClose();
     } else {
-      Alert.alert(
-        "No Location Selected",
-        "Please select a location on the map."
-      );
+      feedback.toast.info(t("mapPicker.noLocationTitle"), t("mapPicker.noLocationMessage"));
     }
   };
 
@@ -256,7 +261,7 @@ export default function MapPicker({
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <View style={styles.header}>
-            <ThemedText style={styles.headerTitle}>Select Location</ThemedText>
+            <ThemedText style={styles.headerTitle}>{t("mapPicker.title")}</ThemedText>
             <TouchableOpacity onPress={onClose}>
               <Feather name="x" size={24} color={theme.text} />
             </TouchableOpacity>
@@ -281,8 +286,7 @@ export default function MapPicker({
                     padding: 20,
                   }}
                 >
-                  Map picker is not available on web platform.{"\n"}
-                  Please use the mobile app to select a location.
+                  {t("mapPicker.webUnavailable")}
                 </ThemedText>
               </View>
             ) : (
@@ -303,7 +307,7 @@ export default function MapPicker({
                           latitude: selectedLatitude,
                           longitude: selectedLongitude,
                         }}
-                        title="Selected Location"
+                        title={t("mapPicker.markerTitle")}
                       />
                     )}
                 </MapView>
@@ -320,8 +324,8 @@ export default function MapPicker({
             <View style={styles.locationInfo}>
               <ThemedText style={styles.locationText}>
                 {selectedLatitude !== null && selectedLongitude !== null
-                  ? "Location selected"
-                  : "Tap on map to select location"}
+                  ? t("mapPicker.locationSelected")
+                  : t("mapPicker.tapMapToSelect")}
               </ThemedText>
             </View>
             {selectedLatitude !== null && selectedLongitude !== null && (
@@ -337,7 +341,7 @@ export default function MapPicker({
               >
                 <Feather name="navigation" size={18} color={theme.text} />
                 <ThemedText style={styles.secondaryButtonText}>
-                  My Location
+                  {t("mapPicker.myLocation")}
                 </ThemedText>
               </TouchableOpacity>
               <TouchableOpacity

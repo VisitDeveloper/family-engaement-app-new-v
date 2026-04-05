@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
@@ -10,14 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, ScrollView, TouchableOpacity, View } from "react-native";
 
 function profileToSwitchBody(profile: ProfileItem): SwitchProfileBody {
   return {
@@ -235,12 +229,9 @@ export default function SwitchProfileScreen() {
       const apiError = err as ApiError;
       if (apiError.status === 401) {
         // Treat as logged out; caller/global handler may redirect to login
-        Alert.alert(t("common.error"), apiError.message || t("switchProfile.failedLoadProfiles"));
+        feedback.toast.error(t("common.error"), apiError.message || t("switchProfile.failedLoadProfiles"));
       } else {
-        Alert.alert(
-          t("common.error"),
-          apiError.message || t("switchProfile.failedLoadProfiles")
-        );
+        feedback.toast.error(t("common.error"), apiError.message || t("switchProfile.failedLoadProfiles"));
       }
     } finally {
       setLoading(false);
@@ -291,15 +282,11 @@ export default function SwitchProfileScreen() {
           siteId: profile.siteId ?? null,
         });
 
-        Alert.alert(t("common.success"), t("switchProfile.profileSwitchedSuccess"), [
-          { text: t("common.ok"), onPress: () => router.back() },
-        ]);
+        feedback.toast.success(t("common.success"), t("switchProfile.profileSwitchedSuccess"));
+        router.back();
       } catch (err) {
         const apiError = err as ApiError;
-        Alert.alert(
-          t("common.error"),
-          apiError.message || t("switchProfile.failedSwitchProfile")
-        );
+        feedback.toast.error(t("common.error"), apiError.message || t("switchProfile.failedSwitchProfile"));
       } finally {
         setSwitchingKey(null);
       }
@@ -390,7 +377,6 @@ export default function SwitchProfileScreen() {
               </View>
             </>
           ) : null}
-
 
           <View style={{ borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 16 }} >
             {(() => {

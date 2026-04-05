@@ -8,22 +8,9 @@ import { useStore } from "@/store";
 import { trackAuthEvent } from "@/utils/analytics";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 export default function LoginScreen() {
@@ -37,6 +24,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState<boolean>(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const loginInFlight = useRef(false);
 
   const colorScheme = useStore((state) => state.colorScheme);
 
@@ -56,11 +44,14 @@ export default function LoginScreen() {
   }, []);
 
   const handleLogin = async () => {
+    if (loginInFlight.current || loading) return;
+
     setError(null);
     const isValid = validate({ email, password, confirmPassword: "" });
 
     if (!isValid) return;
 
+    loginInFlight.current = true;
     setLoading(true);
     trackAuthEvent("login_attempt", { hasEmail: Boolean(email.trim()) });
 
@@ -116,8 +107,9 @@ export default function LoginScreen() {
         apiError.message || t("auth.login.genericError");
       setError(errorMessage);
       trackAuthEvent("login_failed", { status: apiError.status ?? null });
-      Alert.alert(t("common.error"), errorMessage);
+      // Inline error box only — avoids duplicate with toast for the same failure.
     } finally {
+      loginInFlight.current = false;
       setLoading(false);
     }
   };
@@ -279,8 +271,6 @@ export default function LoginScreen() {
         <ThemedText style={styles.subtitle}>
           {t("auth.login.subtitle")}
         </ThemedText>
-
-
 
         <View style={styles.fieldGroup}>
           <ThemedText type="middleTitle" style={styles.fieldLabel}>

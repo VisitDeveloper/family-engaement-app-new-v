@@ -1,4 +1,5 @@
 import HeaderThreeSections from "@/components/reptitive-component/header-three-sections";
+import { feedback } from "@/lib/feedback";
 import AttachingMenu from "@/components/ui/attaching-menu";
 import { TranslateIcon } from "@/components/ui/icons/common-icons";
 import { CopyIcon, EmojiIcon, SendIcon, TrashIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
@@ -25,7 +26,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Clipboard, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Clipboard, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -294,11 +295,8 @@ export default function ChatScreen() {
             // updateConversation(conversationId, conv);
         } catch (error: any) {
             console.error('Error loading conversation:', error);
-            const errorMessage = error?.message || 'Failed to load conversation';
-            // Only show alert if it's not a 404 (conversation might not exist)
-            if (error?.status !== 404) {
-                Alert.alert('Error', errorMessage);
-            }
+            // Don't toast here: loadMessages() runs in parallel on mount and shows the same
+            // network/API error — two toasts are confusing. Errors still surface from loadMessages.
         }
     }, [conversationId]);
 
@@ -322,7 +320,7 @@ export default function ChatScreen() {
             const errorMessage = error?.message || 'Failed to load messages';
             // Only show alert if it's not a 404
             if (error?.status !== 404) {
-                Alert.alert('Error', errorMessage);
+                feedback.toast.error('Error', errorMessage);
             }
             // Set empty messages array on error
             setMessages(conversationId, []);
@@ -362,7 +360,7 @@ export default function ChatScreen() {
             setInput("");
         } catch (error: any) {
             console.error('Error sending message:', error);
-            Alert.alert('Error', error.message || 'Failed to send message');
+            feedback.toast.error('Error', error.message || 'Failed to send message');
         } finally {
             setSending(false);
         }
@@ -372,10 +370,7 @@ export default function ChatScreen() {
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== "granted") {
-                Alert.alert(
-                    "Permission Required",
-                    "Sorry, we need camera roll permissions to select images!"
-                );
+                feedback.toast.info("Permission Required", "Sorry, we need camera roll permissions to select images!");
                 return;
             }
 
@@ -390,7 +385,7 @@ export default function ChatScreen() {
             }
         } catch (error: any) {
             console.error("Error picking image:", error);
-            Alert.alert("Error", "Failed to pick image");
+            feedback.toast.error("Error", "Failed to pick image");
         }
     };
 
@@ -398,10 +393,7 @@ export default function ChatScreen() {
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== "granted") {
-                Alert.alert(
-                    "Permission Required",
-                    "Sorry, we need camera roll permissions to select videos!"
-                );
+                feedback.toast.info("Permission Required", "Sorry, we need camera roll permissions to select videos!");
                 return;
             }
 
@@ -417,10 +409,7 @@ export default function ChatScreen() {
                 const maxVideoDurationMs = 60 * 1000; // 1 minute
 
                 if (durationMs > maxVideoDurationMs) {
-                    Alert.alert(
-                        "Video too long",
-                        "Please select a video up to 1 minute."
-                    );
+                    feedback.toast.info("Video too long", "Please select a video up to 1 minute.");
                     return;
                 }
 
@@ -428,13 +417,13 @@ export default function ChatScreen() {
             }
         } catch (error: any) {
             console.error("Error picking video:", error);
-            Alert.alert("Error", "Failed to pick video");
+            feedback.toast.error("Error", "Failed to pick video");
         }
     };
 
     const handleOpenAttachmentMenu = useCallback(() => {
         if (uploadingFile) {
-            Alert.alert("Upload in progress", "Please wait until the current upload finishes.");
+            feedback.toast.info("Upload in progress", "Please wait until the current upload finishes.");
             return;
         }
         if (sending) {
@@ -460,10 +449,9 @@ export default function ChatScreen() {
             }
         } catch (error: any) {
             console.error("Error picking document:", error);
-            Alert.alert("Error", "Failed to pick document");
+            feedback.toast.error("Error", "Failed to pick document");
         }
     };
-
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const uploadAndSendFile = async (
@@ -541,7 +529,7 @@ export default function ChatScreen() {
             }, 500);
         } catch (error: any) {
             console.error('Error uploading file:', error);
-            Alert.alert('Error', error.message || 'Failed to upload file');
+            feedback.toast.error('Error', error.message || 'Failed to upload file');
             setUploadProgress(0);
             setUploadingFileName(null);
         } finally {
@@ -560,7 +548,7 @@ export default function ChatScreen() {
     };
 
     const handleSelectMedia = () => {
-        Alert.alert(
+        feedback.alert(
             "Select Media",
             "Choose an option",
             [
@@ -574,7 +562,7 @@ export default function ChatScreen() {
     const requestRecordingPermission = useCallback(async (): Promise<boolean> => {
         const { status } = await Audio.requestPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert(
+            feedback.alert(
                 'Microphone access',
                 'Microphone permission is needed to record voice messages.',
                 [{ text: 'OK' }]
@@ -605,7 +593,7 @@ export default function ChatScreen() {
             setIsRecording(true);
         } catch (error: any) {
             console.error('Failed to start recording:', error);
-            Alert.alert('Error', error?.message || 'Could not start recording');
+            feedback.toast.error('Error', error?.message || 'Could not start recording');
         }
     }, [conversationId, uploadingFile, sending, isParentInGroup, requestRecordingPermission]);
 
@@ -623,7 +611,7 @@ export default function ChatScreen() {
             }
             const uri = recording.getURI();
             if (!uri) {
-                Alert.alert('Error', 'Recording file not available');
+                feedback.toast.error('Error', 'Recording file not available');
                 return;
             }
             const durationSeconds = durationMillis > 0 ? Math.round(durationMillis / 1000) : undefined;
@@ -634,7 +622,7 @@ export default function ChatScreen() {
             await uploadAndSendFile(uri, 'audio', mimeType, fileName, durationSeconds);
         } catch (error: any) {
             console.error('Failed to stop/send recording:', error);
-            Alert.alert('Error', error?.message || 'Failed to send voice message');
+            feedback.toast.error('Error', error?.message || 'Failed to send voice message');
         }
     }, [conversationId, uploadAndSendFile]);
 
@@ -669,7 +657,7 @@ export default function ChatScreen() {
     const handleDeleteMessage = useCallback(async (messageId: string) => {
         if (!conversationId) return;
 
-        Alert.alert(
+        feedback.alert(
             "Delete Message",
             "Are you sure you want to delete this message? This action cannot be undone.",
             [
@@ -685,7 +673,7 @@ export default function ChatScreen() {
                             await messagingService.deleteMessage(messageId);
                             removeMessage(conversationId, messageId);
                         } catch (error: any) {
-                            Alert.alert("Error", error?.message ?? "Failed to delete message");
+                            feedback.toast.error("Error", error?.message ?? "Failed to delete message");
                         }
                     },
                 },
@@ -712,7 +700,7 @@ export default function ChatScreen() {
             setEditingMessageId(null);
             setEditDraft("");
         } catch (error: any) {
-            Alert.alert("Error", error?.message ?? "Failed to update message");
+            feedback.toast.error("Error", error?.message ?? "Failed to update message");
         }
     }, [conversationId, editingMessageId, editDraft, updateMessageInStore]);
 
@@ -734,10 +722,10 @@ export default function ChatScreen() {
 
             if (textToCopy) {
                 Clipboard.setString(textToCopy);
-                Alert.alert("Copied", "Message copied to clipboard");
+                feedback.toast.success("Copied", "Message copied to clipboard");
             }
         } catch {
-            Alert.alert("Error", "Failed to copy message");
+            feedback.toast.error("Error", "Failed to copy message");
         }
     }, []);
 
@@ -755,7 +743,7 @@ export default function ChatScreen() {
             );
             updateMessageInStore(conversationId, messageId, updated);
         } catch (err: any) {
-            Alert.alert("Error", err?.message ?? "Failed to add reaction");
+            feedback.toast.error("Error", err?.message ?? "Failed to add reaction");
         }
     }, [selectedOtherMessage, currentUserId, conversationId, i18n.language, updateMessageInStore]);
 
@@ -776,10 +764,9 @@ export default function ChatScreen() {
                 loadMessages();
             }
         } catch (err: any) {
-            Alert.alert("Error", err?.message ?? "Failed to remove reaction");
+            feedback.toast.error("Error", err?.message ?? "Failed to remove reaction");
         }
     }, [selectedOtherMessage, currentUserId, conversationId, i18n.language, updateMessageInStore, loadMessages]);
-
 
     const formatTime = (dateString: string) => {
         const date = new Date(dateString);
@@ -896,7 +883,7 @@ export default function ChatScreen() {
             });
         } catch (error: any) {
             console.error('Error playing audio:', error);
-            Alert.alert('Error', 'Failed to play audio');
+            feedback.toast.error('Error', 'Failed to play audio');
         }
     };
 
@@ -1106,7 +1093,7 @@ export default function ChatScreen() {
                                 loadMessages();
                             }}
                             onEditPoll={() => {
-                                Alert.alert("Edit Poll", "Edit poll is not available yet.");
+                                feedback.toast.info("Edit Poll", "Edit poll is not available yet.");
                             }}
                         />
                         {item.reactions && item.reactions.length > 0 && (
@@ -1594,7 +1581,6 @@ export default function ChatScreen() {
                     isGroup={conversation?.type === "group"}
                 />
 
-
                 {/* Poll Creation Bottom Sheet */}
                 {conversationId && (
                     <CreatePollBottomSheet
@@ -1614,8 +1600,6 @@ export default function ChatScreen() {
                         onAnnouncementCreated={handleAnnouncementCreated}
                     />
                 )}
-
-
 
                 {/* Full-screen image modal */}
                 <Modal
@@ -1749,7 +1733,7 @@ export default function ChatScreen() {
                                 onPlaybackStatusUpdate={() => { }}
                                 onError={(e) => {
                                     console.error("Video error:", e);
-                                    Alert.alert("Error", "Failed to play video");
+                                    feedback.toast.error("Error", "Failed to play video");
                                 }}
                             />
                         )}

@@ -1,4 +1,5 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { feedback } from "@/lib/feedback";
 import { CreatePollDto, messagingService, PollResponseDto } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
@@ -9,7 +10,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Keyboard, Platform, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Keyboard, Platform, Text, TouchableOpacity, View } from "react-native";
 
 interface CreatePollBottomSheetProps {
   visible: boolean;
@@ -190,12 +191,12 @@ export default function CreatePollBottomSheet({
       .filter((opt) => opt.length > 0);
 
     if (!trimmedQuestion) {
-      Alert.alert("Error", "Please enter a question");
+      feedback.toast.error("Error", "Please enter a question");
       return;
     }
 
     if (trimmedOptions.length < 2) {
-      Alert.alert("Error", "Please add at least 2 options");
+      feedback.toast.error("Error", "Please add at least 2 options");
       return;
     }
 
@@ -227,7 +228,7 @@ export default function CreatePollBottomSheet({
       onClose();
     } catch (error: any) {
       console.error("Error creating poll:", error);
-      Alert.alert("Error", error.message || "Failed to create poll");
+      feedback.toast.error("Error", error.message || "Failed to create poll");
     } finally {
       setIsSubmitting(false);
     }

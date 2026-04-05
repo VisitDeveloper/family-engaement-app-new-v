@@ -1,4 +1,5 @@
 import { ThemedText } from '@/components/themed-text';
+import { feedback } from "@/lib/feedback";
 import { ThemedView } from '@/components/themed-view';
 import { EmergencyIcon, SendIcon, UsersIcon } from '@/components/ui/icons/messages-icons';
 import { useThemedStyles } from '@/hooks/use-theme-style';
@@ -9,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, ScrollView, Switch, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Switch, TextInput, TouchableOpacity, View } from "react-native";
 
 const EmergencyAlertScreen = () => {
     const { t } = useTranslation();
@@ -213,23 +214,17 @@ const EmergencyAlertScreen = () => {
     const handleSend = async () => {
         // Validation
         if (!message.trim()) {
-            Alert.alert(
-                t('common.error'),
-                t('emergency.emptyMessage') || 'Please enter a message'
-            );
+            feedback.toast.error(t('common.error'), t('emergency.emptyMessage') || 'Please enter a message');
             return;
         }
 
         if (!pushEnabled && !emailEnabled && !smsEnabled) {
-            Alert.alert(
-                t('common.error'),
-                t('emergency.noDeliveryMethod') || 'Please select at least one delivery method'
-            );
+            feedback.toast.error(t('common.error'), t('emergency.noDeliveryMethod') || 'Please select at least one delivery method');
             return;
         }
 
         // Confirm before sending
-        Alert.alert(
+        feedback.alert(
             t('emergency.confirmTitle') || 'Confirm Emergency Alert',
             t('emergency.confirmMessage') || 'Are you sure you want to send this emergency alert to all recipients?',
             [
@@ -255,7 +250,7 @@ const EmergencyAlertScreen = () => {
                             setRecipientsCount(result.recipientsCount);
 
                             // Show simple success message
-                            Alert.alert(
+                            feedback.alert(
                                 t('common.success'),
                                 t('emergency.sendSuccess', { count: result.recipientsCount }) ||
                                 `Emergency alert sent to ${result.recipientsCount} recipients`,
@@ -274,10 +269,7 @@ const EmergencyAlertScreen = () => {
                             );
                         } catch (error: any) {
                             console.error('Error sending emergency message:', error);
-                            Alert.alert(
-                                t('common.error'),
-                                error.message || t('emergency.sendError') || 'Failed to send emergency alert. Please try again.'
-                            );
+                            feedback.toast.error(t('common.error'), error.message || t('emergency.sendError') || 'Failed to send emergency alert. Please try again.');
                         } finally {
                             setLoading(false);
                         }

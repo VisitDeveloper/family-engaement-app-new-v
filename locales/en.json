@@ -329,7 +329,23 @@
     "failedLoadEvent": "Failed to load event. Please try again.",
     "failedCreateOrUpdate": "Failed to create/update event. Please try again.",
     "loadingParents": "Loading parents...",
-    "noParentsFound": "No parents found"
+    "noParentsFound": "No parents found",
+    "locationPermissionTitle": "Location access required",
+    "locationPermissionRequired": "This permission is mandatory for creating events. Allow location access in your device settings, then try again."
+  },
+  "mapPicker": {
+    "title": "Select location",
+    "webUnavailable": "The map is not available on the web. Please use the mobile app to choose a location.",
+    "markerTitle": "Selected location",
+    "locationSelected": "Location selected",
+    "tapMapToSelect": "Tap the map to select a location",
+    "myLocation": "My location",
+    "permissionDeniedTitle": "Permission denied",
+    "permissionDeniedCurrentLocation": "Location permission is required to use your current position.",
+    "locationErrorTitle": "Error",
+    "locationErrorMessage": "Could not get your current location.",
+    "noLocationTitle": "No location selected",
+    "noLocationMessage": "Please select a location on the map."
   },
   "event": {
     "schoolCalendar": "School Calendar",

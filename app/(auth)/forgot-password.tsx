@@ -1,4 +1,5 @@
 import AuthLanguageSwitcher from "@/components/ui/auth-language-switcher";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
@@ -9,7 +10,7 @@ import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Image, Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function ForgotPasswordScreen() {
   const { t } = useTranslation();
@@ -45,7 +46,7 @@ export default function ForgotPasswordScreen() {
 
   const handleSend = async () => {
     if (!isEmailValid) {
-      Alert.alert(t("auth.common.invalidEmailTitle"), t("auth.common.invalidEmailMessage"));
+      feedback.toast.error(t("auth.common.invalidEmailTitle"), t("auth.common.invalidEmailMessage"));
       return;
     }
 
@@ -56,14 +57,11 @@ export default function ForgotPasswordScreen() {
       setSent(true);
       setCooldown(30);
       trackAuthEvent("forgot_password_request_success");
-      Alert.alert(
-        t("auth.forgot.successTitle"),
-        response.message || t("auth.forgot.successMessage")
-      );
+      feedback.toast.error(t("auth.forgot.successTitle"), response.message || t("auth.forgot.successMessage"));
     } catch (err) {
       const apiError = err as ApiError;
       trackAuthEvent("forgot_password_request_failed", { status: apiError.status ?? null });
-      Alert.alert(t("auth.common.requestFailedTitle"), apiError.message || t("auth.common.tryAgain"));
+      feedback.toast.error(t("auth.common.requestFailedTitle"), apiError.message || t("auth.common.tryAgain"));
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import RoleGuard from "@/components/check-permisions";
+import { feedback } from "@/lib/feedback";
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
 import { UsersIcon } from "@/components/ui/icons/messages-icons";
@@ -15,16 +16,7 @@ import {
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 
 // const { width: screenWidth } = Dimensions.get("window");
 // const CONTENT_WIDTH = Math.min(420, screenWidth - 32); // responsive central column
@@ -128,7 +120,7 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = async () => {
-    Alert.alert(
+    feedback.alert(
       t("settings.logoutConfirmTitle"),
       t("settings.logoutConfirmMessage"),
       [

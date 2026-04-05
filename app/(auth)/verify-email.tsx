@@ -1,4 +1,5 @@
 import AuthLanguageSwitcher from "@/components/ui/auth-language-switcher";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
@@ -9,7 +10,7 @@ import { getDisplayName } from "@/utils/user-name";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Linking, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Linking, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function VerifyEmailScreen() {
   const { t } = useTranslation();
@@ -30,7 +31,7 @@ export default function VerifyEmailScreen() {
   const verify = async (candidateCode: string) => {
     const finalCode = candidateCode.replace(/\D/g, "").slice(0, 6);
     if (finalCode.length !== 6) {
-      Alert.alert(t("auth.verify.invalidCodeTitle"), t("auth.verify.invalidCodeMessage"));
+      feedback.toast.error(t("auth.verify.invalidCodeTitle"), t("auth.verify.invalidCodeMessage"));
       return;
     }
     setLoading(true);
@@ -54,7 +55,7 @@ export default function VerifyEmailScreen() {
     } catch (err) {
       const apiError = err as ApiError;
       trackAuthEvent("verify_email_failed", { status: apiError.status ?? null });
-      Alert.alert(t("auth.verify.failedTitle"), apiError.message || t("auth.common.tryAgain"));
+      feedback.toast.error(t("auth.verify.failedTitle"), apiError.message || t("auth.common.tryAgain"));
     } finally {
       setLoading(false);
     }

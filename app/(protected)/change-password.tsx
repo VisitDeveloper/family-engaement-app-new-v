@@ -1,4 +1,5 @@
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { PasswordIcon } from "@/components/ui/icons/settings-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
@@ -14,13 +15,7 @@ import {
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
 export default function ChangePassword() {
@@ -153,14 +148,8 @@ export default function ChangePassword() {
 
       console.log("response", response);
 
-      Alert.alert(t("common.success"), t("changePassword.passwordChangedSuccess"), [
-        {
-          text: t("common.ok"),
-          onPress: () => {
-            router.back();
-          },
-        },
-      ]);
+      feedback.toast.success(t("common.success"), t("changePassword.passwordChangedSuccess"));
+      router.back();
     } catch (err) {
       const apiError = err as ApiError;
       let errorMessage =
@@ -175,19 +164,13 @@ export default function ChangePassword() {
         setUser(null);
         setRole(null);
 
-        Alert.alert(t("userProfile.sessionExpired"), errorMessage, [
-          {
-            text: t("common.ok"),
-            onPress: () => {
-              router.replace("/(auth)/login");
-            },
-          },
-        ]);
+        feedback.toast.error(t("userProfile.sessionExpired"), errorMessage);
+        router.replace("/(auth)/login");
         return;
       }
 
       setError(errorMessage);
-      Alert.alert(t("common.error"), errorMessage);
+      feedback.toast.error(t("common.error"), errorMessage);
     } finally {
       setLoading(false);
     }

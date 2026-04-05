@@ -1,4 +1,5 @@
 // app/book/[id].tsx
+import { feedback } from "@/lib/feedback";
 import HeaderThreeSections, { type HeaderRightAction } from "@/components/reptitive-component/header-three-sections";
 import { ThemedText } from "@/components/themed-text";
 import { PencilIcon, TrashIcon } from "@/components/ui/icons/messages-icons";
@@ -11,15 +12,7 @@ import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Linking,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, Linking, ScrollView, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const BookDetailScreen = () => {
@@ -62,7 +55,7 @@ const BookDetailScreen = () => {
   const handleDownload = useCallback(async () => {
     const url = resourceItem?.contentUrl?.trim();
     if (!url) {
-      Alert.alert(t("common.error"), t("resource.noFileToDownload"));
+      feedback.toast.error(t("common.error"), t("resource.noFileToDownload"));
       return;
     }
     try {
@@ -70,10 +63,10 @@ const BookDetailScreen = () => {
       if (canOpen) {
         await Linking.openURL(url);
       } else {
-        Alert.alert(t("common.error"), t("resource.cannotOpenFile"));
+        feedback.toast.error(t("common.error"), t("resource.cannotOpenFile"));
       }
     } catch (err: any) {
-      Alert.alert(t("common.error"), err?.message || t("resource.downloadFailed"));
+      feedback.toast.error(t("common.error"), err?.message || t("resource.downloadFailed"));
     }
   }, [resourceItem?.contentUrl, t]);
 
@@ -181,7 +174,7 @@ const BookDetailScreen = () => {
 
   const handleSaveToggle = useCallback(async () => {
     if (!id || typeof id !== "string") {
-      Alert.alert("Error", "Invalid resource ID.");
+      feedback.toast.error("Error", "Invalid resource ID.");
       return;
     }
 
@@ -214,10 +207,7 @@ const BookDetailScreen = () => {
       }
     } catch (error: any) {
       console.error("Error toggling save:", error);
-      Alert.alert(
-        "Error",
-        error.message || "Failed to update save status. Please try again."
-      );
+      feedback.toast.error("Error", error.message || "Failed to update save status. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -225,7 +215,7 @@ const BookDetailScreen = () => {
 
   const handleDelete = useCallback(() => {
     if (!id || typeof id !== "string") return;
-    Alert.alert(
+    feedback.alert(
       t("resource.deleteConfirmTitle"),
       t("resource.deleteConfirmMessage"),
       [
@@ -240,10 +230,7 @@ const BookDetailScreen = () => {
               removeResource(id);
               router.back();
             } catch (err: any) {
-              Alert.alert(
-                t("common.error"),
-                err?.message || t("resource.failedDelete")
-              );
+              feedback.toast.error(t("common.error"), err?.message || t("resource.failedDelete"));
             } finally {
               setDeleting(false);
             }

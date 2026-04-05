@@ -1,4 +1,5 @@
 import { ThemedText } from '@/components/themed-text';
+import { feedback } from "@/lib/feedback";
 import { ThemedView } from '@/components/themed-view';
 import AttachingMenu from '@/components/ui/attaching-menu';
 import { ShareIcon, TranslateIcon } from '@/components/ui/icons/common-icons';
@@ -15,23 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    Clipboard,
-    FlatList,
-    KeyboardAvoidingView,
-    Linking,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { ActivityIndicator, Animated, Clipboard, FlatList, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SYSTEM_GREETING = {
@@ -183,7 +168,7 @@ const TeachingAssistantScreen = () => {
     }));
 
     const handleSelectMedia = () => {
-        Alert.alert(
+        feedback.alert(
             t('buttons.selectMedia') || 'Select Media',
             t('common.chooseOption') || 'Choose an option',
             [
@@ -198,7 +183,7 @@ const TeachingAssistantScreen = () => {
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert(t('common.permissionRequired') || 'Permission Required', t('common.cameraRollPermission') || 'Camera roll permission is needed.');
+                feedback.toast.info(t('common.permissionRequired') || 'Permission Required', t('common.cameraRollPermission') || 'Camera roll permission is needed.');
                 return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -210,7 +195,7 @@ const TeachingAssistantScreen = () => {
                 // TODO: attach to AI context / send
             }
         } catch {
-            Alert.alert(t('common.error') || 'Error', t('common.failedToPickImage') || 'Failed to pick image');
+            feedback.toast.error(t('common.error') || 'Error', t('common.failedToPickImage') || 'Failed to pick image');
         }
     };
 
@@ -218,7 +203,7 @@ const TeachingAssistantScreen = () => {
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert(t('common.permissionRequired') || 'Permission Required', t('common.cameraRollPermission') || 'Camera roll permission is needed.');
+                feedback.toast.info(t('common.permissionRequired') || 'Permission Required', t('common.cameraRollPermission') || 'Camera roll permission is needed.');
                 return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -230,7 +215,7 @@ const TeachingAssistantScreen = () => {
                 // TODO: attach to AI context / send
             }
         } catch {
-            Alert.alert(t('common.error') || 'Error', t('common.failedToPickVideo') || 'Failed to pick video');
+            feedback.toast.error(t('common.error') || 'Error', t('common.failedToPickVideo') || 'Failed to pick video');
         }
     };
 
@@ -256,9 +241,9 @@ const TeachingAssistantScreen = () => {
                 type: asset.mimeType ?? 'application/octet-stream',
             });
             await ragService.uploadFile(formData);
-            Alert.alert(t('common.success') || 'Success', t('ai.uploadSuccess'));
+            feedback.toast.success(t('common.success') || 'Success', t('ai.uploadSuccess'));
         } catch {
-            Alert.alert(t('common.error') || 'Error', t('common.failedToPickDocument') || 'Failed to pick document');
+            feedback.toast.error(t('common.error') || 'Error', t('common.failedToPickDocument') || 'Failed to pick document');
         }
     };
 
@@ -268,7 +253,7 @@ const TeachingAssistantScreen = () => {
             const res = await ragService.listDocuments();
             setIndexedDocuments(res.documents ?? []);
         } catch {
-            Alert.alert(t('common.error') || 'Error', t('ai.error') || 'Could not load documents');
+            feedback.toast.error(t('common.error') || 'Error', t('ai.error') || 'Could not load documents');
         } finally {
             setLoadingDocuments(false);
         }
@@ -280,7 +265,7 @@ const TeachingAssistantScreen = () => {
     };
 
     const deleteIndexedDocument = (filename: string) => {
-        Alert.alert(
+        feedback.alert(
             t('ai.deleteDocument') || 'Remove',
             t('ai.deleteDocumentConfirm') || 'Remove this document from the assistant? It will no longer be used in answers.',
             [
@@ -294,7 +279,7 @@ const TeachingAssistantScreen = () => {
                             await ragService.deleteDocumentsByFilenames([filename]);
                             await loadIndexedDocuments();
                         } catch {
-                            Alert.alert(t('common.error') || 'Error', t('ai.error') || 'Could not remove document');
+                            feedback.toast.error(t('common.error') || 'Error', t('ai.error') || 'Could not remove document');
                         } finally {
                             setDeletingFilename(null);
                         }
@@ -341,7 +326,7 @@ const TeachingAssistantScreen = () => {
 
     const copyToClipboard = (text: string) => {
         Clipboard.setString(text);
-        Alert.alert(t('common.copiedToClipboard') || 'Copied to clipboard');
+        feedback.toast.success(t('common.copiedToClipboard') || 'Copied to clipboard');
     };
 
     const regenerateReply = async (assistantId: string, userContent: string, isDataQuery?: boolean) => {
@@ -549,7 +534,6 @@ const TeachingAssistantScreen = () => {
                         </TouchableOpacity>
                     </View>
                 </ThemedView>
-
 
                 <FlatList
                     ref={flatListRef}

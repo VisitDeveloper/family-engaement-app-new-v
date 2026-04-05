@@ -1,4 +1,5 @@
 import { ThemedText } from "@/components/themed-text";
+import { feedback } from "@/lib/feedback";
 import Divider from "@/components/ui/divider";
 import { UserAllowIcon, UserBlockIcon } from "@/components/ui/icons/settings-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
@@ -12,14 +13,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ListRenderItem,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, ListRenderItem, TouchableOpacity, View } from "react-native";
 
 interface BlocklistContactBottomSheetProps {
   visible: boolean;
@@ -109,7 +103,7 @@ export default function BlocklistContactBottomSheet({
       } catch (error: any) {
         console.error("Error loading contacts:", error);
         if (!append) {
-          Alert.alert("Error", error.message || "Failed to load contacts");
+          feedback.toast.error("Error", error.message || "Failed to load contacts");
         }
       } finally {
         setLoading(false);

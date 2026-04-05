@@ -1,4 +1,5 @@
 import { ThemedText } from '@/components/themed-text';
+import { feedback } from "@/lib/feedback";
 import { ThemedView } from '@/components/themed-view';
 import { EmergencyIcon } from '@/components/ui/icons/messages-icons';
 import { useThemedStyles } from '@/hooks/use-theme-style';
@@ -9,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, FlatList, RefreshControl, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const EmergencyNotificationsScreen = () => {
@@ -186,10 +187,7 @@ const EmergencyNotificationsScreen = () => {
         } catch (error: any) {
             console.error('Error loading emergency messages:', error);
             if (!append) {
-                Alert.alert(
-                    t('common.error'),
-                    error.message || t('emergency.loadError') || 'Failed to load emergency notifications'
-                );
+                feedback.toast.error(t('common.error'), error.message || t('emergency.loadError') || 'Failed to load emergency notifications');
             }
         } finally {
             setLoading(false);
@@ -239,7 +237,7 @@ const EmergencyNotificationsScreen = () => {
                     </ThemedText>
                 </View>
 
-                <ThemedText type="body" style={styles.messageContent}>
+                <ThemedText type="default" style={styles.messageContent}>
                     {item.content}
                 </ThemedText>
 
@@ -275,7 +273,9 @@ const EmergencyNotificationsScreen = () => {
 
     const renderEmpty = () => (
         <View style={styles.emptyContainer}>
-            <EmergencyIcon size={64} color={theme.subText} style={styles.emptyIcon} />
+            <View style={styles.emptyIcon}>
+                <EmergencyIcon size={64} color={theme.subText} />
+            </View>
             <ThemedText type="subtitle" style={styles.emptyText}>
                 {t('emergency.noNotifications') || 'No Emergency Notifications'}
             </ThemedText>

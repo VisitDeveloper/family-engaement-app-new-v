@@ -1,4 +1,5 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { feedback } from "@/lib/feedback";
 import { messagingService, MessageResponseDto } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
@@ -9,7 +10,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Keyboard, Platform, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Keyboard, Platform, Text, TouchableOpacity, View } from "react-native";
 
 interface CreateAnnouncementBottomSheetProps {
   visible: boolean;
@@ -135,7 +136,7 @@ export default function CreateAnnouncementBottomSheet({
     const trimmedContent = content.trim();
 
     if (!trimmedContent) {
-      Alert.alert("Error", "Please enter announcement content");
+      feedback.toast.error("Error", "Please enter announcement content");
       return;
     }
 
@@ -157,7 +158,7 @@ export default function CreateAnnouncementBottomSheet({
       onClose();
     } catch (error: any) {
       console.error("Error creating announcement:", error);
-      Alert.alert("Error", error.message || "Failed to create announcement");
+      feedback.toast.error("Error", error.message || "Failed to create announcement");
     } finally {
       setIsSubmitting(false);
     }

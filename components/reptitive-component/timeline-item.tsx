@@ -1,4 +1,5 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { feedback } from "@/lib/feedback";
 import {
   CommentResponseDto,
   commentService,
@@ -13,15 +14,7 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Alert,
-  Linking,
-  Pressable,
-  Share,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Linking, Pressable, Share, TextInput, TouchableOpacity, View } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
@@ -332,7 +325,7 @@ export default function TimelineItem({
         props.onCommentAdded();
       }
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to post reply");
+      feedback.toast.error("Error", err.message || "Failed to post reply");
       console.error("Error posting reply:", err);
     } finally {
       setIsSubmittingReply((prev) => ({ ...prev, [commentId]: false }));
@@ -439,7 +432,7 @@ export default function TimelineItem({
         return updatedReplies;
       });
       console.error("Error toggling comment like:", err);
-      Alert.alert("Error", err.message || "Failed to toggle like");
+      feedback.toast.error("Error", err.message || "Failed to toggle like");
     }
   };
 
@@ -496,11 +489,11 @@ export default function TimelineItem({
         if (canOpen) {
           await Linking.openURL(formattedUrl);
         } else {
-          Alert.alert("Error", "Cannot open this file");
+          feedback.toast.error("Error", "Cannot open this file");
         }
       } catch (error) {
         console.error("Error opening file:", error);
-        Alert.alert("Error", "Failed to open file");
+        feedback.toast.error("Error", "Failed to open file");
       }
     }
   };
@@ -529,7 +522,7 @@ export default function TimelineItem({
       }
     } catch (error: any) {
       console.error("Error sharing post:", error);
-      Alert.alert("Error", error.message || "Failed to share post");
+      feedback.toast.error("Error", error.message || "Failed to share post");
     }
   };
 
@@ -797,7 +790,7 @@ export default function TimelineItem({
                     style={styles.dropdownItem}
                     onPress={() => {
                       setShowDropdown(false);
-                      Alert.alert(
+                      feedback.alert(
                         "Delete Post",
                         "Are you sure you want to delete this post? This action cannot be undone.",
                         [
@@ -869,7 +862,6 @@ export default function TimelineItem({
             ))}
           </View>
         )}
-
 
         {/* Post Image */}
         {(() => {

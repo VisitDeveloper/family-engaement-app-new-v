@@ -1,16 +1,10 @@
 import { messagingService, PollResponseDto, VotePollDto } from "@/services/messaging.service";
+import { feedback } from "@/lib/feedback";
 import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const POLL_CARD = {
   background: "rgba(215, 169, 227, 0.1)",
@@ -80,7 +74,7 @@ export default function PollMessageCard({
       await fetchPoll();
       onVote?.();
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to vote");
+      feedback.toast.error("Error", err.message || "Failed to vote");
     } finally {
       setVoting(false);
     }
@@ -96,7 +90,7 @@ export default function PollMessageCard({
 
   const handleClosePoll = useCallback(() => {
     if (!poll || poll.isClosed) return;
-    Alert.alert(
+    feedback.alert(
       "Close poll",
       "Are you sure you want to close this poll? No more votes will be accepted.",
       [
@@ -111,7 +105,7 @@ export default function PollMessageCard({
               await fetchPoll();
               onClosePoll?.();
             } catch (e: any) {
-              Alert.alert("Error", e.message || "Failed to close poll");
+              feedback.toast.error("Error", e.message || "Failed to close poll");
             } finally {
               setClosingPoll(false);
             }

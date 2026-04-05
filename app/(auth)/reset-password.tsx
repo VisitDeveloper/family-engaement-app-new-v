@@ -1,4 +1,5 @@
 import AuthLanguageSwitcher from "@/components/ui/auth-language-switcher";
+import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useValidation } from "@/hooks/use-validation";
@@ -10,7 +11,7 @@ import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Image, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function ResetPasswordScreen() {
   const { t } = useTranslation();
@@ -67,16 +68,11 @@ export default function ResetPasswordScreen() {
     try {
       const response = await authService.resetPassword(normalizedToken, trimmedNewPassword);
       trackAuthEvent("reset_password_success");
-      Alert.alert(
+      feedback.toast.success(
         t("auth.reset.successTitle"),
-        response.message || t("auth.reset.successMessage"),
-        [
-          {
-            text: t("auth.common.backToLogin"),
-            onPress: () => router.replace("/(auth)/login"),
-          },
-        ]
+        response.message || t("auth.reset.successMessage")
       );
+      router.replace("/(auth)/login");
     } catch (err) {
       const apiError = err as ApiError;
       const lowerMessage = (apiError.message || "").toLowerCase();
@@ -87,7 +83,7 @@ export default function ResetPasswordScreen() {
       trackAuthEvent("reset_password_failed", { status: apiError.status ?? null, invalidOrExpired: isInvalidOrExpired });
 
       if (isInvalidOrExpired) {
-        Alert.alert(
+        feedback.alert(
           t("auth.reset.invalidTokenTitle"),
           t("auth.reset.invalidTokenMessage"),
           [
@@ -102,7 +98,7 @@ export default function ResetPasswordScreen() {
           ]
         );
       } else {
-        Alert.alert(t("auth.reset.failedTitle"), apiError.message || t("auth.common.tryAgain"));
+        feedback.toast.error(t("auth.reset.failedTitle"), apiError.message || t("auth.common.tryAgain"));
       }
     } finally {
       setLoading(false);

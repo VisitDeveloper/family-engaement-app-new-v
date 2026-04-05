@@ -1,4 +1,5 @@
 import { CommentResponseDto, commentService } from "@/services/comment.service";
+import { feedback } from "@/lib/feedback";
 import { likeService } from "@/services/like.service";
 import { useStore } from "@/store";
 import {
@@ -6,7 +7,7 @@ import {
   BottomSheetModal,
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, Platform, View } from "react-native";
+import { Keyboard, Platform, View } from "react-native";
 import { ThemedText } from "../themed-text";
 import { CommentInput } from "./comments/comment-input";
 import { CommentItem } from "./comments/comment-item";
@@ -329,7 +330,7 @@ export default function CommentsBottomSheet({
       }
       // Keep bottom sheet open - don't close it
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to post comment");
+      feedback.toast.error("Error", err.message || "Failed to post comment");
       console.error("Error posting comment:", err);
     } finally {
       setIsSubmittingComment(false);
@@ -400,7 +401,7 @@ export default function CommentsBottomSheet({
         onCommentAdded();
       }
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to post reply");
+      feedback.toast.error("Error", err.message || "Failed to post reply");
       console.error("Error posting reply:", err);
     } finally {
       setIsSubmittingReply((prev) => ({ ...prev, [commentId]: false }));
@@ -519,10 +520,9 @@ export default function CommentsBottomSheet({
         return updatedReplies;
       });
       console.error("Error toggling comment like:", err);
-      Alert.alert("Error", err.message || "Failed to toggle like");
+      feedback.toast.error("Error", err.message || "Failed to toggle like");
     }
   };
-
 
   const handleSheetChanges = useCallback(
     (index: number) => {
@@ -586,7 +586,6 @@ export default function CommentsBottomSheet({
     ),
     [loading, comments.length, theme.text]
   );
-
 
   if (!visible) {
     return null;

@@ -1,4 +1,5 @@
 import RoleGuard from "@/components/check-permisions";
+import { feedback } from "@/lib/feedback";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import ResourceItem, {
   ResourceItemProps,
@@ -18,15 +19,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Platform,
-  RefreshControl,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Platform, RefreshControl, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Helper function to get icon based on type
@@ -117,7 +110,7 @@ const ResourceLibrary = () => {
         const errorMessage =
           err.message || "Failed to load resources. Please try again.";
         setError(errorMessage);
-        Alert.alert("Error", errorMessage);
+        feedback.toast.error("Error", errorMessage);
         console.error("Error fetching resources:", err);
       } finally {
         setLoading(false);
@@ -250,10 +243,7 @@ const ResourceLibrary = () => {
       // Refresh the list to get updated data
       await fetchResources(query, selectedCategory);
     } catch (err: any) {
-      Alert.alert(
-        "Error",
-        err.message || "Failed to update save status. Please try again."
-      );
+      feedback.toast.error("Error", err.message || "Failed to update save status. Please try again.");
       console.error("Error toggling save:", err);
     }
   };
@@ -287,7 +277,7 @@ const ResourceLibrary = () => {
         params: { id: data.id },
       });
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to load resource details");
+      feedback.toast.error("Error", err.message || "Failed to load resource details");
       console.error("Error fetching resource details:", err);
     }
   };
