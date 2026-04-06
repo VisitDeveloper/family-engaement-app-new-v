@@ -237,7 +237,17 @@
     "changePasswordButton": "Change Password"
   },
   "dataPrivacy": {
-    "title": "Data & Privacy Policy"
+    "title": "Data & Privacy Policy",
+    "dataProtectionTitle": "Data Protection Policy",
+    "dataProtectionIntro": "This policy outlines how we collect, use, and protect your personal information.",
+    "privacyCommitmentTitle": "Privacy Commitment",
+    "privacyCommitmentBody": "We are dedicated to safeguarding your privacy and ensuring your data is handled responsibly.",
+    "informationCollectionTitle": "Information Collection",
+    "informationCollectionBody": "We gather personal data only when necessary, and we inform you about its purpose.",
+    "dataUsageTitle": "Data Usage",
+    "dataUsageBody": "Your information is used to enhance our services and improve user experience.",
+    "userRightsTitle": "User Rights",
+    "userRightsBody": "You have the right to access, modify, or delete your personal data at any time."
   },
   "blocklist": {
     "title": "Block/Unblock Contacts",
@@ -553,6 +563,10 @@
     "postsShared": "Posts Shared",
     "messagesSent": "Messages Sent",
     "ofTotalFamilies": "of {{total}} total families",
+    "trendNew": "New",
+    "trendSameMonth": "Same as last month",
+    "trendUpFromLastMonth": "↑ {{pct}}% from last month",
+    "trendDownFromLastMonth": "↓ {{pct}}% from last month",
     "teacherEngagement": "Teacher Engagement",
     "noTeacherData": "No teacher data yet.",
     "posts": "posts",

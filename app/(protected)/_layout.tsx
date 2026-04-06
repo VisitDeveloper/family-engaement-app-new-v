@@ -3,6 +3,10 @@ import { apiClient } from "@/services/api";
 import { authService } from "@/services/auth.service";
 import type { StoreUser } from "@/store";
 import { useStore } from "@/store";
+import {
+  mergeProfileAppLanguage,
+  shouldPushAppLanguageToServer,
+} from "@/store/slice/language";
 import { getDisplayName } from "@/utils/user-name";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
@@ -49,6 +53,12 @@ export default function RootLayout() {
   // After login / app load: fetch profile and hydrate user + settings (per User Settings API)
   const profileFetchedRef = useRef(false);
   useEffect(() => {
+    if (!user?.id) {
+      profileFetchedRef.current = false;
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
     if (!user?.id || profileFetchedRef.current) return;
     let cancelled = false;
     profileFetchedRef.current = true;
@@ -84,8 +94,15 @@ export default function RootLayout() {
         }
 
         store.setUserSettingsFromProfile(response.settings);
-        if (response.settings?.appLanguage) {
-          store.setAppLanguage(response.settings.appLanguage);
+        const profileLang = response.settings?.appLanguage;
+        const mergedLang = mergeProfileAppLanguage(profileLang, store.appLanguage);
+        if (mergedLang) {
+          store.setAppLanguage(mergedLang);
+          if (shouldPushAppLanguageToServer(profileLang, mergedLang)) {
+            void authService
+              .updateSettings({ appLanguage: mergedLang })
+              .catch(() => {});
+          }
         }
       })
       .catch(() => {

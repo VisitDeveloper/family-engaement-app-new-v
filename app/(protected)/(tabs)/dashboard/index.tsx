@@ -12,8 +12,42 @@ import { useStore } from "@/store";
 import { Redirect, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { DimensionValue } from "react-native";
 import { ActivityIndicator, Platform, RefreshControl, ScrollView, Share, Text, TouchableOpacity, View } from "react-native";
+import type { SummaryMetric } from "@/types/dashboard.types";
+
+function findSummaryMetric(
+  summary: SummaryMetric[],
+  key: NonNullable<SummaryMetric["metricKey"]>,
+  englishLabel: string,
+): SummaryMetric | undefined {
+  return summary.find((m) => m.metricKey === key) ?? summary.find((m) => m.label === englishLabel);
+}
+
+function activeFamiliesSubtitleTotal(metric: SummaryMetric | undefined): number {
+  if (metric?.totalFamilies != null) return metric.totalFamilies;
+  if (metric?.context && typeof metric.context === "string") {
+    const match = metric.context.match(/\d+/);
+    if (match) return Number(match[0]);
+  }
+  return 0;
+}
+
+function formatSummaryTrend(metric: SummaryMetric | undefined, t: TFunction): string {
+  if (!metric) return "—";
+  if (metric.trendIsNew === true) return String(t("dashboard.trendNew"));
+  if (metric.trendDirection === "up" && metric.trendPercent != null) {
+    return String(t("dashboard.trendUpFromLastMonth", { pct: metric.trendPercent }));
+  }
+  if (metric.trendDirection === "down" && metric.trendPercent != null) {
+    return String(t("dashboard.trendDownFromLastMonth", { pct: metric.trendPercent }));
+  }
+  if (metric.trendDirection === "same" || metric.trendDirection === undefined) {
+    return String(t("dashboard.trendSameMonth"));
+  }
+  return metric.trend ?? "—";
+}
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -143,15 +177,20 @@ export default function Dashboard() {
     return <Redirect href="/(protected)/(tabs)/dashboard/parent-dashboard" />;
   }
 
-  const engagementSub = summary?.find(metric => metric.label === "Engagement Rate")?.trend ?? "";
-  const engagementPositive = summary?.find(metric => metric.label === "Engagement Rate")?.trendDirection === "up";
-  const engagementNegative = summary?.find(metric => metric.label === "Engagement Rate")?.trendDirection === "down";
-  const postsSub = summary?.find(metric => metric.label === "Posts Shared")?.trend ?? "";
-  const postsNegative = summary?.find(metric => metric.label === "Posts Shared")?.trendDirection === "down";
-  const postsPositive = summary?.find(metric => metric.label === "Posts Shared")?.trendDirection === "up";
-  const messagesSub = summary?.find(metric => metric.label === "Messages Sent")?.trend ?? "";
-  const messagesNegative = summary?.find(metric => metric.label === "Messages Sent")?.trendDirection === "down";
-  const messagesPositive = summary?.find(metric => metric.label === "Messages Sent")?.trendDirection === "up";
+  const activeM = findSummaryMetric(summary, "activeFamilies", "Active Families");
+  const engagementM = findSummaryMetric(summary, "engagementRate", "Engagement Rate");
+  const postsM = findSummaryMetric(summary, "postsShared", "Posts Shared");
+  const messagesM = findSummaryMetric(summary, "messagesSent", "Messages Sent");
+
+  const engagementSub = formatSummaryTrend(engagementM, t);
+  const engagementPositive = engagementM?.trendDirection === "up";
+  const engagementNegative = engagementM?.trendDirection === "down";
+  const postsSub = formatSummaryTrend(postsM, t);
+  const postsNegative = postsM?.trendDirection === "down";
+  const postsPositive = postsM?.trendDirection === "up";
+  const messagesSub = formatSummaryTrend(messagesM, t);
+  const messagesNegative = messagesM?.trendDirection === "down";
+  const messagesPositive = messagesM?.trendDirection === "up";
 
   return (
     <View style={styles.container}>
@@ -184,17 +223,18 @@ export default function Dashboard() {
             />
           }
         >
+
           <View style={{ flexGrow: 1 }}>
             <View style={styles.row}>
               <StatCard
                 label={t("dashboard.activeFamilies")}
-                value={summary ? String(summary.find(metric => metric.label === "Active Families")?.value ?? 0) : "—"}
-                sub={summary ? t("dashboard.ofTotalFamilies", { total: summary.find(metric => metric.label === "Active Families")?.context ?? 0 }) : ""}
+                value={summary.length ? String(activeM?.value ?? 0) : "—"}
+                sub={summary.length ? t("dashboard.ofTotalFamilies", { total: activeFamiliesSubtitleTotal(activeM) }) : ""}
                 icon={<Person2FillIcon size={30} color={theme.iconDash} />}
               />
               <StatCard
                 label={t("dashboard.engagementRate")}
-                value={summary ? `${summary.find(metric => metric.label === "Engagement Rate")?.value ?? 0}%` : "—"}
+                value={summary.length ? `${engagementM?.value ?? "0%"}` : "—"}
                 sub={engagementSub || "—"}
                 positive={engagementPositive}
                 negative={engagementNegative}
@@ -205,7 +245,7 @@ export default function Dashboard() {
             <View style={styles.row}>
               <StatCard
                 label={t("dashboard.postsShared")}
-                value={summary ? String(summary.find(metric => metric.label === "Posts Shared")?.value ?? 0) : "—"}
+                value={summary.length ? String(postsM?.value ?? 0) : "—"}
                 sub={postsSub || "—"}
                 negative={postsNegative}
                 positive={postsPositive}
@@ -213,7 +253,7 @@ export default function Dashboard() {
               />
               <StatCard
                 label={t("dashboard.messagesSent")}
-                value={summary ? String(summary.find(metric => metric.label === "Messages Sent")?.value ?? 0) : "—"}
+                value={summary.length ? String(messagesM?.value ?? 0) : "—"}
                 sub={messagesSub || "—"}
                 negative={messagesNegative}
                 positive={messagesPositive}

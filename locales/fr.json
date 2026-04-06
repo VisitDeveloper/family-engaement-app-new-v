@@ -129,15 +129,15 @@
     "addFamilyMember": "Ajouter un membre de la famille",
     "manageChildren": "Gérer les enfants",
     "exportData": "Exporter les données",
-    "familyConnect": "Family Connect",
+    "familyConnect": "Connexion familiale",
     "version": "Version",
     "logoutConfirmTitle": "Déconnexion",
     "logoutConfirmMessage": "Êtes-vous sûr de vouloir vous déconnecter ?"
   },
   "languages": {
-    "en": "English",
+    "en": "Anglais",
     "fr": "Français",
-    "es": "Español"
+    "es": "Espagnol"
   },
   "tabs": {
     "messages": "Messages",
@@ -237,7 +237,17 @@
     "changePasswordButton": "Changer le mot de passe"
   },
   "dataPrivacy": {
-    "title": "Politique de données et de confidentialité"
+    "title": "Politique de données et de confidentialité",
+    "dataProtectionTitle": "Politique de protection des données",
+    "dataProtectionIntro": "Cette politique décrit comment nous collectons, utilisons et protégeons vos informations personnelles.",
+    "privacyCommitmentTitle": "Engagement en matière de confidentialité",
+    "privacyCommitmentBody": "Nous nous engageons à protéger votre vie privée et à traiter vos données de manière responsable.",
+    "informationCollectionTitle": "Collecte d'informations",
+    "informationCollectionBody": "Nous ne collectons des données personnelles que lorsque c'est nécessaire et nous vous en indiquons la finalité.",
+    "dataUsageTitle": "Utilisation des données",
+    "dataUsageBody": "Vos informations servent à améliorer nos services et l'expérience utilisateur.",
+    "userRightsTitle": "Droits des utilisateurs",
+    "userRightsBody": "Vous avez le droit d'accéder à vos données personnelles, de les modifier ou de les supprimer à tout moment."
   },
   "blocklist": {
     "title": "Bloquer/Débloquer les contacts",
@@ -553,6 +563,10 @@
     "postsShared": "Publications partagées",
     "messagesSent": "Messages envoyés",
     "ofTotalFamilies": "sur {{total}} familles au total",
+    "trendNew": "Nouveau",
+    "trendSameMonth": "Comme le mois dernier",
+    "trendUpFromLastMonth": "↑ {{pct}}% par rapport au mois dernier",
+    "trendDownFromLastMonth": "↓ {{pct}}% par rapport au mois dernier",
     "teacherEngagement": "Engagement des enseignants",
     "noTeacherData": "Aucune donnée enseignant pour le moment.",
     "posts": "publications",

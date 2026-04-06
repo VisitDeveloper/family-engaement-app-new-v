@@ -34,38 +34,54 @@ export default function HeaderTabItem({ buttonVariant = "default", ...props }: H
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        // padding: 10,
+        width: "100%",
+        minWidth: 0,
       },
       headerWrap: {
         flexDirection: "column",
         alignItems: "flex-start",
+        flex: 1,
+        minWidth: 0,
+        flexShrink: 1,
+        paddingRight: 8,
       },
-      headerTitle: { fontWeight: "bold", color: theme.text },
-      headerSubTitle: { color: theme.text },
+      headerTitle: { fontWeight: "bold", color: theme.text, alignSelf: "stretch", flexShrink: 1 },
+      headerSubTitle: { color: theme.text, alignSelf: "stretch", flexShrink: 1 },
       eventButton: {
         flexDirection: "row",
         alignItems: "center",
+        maxWidth: "100%",
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 6,
         borderColor: theme.tint,
         borderWidth: 1,
       },
-      eventText: { marginLeft: 5 },
+      eventText: { marginLeft: 5, flexShrink: 1, minWidth: 0 },
     } as const)
   );
 
   return (
     <View style={[styles.header, props.addstyles]}>
       <View style={styles.headerWrap}>
-        <ThemedText type="subtitle" style={styles.headerTitle}>
+        <ThemedText
+          type="subtitle"
+          style={styles.headerTitle}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           {props.title}
         </ThemedText>
-        <ThemedText type="subText" style={styles.headerSubTitle}>
+        <ThemedText
+          type="subText"
+          style={styles.headerSubTitle}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           {props.subTitle}
         </ThemedText>
       </View>
-      <View style={{ flexDirection: "row", gap: 5 }}>
+      <View style={{ flexDirection: "row", gap: 5, flexShrink: 0 }}>
         {props?.buttonTitle ? (
           <RoleGuard
             roles={props.buttonRoles || ["admin", "teacher", "parent"]}
@@ -81,7 +97,12 @@ export default function HeaderTabItem({ buttonVariant = "default", ...props }: H
             >
               {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
               {props.buttonIcon ? props.buttonIcon : null}
-              <ThemedText type="subText" style={[styles.eventText, { color: buttonVariant === "primary" ? theme.bg : theme.tint }]}>
+              <ThemedText
+                type="subText"
+                style={[styles.eventText, { color: buttonVariant === "primary" ? theme.bg : theme.tint }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {props.buttonTitle!}
               </ThemedText>
             </TouchableOpacity>
@@ -99,7 +120,12 @@ export default function HeaderTabItem({ buttonVariant = "default", ...props }: H
               {/* <Feather name="calendar" size={16} color={theme.tint} /> */}
               {props.buttonSecondIcon ? props.buttonSecondIcon : null}
               {props?.buttonSecondTtitle ? (
-                <ThemedText type="subText" style={styles.eventText}>
+                <ThemedText
+                  type="subText"
+                  style={styles.eventText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {props.buttonSecondTtitle!}
                 </ThemedText>
               ) : null}

@@ -9,6 +9,10 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
 import { authService, UserProfile } from "@/services/auth.service";
 import { useStore } from "@/store";
+import {
+  mergeProfileAppLanguage,
+  shouldPushAppLanguageToServer,
+} from "@/store/slice/language";
 import { getDisplayName } from "@/utils/user-name";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -173,8 +177,18 @@ export default function ProfileScreen() {
         setUser(userData);
         if (response.settings) {
           setUserSettingsFromProfile(response.settings);
-          if (response.settings.appLanguage) {
-            setAppLanguage(response.settings.appLanguage);
+          const profileLang = response.settings.appLanguage;
+          const mergedLang = mergeProfileAppLanguage(
+            profileLang,
+            useStore.getState().appLanguage
+          );
+          if (mergedLang) {
+            setAppLanguage(mergedLang);
+            if (shouldPushAppLanguageToServer(profileLang, mergedLang)) {
+              void authService
+                .updateSettings({ appLanguage: mergedLang })
+                .catch(() => {});
+            }
           }
         }
       }
@@ -618,13 +632,11 @@ export default function ProfileScreen() {
                 : ""}
           </ThemedText>
           <View style={[styles.tagsContainer, { borderBottomColor: theme.border, borderBottomWidth: 1, paddingBottom: 10 }]}>
-            {profile?.subjects && profile.subjects.length > 0 && (
-              <View style={styles.tag}>
-                <ThemedText style={styles.tagText}>
-                  {profile.subjects[0]}
-                </ThemedText>
+            {profile?.subjects?.map((subject, index) => (
+              <View key={`${subject}-${index}`} style={styles.tag}>
+                <ThemedText style={styles.tagText}>{subject}</ThemedText>
               </View>
-            )}
+            ))}
             {/* TODO: Add classroom tag when classroom data is available from API */}
           </View>
           <TouchableOpacity

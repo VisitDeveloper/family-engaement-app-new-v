@@ -547,10 +547,7 @@ export default function SettingsScreen() {
             />
             <ThemedText
               type="subText"
-              style={[
-                styles.dataSecurityDescription,
-                { color: theme.text, flex: 1, paddingVertical: 0 },
-              ]}
+              style={{ color: theme.text, flex: 1, paddingVertical: 0 }}
             >
               {t("settings.privacyDescription")}
             </ThemedText>
@@ -877,12 +874,6 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: "baseline",
     justifyContent: "space-between",
-  },
-  dataSecurityDescription: {
-    lineHeight: 15,
-    // paddingHorizontal: 5,
-    textAlign: "justify",
-    // marginHorizontal: 20,
   },
   dataSecurityLink: {
     paddingVertical: 10,

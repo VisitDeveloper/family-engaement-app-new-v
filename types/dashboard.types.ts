@@ -74,12 +74,23 @@ export interface AdminDashboardResponse {
   teacherEngagement: TeacherEngagement[];
 }
 
+export type DashboardSummaryMetricKey =
+  | 'activeFamilies'
+  | 'engagementRate'
+  | 'postsShared'
+  | 'messagesSent';
+
 export interface SummaryMetric {
   value: number | string;
   label: string;
+  metricKey?: DashboardSummaryMetricKey;
   context?: string;
+  /** Total families (active-families row); use for localized subtitles. */
+  totalFamilies?: number;
   trend?: string;
   trendDirection?: string;
+  trendPercent?: number;
+  trendIsNew?: boolean;
 }
 
 export interface TeacherEngagement {

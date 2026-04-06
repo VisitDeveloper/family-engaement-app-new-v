@@ -51,52 +51,48 @@ export default function DataPrivacyScreen() {
                 <View style={styles.card}>
 
                     <View style={styles.row}>
-                        <ThemedText type="subtitle" style={styles.sectionTitle}>Data Protection Policy</ThemedText>
-                    </View>
-                    <ThemedText type="subText" style={{ color: theme.text, marginBottom: 10 }}>
-                        This policy outlines how we collect, use, and
-                        protect your personal information.
-                    </ThemedText>
-
-
-                    <View style={styles.row}>
                         <ThemedText type="subtitle" style={styles.sectionTitle}>
-                            Privacy Commitment
+                            {t("dataPrivacy.dataProtectionTitle")}
                         </ThemedText>
                     </View>
                     <ThemedText type="subText" style={{ color: theme.text, marginBottom: 10 }}>
-                        We are dedicated to safeguarding your privacy
-                        and ensuring your data is handled responsibly.
+                        {t("dataPrivacy.dataProtectionIntro")}
                     </ThemedText>
 
                     <View style={styles.row}>
                         <ThemedText type="subtitle" style={styles.sectionTitle}>
-                            Information Collection
+                            {t("dataPrivacy.privacyCommitmentTitle")}
                         </ThemedText>
                     </View>
                     <ThemedText type="subText" style={{ color: theme.text, marginBottom: 10 }}>
-                        We gather personal data only when necessary,
-                        and we inform you about its purpose.
+                        {t("dataPrivacy.privacyCommitmentBody")}
                     </ThemedText>
 
                     <View style={styles.row}>
                         <ThemedText type="subtitle" style={styles.sectionTitle}>
-                            Data Usage
+                            {t("dataPrivacy.informationCollectionTitle")}
                         </ThemedText>
                     </View>
                     <ThemedText type="subText" style={{ color: theme.text, marginBottom: 10 }}>
-                        Your information is used to enhance our services
-                        and improve user experience.
+                        {t("dataPrivacy.informationCollectionBody")}
                     </ThemedText>
 
                     <View style={styles.row}>
                         <ThemedText type="subtitle" style={styles.sectionTitle}>
-                            User Rights
+                            {t("dataPrivacy.dataUsageTitle")}
                         </ThemedText>
                     </View>
                     <ThemedText type="subText" style={{ color: theme.text, marginBottom: 10 }}>
-                        You have the right to access, modify, or delete
-                        your personal data at any time.
+                        {t("dataPrivacy.dataUsageBody")}
+                    </ThemedText>
+
+                    <View style={styles.row}>
+                        <ThemedText type="subtitle" style={styles.sectionTitle}>
+                            {t("dataPrivacy.userRightsTitle")}
+                        </ThemedText>
+                    </View>
+                    <ThemedText type="subText" style={{ color: theme.text, marginBottom: 10 }}>
+                        {t("dataPrivacy.userRightsBody")}
                     </ThemedText>
                 </View>
 

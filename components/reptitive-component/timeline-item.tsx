@@ -541,6 +541,49 @@ export default function TimelineItem({
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 10,
+        minWidth: 0,
+        width: "100%",
+      },
+      postHeaderMeta: {
+        flex: 1,
+        minWidth: 0,
+        flexShrink: 1,
+        paddingRight: 4,
+      },
+      postAuthorName: {
+        color: theme.text,
+        alignSelf: "stretch",
+        flexShrink: 1,
+      },
+      postSeenTime: {
+        color: theme.subText,
+        alignSelf: "stretch",
+        flexShrink: 1,
+      },
+      commentBodyColumn: {
+        flex: 1,
+        marginLeft: 8,
+        alignItems: "flex-start",
+        minWidth: 0,
+      },
+      commentTopRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        width: "100%",
+        minWidth: 0,
+      },
+      commentNameTimeRow: {
+        flexDirection: "row",
+        alignItems: "baseline",
+        gap: 4,
+        flex: 1,
+        minWidth: 0,
+      },
+      commentAuthorDisplayName: {
+        color: theme.text,
+        fontSize: 12,
+        flexShrink: 1,
+        minWidth: 0,
       },
       avatar: {
         width: 40,
@@ -631,6 +674,7 @@ export default function TimelineItem({
         flexDirection: "row",
         alignItems: "flex-start",
         marginTop: 5,
+        minWidth: 0,
       },
       commentInput: {
         flex: 1,
@@ -719,17 +763,27 @@ export default function TimelineItem({
               </ThemedText>
             </View>
           )}
-          <View style={{ flex: 1 }}>
-            <ThemedText type="defaultSemiBold" style={{ color: theme.text }}>
+          <View style={styles.postHeaderMeta}>
+            <ThemedText
+              type="defaultSemiBold"
+              style={styles.postAuthorName}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {props.name}
             </ThemedText>
-            <ThemedText type="subLittleText" style={{ color: theme.subText }}>
+            <ThemedText
+              type="subLittleText"
+              style={styles.postSeenTime}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {props.seen}
             </ThemedText>
           </View>
 
           {canEditDelete && (
-            <View style={styles.dropdownContainer}>
+            <View style={[styles.dropdownContainer, { flexShrink: 0 }]}>
               <TouchableOpacity
                 onPress={(e) => {
                   e.stopPropagation();
@@ -1132,33 +1186,14 @@ export default function TimelineItem({
                           color={theme.subText}
                         />
                       )}
-                      <View
-                        style={{
-                          flex: 1,
-                          marginLeft: 8,
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "baseline",
-                              justifyContent: "flex-start",
-                              gap: 4,
-                            }}
-                          >
+                      <View style={styles.commentBodyColumn}>
+                        <View style={styles.commentTopRow}>
+                          <View style={styles.commentNameTimeRow}>
                             <ThemedText
                               type="defaultSemiBold"
-                              style={{
-                                color: theme.text,
-                                fontSize: 12,
-                              }}
+                              style={styles.commentAuthorDisplayName}
+                              numberOfLines={1}
+                              ellipsizeMode="tail"
                             >
                               {getDisplayName(
                                 commentItem.author.firstName,
@@ -1168,7 +1203,11 @@ export default function TimelineItem({
                             </ThemedText>
                             <ThemedText
                               type="subLittleText"
-                              style={{ fontSize: 9, color: theme.subText }}
+                              style={{
+                                fontSize: 9,
+                                color: theme.subText,
+                                flexShrink: 0,
+                              }}
                             >
                               {formatTimeAgoShort(commentItem.createdAt)}
                             </ThemedText>
@@ -1323,33 +1362,14 @@ export default function TimelineItem({
                                     color={theme.subText}
                                   />
                                 )}
-                                <View
-                                  style={{
-                                    flex: 1,
-                                    marginLeft: 8,
-                                    alignItems: "flex-start",
-                                  }}
-                                >
-                                  <View
-                                    style={{
-                                      flexDirection: "row",
-                                      justifyContent: "space-between",
-                                    }}
-                                  >
-                                    <View
-                                      style={{
-                                        flexDirection: "row",
-                                        alignItems: "baseline",
-                                        justifyContent: "flex-start",
-                                        gap: 4,
-                                      }}
-                                    >
+                                <View style={styles.commentBodyColumn}>
+                                  <View style={styles.commentTopRow}>
+                                    <View style={styles.commentNameTimeRow}>
                                       <ThemedText
                                         type="defaultSemiBold"
-                                        style={{
-                                          color: theme.text,
-                                          fontSize: 12,
-                                        }}
+                                        style={styles.commentAuthorDisplayName}
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
                                       >
                                         {getDisplayName(
                                           reply.author.firstName,
@@ -1362,6 +1382,7 @@ export default function TimelineItem({
                                         style={{
                                           fontSize: 9,
                                           color: theme.subText,
+                                          flexShrink: 0,
                                         }}
                                       >
                                         {formatTimeAgoShort(reply.createdAt)}
@@ -1620,21 +1641,15 @@ export default function TimelineItem({
                             color={theme.subText}
                           />
                         )}
-                        <View
-                          style={{
-                            flex: 1,
-                            flexDirection: "row",
-                            flexWrap: "wrap",
-                            alignItems: "center",
-                          }}
-                        >
+                        <View style={{ flex: 1, minWidth: 0 }}>
                           <ThemedText
                             type="defaultSemiBold"
-                            style={{
-                              color: theme.text,
-                              paddingLeft: 8,
-                              fontSize: 12,
-                            }}
+                            style={[
+                              styles.commentAuthorDisplayName,
+                              { paddingLeft: 8 },
+                            ]}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
                           >
                             {getDisplayName(
                               commentItem.author.firstName,
@@ -1642,24 +1657,37 @@ export default function TimelineItem({
                               commentItem.author.email || "Unknown"
                             )}
                           </ThemedText>
-                          <ThemedText
-                            type="subText"
-                            style={[
-                              styles.generalmargin,
-                              { color: theme.text, flex: 1 },
-                            ]}
-                          >
-                            {commentItem.content}
-                          </ThemedText>
-                          <TouchableOpacity
+                          <View
                             style={{
                               flexDirection: "row",
-                              alignItems: "center",
-                              marginLeft: 8,
-                              gap: 4,
+                              alignItems: "flex-start",
+                              width: "100%",
+                              minWidth: 0,
                             }}
-                            onPress={() => handleCommentLike(commentItem.id)}
                           >
+                            <ThemedText
+                              type="subText"
+                              style={[
+                                styles.generalmargin,
+                                {
+                                  color: theme.text,
+                                  flex: 1,
+                                  minWidth: 0,
+                                },
+                              ]}
+                            >
+                              {commentItem.content}
+                            </ThemedText>
+                            <TouchableOpacity
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginLeft: 8,
+                                gap: 4,
+                                flexShrink: 0,
+                              }}
+                              onPress={() => handleCommentLike(commentItem.id)}
+                            >
                             <AntDesign
                               name={
                                 commentLikes[commentItem.id]?.isLiked ??
@@ -1688,6 +1716,7 @@ export default function TimelineItem({
                                 </ThemedText>
                               )}
                           </TouchableOpacity>
+                          </View>
                         </View>
                       </View>
                     ))}
