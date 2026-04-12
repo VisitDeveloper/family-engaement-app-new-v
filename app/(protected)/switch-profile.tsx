@@ -282,6 +282,8 @@ export default function SwitchProfileScreen() {
           siteId: profile.siteId ?? null,
         });
 
+        void authService.getProfile().catch(() => {});
+
         feedback.toast.success(t("common.success"), t("switchProfile.profileSwitchedSuccess"));
         router.back();
       } catch (err) {

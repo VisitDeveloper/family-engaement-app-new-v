@@ -1,11 +1,14 @@
 import type {
   AuthResponse,
+  AuthSessionsResponse,
   ChangePasswordRequest,
   ChangePasswordResponse,
   ProfileResponseDto,
   ProfilesResponse,
   RefreshTokenResponse,
   RequestPhoneChangeOtpRequest,
+  RevokeOthersResponse,
+  RevokeSessionResponse,
   SwitchProfileBody,
   SwitchProfileResponse,
   UpdateProfilePictureResponse,
@@ -16,6 +19,7 @@ import type {
   VerifyPhoneChangeOtpRequest,
   VerifyPhoneChangeOtpResponse,
 } from "@/types";
+import { persistMobileMapsConfigFromProfile } from "@/lib/maps-client-config";
 import { unregisterPushTokenOnLogout } from "@/utils/pushNotifications";
 import { apiClient, ApiError } from "./api";
 
@@ -60,6 +64,9 @@ export interface AuthService {
   getProfiles(): Promise<ProfilesResponse>;
   /** POST /auth/switch-profile — switch active profile; updates stored tokens */
   switchProfile(body: SwitchProfileBody): Promise<SwitchProfileResponse>;
+  listSessions(): Promise<AuthSessionsResponse>;
+  revokeSession(sessionId: string): Promise<RevokeSessionResponse>;
+  revokeOtherSessions(): Promise<RevokeOthersResponse>;
 }
 
 class AuthServiceImpl implements AuthService {
@@ -286,6 +293,7 @@ class AuthServiceImpl implements AuthService {
   async getProfile(): Promise<ProfileResponse> {
     try {
       const response = await apiClient.get<ProfileResponseDto>("/auth/profile");
+      void persistMobileMapsConfigFromProfile(response);
       return response as ProfileResponse;
     } catch (error) {
       const apiError = error as ApiError;
@@ -304,6 +312,7 @@ class AuthServiceImpl implements AuthService {
         "/auth/profile",
         body
       );
+      void persistMobileMapsConfigFromProfile(response);
       return response as ProfileResponse;
     } catch (error) {
       const apiError = error as ApiError;
@@ -453,6 +462,50 @@ class AuthServiceImpl implements AuthService {
       throw {
         message:
           apiError.message ?? "Failed to switch profile",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async listSessions(): Promise<AuthSessionsResponse> {
+    try {
+      return await apiClient.get<AuthSessionsResponse>("/auth/sessions");
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message: apiError.message ?? "Failed to load sessions",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async revokeSession(sessionId: string): Promise<RevokeSessionResponse> {
+    try {
+      return await apiClient.delete<RevokeSessionResponse>(
+        `/auth/sessions/${encodeURIComponent(sessionId)}`
+      );
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message: apiError.message ?? "Failed to end session",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async revokeOtherSessions(): Promise<RevokeOthersResponse> {
+    try {
+      return await apiClient.post<RevokeOthersResponse>(
+        "/auth/sessions/revoke-others",
+        {}
+      );
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message: apiError.message ?? "Failed to end other sessions",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

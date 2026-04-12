@@ -46,6 +46,8 @@ export interface UserListItemDto {
   role?: UserRole;
   childName?: string | null;
   lastOnline?: string | Date | null;
+  /** From GET /users — distinct push client platforms when present */
+  platforms?: string[];
 }
 
 /** Alias for parent list (same shape as UserListItemDto) */
@@ -57,6 +59,18 @@ export interface CurrentProfile {
   role: UserRole;
   organizationId: string | null;
   siteId: string | null;
+}
+
+/** Org-level map keys from backend (portal-editable). */
+export interface MobileMapsConfigDto {
+  googleMapsAndroidApiKey?: string | null;
+  googleMapsIosApiKey?: string | null;
+}
+
+/** Resolved media limits from GET /auth/profile */
+export interface MediaUploadLimitsDto {
+  maxVideoDurationSeconds: number;
+  maxUploadSizeMb: number;
 }
 
 /** Profile as returned by GET /auth/profile */
@@ -79,6 +93,8 @@ export interface ProfileResponseDto {
   classrooms?: import('./messaging.types').ClassroomResponseDto[];
   /** Active profile from JWT; use currentProfile.id to match with GET /auth/profiles items. */
   currentProfile?: CurrentProfile;
+  mobileMapsConfig?: MobileMapsConfigDto;
+  mediaUploadLimits?: MediaUploadLimitsDto;
 }
 
 /** Body for PUT /auth/profile (partial update; only send changed fields) */
@@ -107,6 +123,29 @@ export interface RefreshTokenResponse {
   access_token: string;
   refresh_token: string;
   message: string;
+}
+
+export interface AuthSessionItem {
+  id: string;
+  createdAt: string;
+  lastActiveAt: string;
+  userAgent: string | null;
+  clientLabel: string | null;
+  isCurrent: boolean;
+}
+
+export interface AuthSessionsResponse {
+  sessions: AuthSessionItem[];
+}
+
+export interface RevokeSessionResponse {
+  message: string;
+  wasCurrent: boolean;
+}
+
+export interface RevokeOthersResponse {
+  message: string;
+  revokedCount: number;
 }
 
 export interface ChangePasswordRequest {

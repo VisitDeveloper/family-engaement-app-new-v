@@ -616,6 +616,26 @@ export default function SettingsScreen() {
             </ThemedText>
             <AntDesign name="right" size={16} color={theme.text} />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.push("/sessions")}
+            style={[
+              styles.dataSecurityLink,
+              { borderColor: theme.border },
+            ]}
+          >
+            <ThemedText
+              type="subText"
+              style={{
+                color: theme.text,
+                fontWeight: "bold",
+                paddingHorizontal: 10,
+              }}
+            >
+              {t("settings.activeSessions")}
+            </ThemedText>
+            <AntDesign name="right" size={16} color={theme.text} />
+          </TouchableOpacity>
         </View>
 
         {/* accont manager  */}

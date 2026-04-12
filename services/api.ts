@@ -151,6 +151,7 @@ class ApiClient {
         headers: {
           'Content-Type': 'application/json',
           'Accept-Language': acceptLanguage,
+          'X-Client-Label': 'native',
         },
         body: JSON.stringify({
           refresh_token: refreshToken,
@@ -241,6 +242,7 @@ class ApiClient {
     // Default: en, but if language getter is set, it uses that
     const acceptLanguage = this.getLanguage ? this.getLanguage() : 'en';
     headers.set('Accept-Language', acceptLanguage);
+    headers.set('X-Client-Label', 'native');
 
     const url = `${this.baseURL}${endpoint}`;
 
