@@ -73,6 +73,8 @@ export default function ChatScreen() {
     const recorderModeRef = useRef<RecorderMode>("idle");
     const micPressingRef = useRef(false);
     const gestureOutcomeRef = useRef<"none" | "locked" | "cancelled">("none");
+    /** If user cancels before `Recording.createAsync` finishes, drop the recording when it appears. */
+    const discardRecordingAfterPrepareRef = useRef(false);
     const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
     const [audioPositions, setAudioPositions] = useState<Record<string, number>>({});
     const [audioDurations, setAudioDurations] = useState<Record<string, number>>({});
@@ -102,12 +104,18 @@ export default function ChatScreen() {
     const isRecorderLocked = recorderMode === "locked";
     const isRecorderPreview = recorderMode === "preview";
     const WAVEFORM_BAR_COUNT = 28;
-    const LOCK_THRESHOLD = 70;
-    const CANCEL_THRESHOLD = 90;
+    /** Distance (px) from touch start; kept moderate so slow drags still count. */
+    const LOCK_THRESHOLD = 32;
+    const CANCEL_THRESHOLD = 42;
 
     useEffect(() => {
         recorderModeRef.current = recorderMode;
     }, [recorderMode]);
+
+    const setRecorderModeImmediate = useCallback((mode: RecorderMode) => {
+        recorderModeRef.current = mode;
+        setRecorderMode(mode);
+    }, []);
 
     // Select data from store instead of calling functions
     const conversations = useStore((state: any) => state.conversations);
@@ -682,14 +690,18 @@ export default function ChatScreen() {
         setPreviewPositionMs(0);
         setPreviewDurationMs(0);
         gestureOutcomeRef.current = "none";
-        setRecorderMode("idle");
-    }, [cleanupPreviewSound]);
+        setRecorderModeImmediate("idle");
+    }, [cleanupPreviewSound, setRecorderModeImmediate]);
 
     const startRecording = useCallback(async () => {
-        if (!conversationId || uploadingFile || sending || isRecording) return;
+        if (!conversationId || uploadingFile || sending) return;
         if (isParentInGroup) return;
+        if (recordingRef.current) return;
         const ok = await requestRecordingPermission();
-        if (!ok) return;
+        if (!ok) {
+            await resetRecorderUi();
+            return;
+        }
 
         try {
             await cleanupPreviewSound();
@@ -716,6 +728,17 @@ export default function ChatScreen() {
             recordingRef.current = recording;
             setRecordingDurationMs(0);
             setRecordingWaveform([]);
+            if (discardRecordingAfterPrepareRef.current) {
+                discardRecordingAfterPrepareRef.current = false;
+                try {
+                    await recording.stopAndUnloadAsync();
+                } catch {
+                    // noop
+                }
+                recordingRef.current = null;
+                await resetRecorderUi();
+                return;
+            }
             if (gestureOutcomeRef.current === "cancelled") {
                 await recording.stopAndUnloadAsync();
                 recordingRef.current = null;
@@ -723,21 +746,24 @@ export default function ChatScreen() {
                 return;
             }
             if (gestureOutcomeRef.current === "locked") {
-                setRecorderMode("locked");
+                if (!micPressingRef.current) {
+                    setRecorderModeImmediate("locked");
+                }
             } else {
-                setRecorderMode("recording");
+                setRecorderModeImmediate("recording");
             }
         } catch (error: any) {
             console.error("Failed to start recording:", error);
             feedback.toast.error("Error", error?.message || "Could not start recording");
+            await resetRecorderUi();
         }
-    }, [conversationId, uploadingFile, sending, isRecording, isParentInGroup, requestRecordingPermission, cleanupPreviewSound, WAVEFORM_BAR_COUNT, resetRecorderUi]);
+    }, [conversationId, uploadingFile, sending, isParentInGroup, requestRecordingPermission, cleanupPreviewSound, WAVEFORM_BAR_COUNT, resetRecorderUi, setRecorderModeImmediate]);
 
     const stopRecordingToPreview = useCallback(async () => {
         const recording = recordingRef.current;
         if (!recording) return;
         try {
-            setRecorderMode("preview");
+            setRecorderModeImmediate("preview");
             recordingRef.current = null;
             const status = await recording.getStatusAsync();
             const durationMillis = status.durationMillis ?? recordingDurationMs;
@@ -764,10 +790,11 @@ export default function ChatScreen() {
             await resetRecorderUi();
             feedback.toast.error("Error", error?.message || "Failed to process voice message");
         }
-    }, [recordingDurationMs, resetRecorderUi, t]);
+    }, [recordingDurationMs, resetRecorderUi, t, setRecorderModeImmediate]);
 
     const cancelRecording = useCallback(async () => {
         const recording = recordingRef.current;
+        const hadRecording = !!recording;
         try {
             if (recording) {
                 const status = await recording.getStatusAsync();
@@ -779,6 +806,9 @@ export default function ChatScreen() {
             // noop
         } finally {
             recordingRef.current = null;
+            if (!hadRecording) {
+                discardRecordingAfterPrepareRef.current = true;
+            }
             await resetRecorderUi();
         }
     }, [resetRecorderUi]);
@@ -786,15 +816,15 @@ export default function ChatScreen() {
     const sendPreviewRecording = useCallback(async () => {
         if (!previewAudio || !conversationId) return;
         try {
-            setRecorderMode("sending");
+            setRecorderModeImmediate("sending");
             const ts = Date.now();
             await uploadAndSendFile(previewAudio.uri, "audio", "audio/m4a", `voice-${ts}.m4a`, previewAudio.durationSeconds);
             await resetRecorderUi();
         } catch (error: any) {
-            setRecorderMode("preview");
+            setRecorderModeImmediate("preview");
             feedback.toast.error("Error", error?.message || "Failed to send voice message");
         }
-    }, [previewAudio, conversationId, uploadAndSendFile, resetRecorderUi]);
+    }, [previewAudio, conversationId, uploadAndSendFile, resetRecorderUi, setRecorderModeImmediate]);
 
     const togglePreviewPlayback = useCallback(async () => {
         if (!previewAudio?.uri) return;
@@ -835,35 +865,80 @@ export default function ChatScreen() {
         }
     }, [previewAudio, previewDurationMs]);
 
-    const micPanResponder = useMemo(() => PanResponder.create({
-        onMoveShouldSetPanResponder: () => micPressingRef.current && !isRecorderLocked,
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderMove: (_, gestureState) => {
-            if (isRecorderLocked) return;
-            if (gestureState.dy < -LOCK_THRESHOLD) {
-                gestureOutcomeRef.current = "locked";
-                if (recorderModeRef.current === "recording") {
-                    setRecorderMode("locked");
-                }
-                return;
-            }
-            if (gestureState.dx < -CANCEL_THRESHOLD) {
-                gestureOutcomeRef.current = "cancelled";
-                if (recorderModeRef.current === "recording" || recorderModeRef.current === "locked") {
-                    void cancelRecording();
-                }
-            }
-        },
-        onPanResponderRelease: () => {
-            micPressingRef.current = false;
-            if (gestureOutcomeRef.current === "none" && recorderModeRef.current === "recording") {
-                void stopRecordingToPreview();
-            }
-        },
-        onPanResponderTerminate: () => {
-            micPressingRef.current = false;
-        },
-    }), [isRecorderLocked, LOCK_THRESHOLD, CANCEL_THRESHOLD, cancelRecording, stopRecordingToPreview]);
+    const micPanResponder = useMemo(
+        () =>
+            PanResponder.create({
+                onStartShouldSetPanResponder: () => !(sending || uploadingFile || isRecorderPreview),
+                onPanResponderTerminationRequest: () => false,
+                onPanResponderGrant: () => {
+                    if (sending || uploadingFile || isRecorderPreview) return;
+                    micPressingRef.current = true;
+                    gestureOutcomeRef.current = "none";
+                    discardRecordingAfterPrepareRef.current = false;
+                    setRecorderModeImmediate("recording");
+                    void startRecording();
+                },
+                onPanResponderMove: (_, gestureState) => {
+                    if (gestureOutcomeRef.current === "locked") return;
+                    if (gestureState.dy < -LOCK_THRESHOLD) {
+                        gestureOutcomeRef.current = "locked";
+                        return;
+                    }
+                    if (gestureState.dx < -CANCEL_THRESHOLD) {
+                        gestureOutcomeRef.current = "cancelled";
+                        void cancelRecording();
+                    }
+                },
+                onPanResponderRelease: () => {
+                    micPressingRef.current = false;
+                    if (gestureOutcomeRef.current === "locked") {
+                        setRecorderModeImmediate("locked");
+                        return;
+                    }
+                    if (gestureOutcomeRef.current === "cancelled") {
+                        return;
+                    }
+                    if (recorderModeRef.current === "recording") {
+                        if (recordingRef.current) {
+                            void stopRecordingToPreview();
+                        } else {
+                            discardRecordingAfterPrepareRef.current = true;
+                            void resetRecorderUi();
+                        }
+                    }
+                },
+                onPanResponderTerminate: () => {
+                    micPressingRef.current = false;
+                    if (gestureOutcomeRef.current === "locked") {
+                        setRecorderModeImmediate("locked");
+                        return;
+                    }
+                    if (gestureOutcomeRef.current === "cancelled") {
+                        return;
+                    }
+                    if (recorderModeRef.current === "recording") {
+                        if (recordingRef.current) {
+                            void stopRecordingToPreview();
+                        } else {
+                            discardRecordingAfterPrepareRef.current = true;
+                            void resetRecorderUi();
+                        }
+                    }
+                },
+            }),
+        [
+            sending,
+            uploadingFile,
+            isRecorderPreview,
+            startRecording,
+            setRecorderModeImmediate,
+            LOCK_THRESHOLD,
+            CANCEL_THRESHOLD,
+            cancelRecording,
+            stopRecordingToPreview,
+            resetRecorderUi,
+        ]
+    );
 
     const handleFilePress = (url: string) => {
         if (url) Linking.openURL(url);
@@ -1714,28 +1789,23 @@ export default function ChatScreen() {
                     </>
                 ) : (
                     <>
-                        <TouchableOpacity
-                            style={[styles.micButton, isRecording && { backgroundColor: theme.tint + "1f", borderColor: theme.tint + "66" }]}
-                            onPressIn={() => {
-                                micPressingRef.current = true;
-                                gestureOutcomeRef.current = "none";
-                                void startRecording();
-                            }}
-                            onPressOut={() => {
-                                micPressingRef.current = false;
-                                if (gestureOutcomeRef.current === "none" && recorderModeRef.current === "recording") {
-                                    void stopRecordingToPreview();
-                                }
-                            }}
-                            disabled={sending || uploadingFile || isRecorderPreview}
+                        <View
+                            style={[
+                                styles.micButton,
+                                isRecording && { backgroundColor: theme.tint + "1f", borderColor: theme.tint + "66" },
+                                (sending || uploadingFile || isRecorderPreview) && { opacity: 0.45 },
+                            ]}
+                            pointerEvents={sending || uploadingFile || isRecorderPreview ? "none" : "auto"}
+                            accessibilityRole="button"
                             accessibilityLabel={isRecording ? "Stop and send voice message" : "Record voice message"}
+                            accessibilityState={{ disabled: sending || uploadingFile || isRecorderPreview }}
                             {...micPanResponder.panHandlers}
                         >
                             <VoiceIcon
                                 color={isRecording ? theme.tint : (theme.text || "rgba(18, 18, 18, 1)")}
                                 size={20}
                             />
-                        </TouchableOpacity>
+                        </View>
                         <TouchableOpacity
                             style={[styles.sendButton, (sending || uploadingFile || !input.trim() || isRecording) && { opacity: 0.5 }]}
                             onPress={handleSendMessage}
