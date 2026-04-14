@@ -16,6 +16,12 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Image, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
 
+type SelectedUploadFile = {
+  uri: string;
+  name: string;
+  mimeType?: string;
+};
+
 const RESOURCE_TYPES: { value: ResourceType; labelKey: string }[] = [
   { value: "book", labelKey: "resource.categoryBook" },
   { value: "activity", labelKey: "resource.categoryActivity" },
@@ -34,8 +40,7 @@ export default function NewResourceScreen() {
   const [category, setCategory] = useState("");
   const [ageRange, setAgeRange] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] =
-    useState<DocumentPicker.DocumentPickerResult | null>(null);
+  const [selectedFile, setSelectedFile] = useState<SelectedUploadFile | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const pickImage = async () => {
@@ -67,11 +72,59 @@ export default function NewResourceScreen() {
         copyToCacheDirectory: true,
       });
       if (!result.canceled && result.assets[0]) {
-        setSelectedFile(result);
+        const file = result.assets[0];
+        setSelectedFile({
+          uri: file.uri,
+          name: file.name ?? "file",
+          mimeType: file.mimeType ?? undefined,
+        });
       }
     } catch (error) {
       console.error("Error picking document:", error);
       feedback.toast.error(t("common.error"), t("resource.failedPickDocument"));
+    }
+  };
+
+  const pickFileFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        feedback.toast.info(t("resource.permissionRequired"), t("resource.needCameraRollPermission"));
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const fallbackName = asset.uri.split("/").pop() || "gallery-file";
+        setSelectedFile({
+          uri: asset.uri,
+          name: asset.fileName ?? fallbackName,
+          mimeType: asset.mimeType ?? undefined,
+        });
+      }
+    } catch (error) {
+      console.error("Error picking file from gallery:", error);
+      feedback.toast.error(t("common.error"), t("resource.failedPickDocument"));
+    }
+  };
+
+  const handlePickFile = async () => {
+    const selectedIndex = await feedback.actionSheet({
+      title: t("resource.fileSourceTitle"),
+      options: [
+        { label: t("resource.chooseFromGallery") },
+        { label: t("resource.chooseFromFiles") },
+      ],
+    });
+    if (selectedIndex === 0) {
+      await pickFileFromGallery();
+      return;
+    }
+    if (selectedIndex === 1) {
+      await pickDocument();
     }
   };
 
@@ -159,12 +212,11 @@ export default function NewResourceScreen() {
         imageUrl = uploadResponse.url;
       }
 
-      if (selectedFile && !selectedFile.canceled && selectedFile.assets[0]) {
-        const file = selectedFile.assets[0];
+      if (selectedFile) {
         const fileFormData = new FormData();
         fileFormData.append("file", {
           uri: file.uri,
-          name: file.name || "file",
+          name: file.name,
           type: file.mimeType || "application/octet-stream",
         } as any);
         const uploadResponse = await messagingService.uploadFile(fileFormData);
@@ -324,18 +376,18 @@ export default function NewResourceScreen() {
             {t("resource.formContentFile")}
           </ThemedText>
           <TouchableOpacity
-            onPress={pickDocument}
+            onPress={handlePickFile}
             disabled={submitting}
             style={[styles.uploadButtonRow, { borderColor: theme.border, backgroundColor: theme.panel }]}
           >
             <FileIcon size={20} color={theme.tint} />
             <ThemedText style={{ color: theme.text, marginLeft: 8, flex: 1 }} numberOfLines={1}>
-              {selectedFile && !selectedFile.canceled && selectedFile.assets[0]
-                ? selectedFile.assets[0].name
+              {selectedFile
+                ? selectedFile.name
                 : t("resource.tapToAddFile")}
             </ThemedText>
           </TouchableOpacity>
-          {selectedFile && !selectedFile.canceled && selectedFile.assets[0] && (
+          {selectedFile && (
             <TouchableOpacity
               onPress={() => setSelectedFile(null)}
               style={{ marginTop: 6 }}

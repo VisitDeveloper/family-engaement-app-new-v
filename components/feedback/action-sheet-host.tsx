@@ -73,7 +73,7 @@ export function ActionSheetHost() {
       }}
     >
       <BottomSheetView style={styles.sheet}>
-        <View style={[styles.accentLine, { backgroundColor: theme.tint }]} />
+        {/* <View style={[styles.accentLine, { backgroundColor: theme.tint }]} /> */}
 
         {sheetTitle ? (
           <Text style={[styles.title, { color: theme.text }]}>{sheetTitle}</Text>
@@ -202,11 +202,11 @@ const styles = StyleSheet.create({
   optionGroupElev:
     Platform.OS === "ios"
       ? {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.07,
-          shadowRadius: 12,
-        }
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.07,
+        shadowRadius: 12,
+      }
       : { elevation: 3 },
   row: {
     flexDirection: "row",
