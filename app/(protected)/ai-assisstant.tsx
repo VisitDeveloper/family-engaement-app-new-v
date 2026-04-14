@@ -187,7 +187,7 @@ const TeachingAssistantScreen = () => {
                 return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: (ImagePicker.MediaType?.Image ?? "images"),
                 allowsEditing: true,
                 quality: 0.8,
             });
@@ -207,7 +207,7 @@ const TeachingAssistantScreen = () => {
                 return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+                mediaTypes: (ImagePicker.MediaType?.Video ?? "videos"),
                 allowsEditing: false,
                 quality: 1,
             });

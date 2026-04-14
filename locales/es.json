@@ -621,6 +621,15 @@
     "autoDetect": "Detectar automáticamente",
     "turnOff": "Desactivar la traducción"
   },
+  "chat": {
+    "slideToCancel": "Desliza a la izquierda para cancelar",
+    "slideUpToLock": "Desliza hacia arriba para bloquear",
+    "lockedRecording": "Grabación bloqueada",
+    "previewVoice": "Vista previa de voz",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "voiceTooShort": "El mensaje de voz es demasiado corto."
+  },
   "ai": {
     "title": "Asistente docente de AI",
     "buttonLabel": "Asistente AI",

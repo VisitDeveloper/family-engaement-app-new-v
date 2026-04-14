@@ -20,17 +20,29 @@ import { useStore } from "@/store";
 import { getDisplayName } from "@/utils/user-name";
 import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { Ionicons } from "@expo/vector-icons";
-import { Audio, ResizeMode, Video } from "expo-av";
+import { AVPlaybackStatus, Audio, ResizeMode, Video } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Clipboard, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Clipboard, DeviceEventEmitter, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, PanResponder, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import InCallManager from "react-native-incall-manager";
 
 export default function ChatScreen() {
+    type RecorderMode = "idle" | "recording" | "locked" | "preview" | "sending";
+    const resolvePickerMediaType = (kind: "image" | "video") => {
+        const pickerAny = ImagePicker as any;
+        if (pickerAny.MediaType) {
+            return kind === "image" ? pickerAny.MediaType.Image : pickerAny.MediaType.Video;
+        }
+        if (pickerAny.MediaTypeOptions) {
+            return kind === "image" ? pickerAny.MediaTypeOptions.Images : pickerAny.MediaTypeOptions.Videos;
+        }
+        return kind === "image" ? "images" : "videos";
+    };
     const { t, i18n } = useTranslation();
     const [input, setInput] = useState("");
     const [sending, setSending] = useState(false);
@@ -49,13 +61,26 @@ export default function ChatScreen() {
     const [showReactionPicker, setShowReactionPicker] = useState(false);
     const messageViewRefs = useRef<Record<string, View | null>>({});
     const videoRef = useRef<Video | null>(null);
-    const [isRecording, setIsRecording] = useState(false);
+    const [recorderMode, setRecorderMode] = useState<RecorderMode>("idle");
     const recordingRef = useRef<Audio.Recording | null>(null);
+    const [recordingDurationMs, setRecordingDurationMs] = useState(0);
+    const [recordingWaveform, setRecordingWaveform] = useState<number[]>([]);
+    const [previewAudio, setPreviewAudio] = useState<{ uri: string; durationSeconds?: number } | null>(null);
+    const [previewIsPlaying, setPreviewIsPlaying] = useState(false);
+    const [previewPositionMs, setPreviewPositionMs] = useState(0);
+    const [previewDurationMs, setPreviewDurationMs] = useState(0);
+    const previewSoundRef = useRef<Audio.Sound | null>(null);
+    const recorderModeRef = useRef<RecorderMode>("idle");
+    const micPressingRef = useRef(false);
+    const gestureOutcomeRef = useRef<"none" | "locked" | "cancelled">("none");
     const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
     const [audioPositions, setAudioPositions] = useState<Record<string, number>>({});
     const [audioDurations, setAudioDurations] = useState<Record<string, number>>({});
     const soundRef = useRef<Audio.Sound | null>(null);
     const positionUpdateInterval = useRef<NodeJS.Timeout | null>(null);
+    const [audioRouteSessionActive, setAudioRouteSessionActive] = useState(false);
+    const [isProximityNear, setIsProximityNear] = useState(false);
+    const [isHeadsetPlugged, setIsHeadsetPlugged] = useState(false);
     const [translateMessages, setTranslateMessages] = useState(false);
     const [translateApplyKey, setTranslateApplyKey] = useState(0);
     const [translateSource, setTranslateSource] = useState<"auto" | string>("auto");
@@ -73,6 +98,16 @@ export default function ChatScreen() {
     const conversationId = chatID;
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const isRecording = recorderMode === "recording" || recorderMode === "locked";
+    const isRecorderLocked = recorderMode === "locked";
+    const isRecorderPreview = recorderMode === "preview";
+    const WAVEFORM_BAR_COUNT = 28;
+    const LOCK_THRESHOLD = 70;
+    const CANCEL_THRESHOLD = 90;
+
+    useEffect(() => {
+        recorderModeRef.current = recorderMode;
+    }, [recorderMode]);
 
     // Select data from store instead of calling functions
     const conversations = useStore((state: any) => state.conversations);
@@ -195,8 +230,40 @@ export default function ChatScreen() {
             borderRadius: 8
         },
         input: { flex: 1, borderWidth: 1, borderColor: t.border, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, minHeight: 40, maxHeight: 100, color: t.text, backgroundColor: t.panel || t.bg, fontSize: 16 },
-        sendButton: { backgroundColor: t.tint, padding: 10, borderRadius: 8, marginLeft: 5 },
-        micButton: { backgroundColor: "transparent", padding: 10, borderRadius: 8, marginLeft: 5 },
+        sendButton: { backgroundColor: t.tint, padding: 10, borderRadius: 8, marginLeft: 5, alignItems: "center", justifyContent: "center", minWidth: 40, minHeight: 40 },
+        micButton: { backgroundColor: t.panel || t.bg, padding: 10, borderRadius: 8, marginLeft: 5, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: t.border, minWidth: 40, minHeight: 40 },
+        recordingContainer: {
+            flex: 1,
+            minHeight: 42,
+            borderWidth: 1,
+            borderColor: t.border,
+            borderRadius: 10,
+            paddingHorizontal: 10,
+            paddingVertical: 8,
+            backgroundColor: t.panel || t.bg,
+            justifyContent: "center",
+            gap: 6,
+        },
+        recordingHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
+        recordingDot: { width: 8, height: 8, borderRadius: 999, backgroundColor: "#ff3b30" },
+        recordingTimer: { color: t.text, fontWeight: "700", fontSize: 13 },
+        recordingHint: { color: t.subText || t.text, fontSize: 11 },
+        waveformRow: {
+            flexDirection: "row",
+            alignItems: "flex-end",
+            gap: 2,
+            minHeight: 18,
+            flex: 1,
+            maxHeight: 20,
+            overflow: "hidden",
+            paddingVertical: 1,
+        },
+        waveformBar: { width: 4, borderRadius: 8, backgroundColor: t.tint, minHeight: 4 },
+        recorderLockButton: { backgroundColor: t.panel || t.bg, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: t.border, alignItems: "center", justifyContent: "center", marginLeft: 5, minWidth: 40, minHeight: 40 },
+        previewActions: { flexDirection: "row", gap: 8, marginLeft: 8 },
+        previewActionButton: { backgroundColor: t.panel || t.bg, borderWidth: 1, borderColor: t.border, alignItems: "center", justifyContent: "center", padding: 10, borderRadius: 8, minWidth: 40, minHeight: 40 },
+        previewDeleteButton: { borderColor: "#ff3b3055", backgroundColor: "#ff3b3010" },
+        previewDeleteLeftButton: { marginRight: 8 },
         loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
         fileContainer: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 5, minWidth: 200, backgroundColor: "rgba(255, 255, 255, 0.1)", padding: 10, borderRadius: 8 },
         fileName: { color: t.text, fontSize: 14 },
@@ -375,7 +442,7 @@ export default function ChatScreen() {
             }
 
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: resolvePickerMediaType("image"),
                 allowsEditing: true,
                 quality: 0.8,
             });
@@ -398,7 +465,7 @@ export default function ChatScreen() {
             }
 
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+                mediaTypes: resolvePickerMediaType("video"),
                 allowsEditing: false,
                 quality: 1,
             });
@@ -547,16 +614,31 @@ export default function ChatScreen() {
         setShowAnnouncementSheet(false);
     };
 
-    const handleSelectMedia = () => {
-        feedback.alert(
-            "Select Media",
-            "Choose an option",
-            [
-                { text: t("buttons.image"), onPress: pickImage },
-                { text: t("buttons.video"), onPress: pickVideo },
-                { text: t("common.cancel"), style: "cancel" },
-            ]
-        );
+    const handleSelectMedia = async () => {
+        const selectedIndex = await feedback.actionSheet({
+            title: "Select Media",
+            options: [
+                { label: t("buttons.image") },
+                { label: t("buttons.video") },
+            ],
+        });
+
+        if (selectedIndex === 0) {
+            await pickImage();
+            return;
+        }
+
+        if (selectedIndex === 1) {
+            await pickVideo();
+        }
+    };
+
+    const handleSelectFiles = () => {
+        setShowAttachingMenu(false);
+        const delay = Platform.OS === "ios" ? 600 : 400;
+        setTimeout(() => {
+            void pickDocument();
+        }, delay);
     };
 
     const requestRecordingPermission = useCallback(async (): Promise<boolean> => {
@@ -579,76 +661,232 @@ export default function ChatScreen() {
         return true;
     }, []);
 
+    const cleanupPreviewSound = useCallback(async () => {
+        if (!previewSoundRef.current) return;
+        try {
+            await previewSoundRef.current.unloadAsync();
+        } catch {
+            // noop
+        } finally {
+            previewSoundRef.current = null;
+            setPreviewIsPlaying(false);
+            setPreviewPositionMs(0);
+        }
+    }, []);
+
+    const resetRecorderUi = useCallback(async () => {
+        await cleanupPreviewSound();
+        setRecordingDurationMs(0);
+        setRecordingWaveform([]);
+        setPreviewAudio(null);
+        setPreviewPositionMs(0);
+        setPreviewDurationMs(0);
+        gestureOutcomeRef.current = "none";
+        setRecorderMode("idle");
+    }, [cleanupPreviewSound]);
+
     const startRecording = useCallback(async () => {
-        if (!conversationId || uploadingFile || sending) return;
+        if (!conversationId || uploadingFile || sending || isRecording) return;
         if (isParentInGroup) return;
         const ok = await requestRecordingPermission();
         if (!ok) return;
 
         try {
-            const { recording } = await Audio.Recording.createAsync(
-                Audio.RecordingOptionsPresets.HIGH_QUALITY
-            );
+            await cleanupPreviewSound();
+            const options = {
+                ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+                ios: {
+                    ...Audio.RecordingOptionsPresets.HIGH_QUALITY.ios,
+                    isMeteringEnabled: true,
+                },
+                android: {
+                    ...Audio.RecordingOptionsPresets.HIGH_QUALITY.android,
+                    isMeteringEnabled: true,
+                },
+            };
+            const { recording } = await Audio.Recording.createAsync(options as any);
+            recording.setProgressUpdateInterval(120);
+            recording.setOnRecordingStatusUpdate((status) => {
+                if (!status.isRecording) return;
+                setRecordingDurationMs(status.durationMillis ?? 0);
+                const metering = typeof status.metering === "number" ? status.metering : -160;
+                const normalized = Math.max(0.08, Math.min(1, (metering + 160) / 160));
+                setRecordingWaveform((prev) => [...prev.slice(-(WAVEFORM_BAR_COUNT - 1)), normalized]);
+            });
             recordingRef.current = recording;
-            setIsRecording(true);
+            setRecordingDurationMs(0);
+            setRecordingWaveform([]);
+            if (gestureOutcomeRef.current === "cancelled") {
+                await recording.stopAndUnloadAsync();
+                recordingRef.current = null;
+                await resetRecorderUi();
+                return;
+            }
+            if (gestureOutcomeRef.current === "locked") {
+                setRecorderMode("locked");
+            } else {
+                setRecorderMode("recording");
+            }
         } catch (error: any) {
-            console.error('Failed to start recording:', error);
-            feedback.toast.error('Error', error?.message || 'Could not start recording');
+            console.error("Failed to start recording:", error);
+            feedback.toast.error("Error", error?.message || "Could not start recording");
         }
-    }, [conversationId, uploadingFile, sending, isParentInGroup, requestRecordingPermission]);
+    }, [conversationId, uploadingFile, sending, isRecording, isParentInGroup, requestRecordingPermission, cleanupPreviewSound, WAVEFORM_BAR_COUNT, resetRecorderUi]);
 
-    const stopRecordingAndSend = useCallback(async () => {
+    const stopRecordingToPreview = useCallback(async () => {
         const recording = recordingRef.current;
-        if (!recording || !conversationId) return;
-
+        if (!recording) return;
         try {
-            setIsRecording(false);
+            setRecorderMode("preview");
             recordingRef.current = null;
             const status = await recording.getStatusAsync();
-            const durationMillis = status.durationMillis ?? 0;
+            const durationMillis = status.durationMillis ?? recordingDurationMs;
             if (!status.isDoneRecording) {
                 await recording.stopAndUnloadAsync();
             }
             const uri = recording.getURI();
             if (!uri) {
-                feedback.toast.error('Error', 'Recording file not available');
+                await resetRecorderUi();
+                feedback.toast.error("Error", "Recording file not available");
                 return;
             }
-            const durationSeconds = durationMillis > 0 ? Math.round(durationMillis / 1000) : undefined;
-            const ts = Date.now();
-            const fileName = `voice-${ts}.m4a`;
-            const mimeType = 'audio/m4a';
-
-            await uploadAndSendFile(uri, 'audio', mimeType, fileName, durationSeconds);
+            const durationSeconds = durationMillis > 0 ? Math.round(durationMillis / 1000) : 0;
+            if (durationSeconds < 1) {
+                await resetRecorderUi();
+                feedback.toast.info("Too short", t("chat.voiceTooShort"));
+                return;
+            }
+            setPreviewAudio({ uri, durationSeconds });
+            setPreviewDurationMs(durationMillis);
+            setPreviewPositionMs(0);
         } catch (error: any) {
-            console.error('Failed to stop/send recording:', error);
-            feedback.toast.error('Error', error?.message || 'Failed to send voice message');
+            console.error("Failed to stop recording:", error);
+            await resetRecorderUi();
+            feedback.toast.error("Error", error?.message || "Failed to process voice message");
         }
-    }, [conversationId, uploadAndSendFile]);
+    }, [recordingDurationMs, resetRecorderUi, t]);
 
-    const handleMicPress = useCallback(() => {
-        if (isRecording) {
-            stopRecordingAndSend();
-        } else {
-            startRecording();
+    const cancelRecording = useCallback(async () => {
+        const recording = recordingRef.current;
+        try {
+            if (recording) {
+                const status = await recording.getStatusAsync();
+                if (!status.isDoneRecording) {
+                    await recording.stopAndUnloadAsync();
+                }
+            }
+        } catch {
+            // noop
+        } finally {
+            recordingRef.current = null;
+            await resetRecorderUi();
         }
-    }, [isRecording, startRecording, stopRecordingAndSend]);
+    }, [resetRecorderUi]);
 
-    const handleSelectFiles = () => {
-        setShowAttachingMenu(false);
-        const delay = Platform.OS === "ios" ? 600 : 400;
-        setTimeout(() => {
-            pickDocument();
-        }, delay);
-    };
+    const sendPreviewRecording = useCallback(async () => {
+        if (!previewAudio || !conversationId) return;
+        try {
+            setRecorderMode("sending");
+            const ts = Date.now();
+            await uploadAndSendFile(previewAudio.uri, "audio", "audio/m4a", `voice-${ts}.m4a`, previewAudio.durationSeconds);
+            await resetRecorderUi();
+        } catch (error: any) {
+            setRecorderMode("preview");
+            feedback.toast.error("Error", error?.message || "Failed to send voice message");
+        }
+    }, [previewAudio, conversationId, uploadAndSendFile, resetRecorderUi]);
+
+    const togglePreviewPlayback = useCallback(async () => {
+        if (!previewAudio?.uri) return;
+        try {
+            if (!previewSoundRef.current) {
+                const { sound } = await Audio.Sound.createAsync({ uri: previewAudio.uri }, { shouldPlay: true });
+                previewSoundRef.current = sound;
+                setPreviewIsPlaying(true);
+                sound.setOnPlaybackStatusUpdate((status) => {
+                    if (!status.isLoaded) return;
+                    setPreviewPositionMs(status.positionMillis ?? 0);
+                    setPreviewDurationMs(status.durationMillis ?? previewDurationMs);
+                    if (status.didJustFinish) {
+                        setPreviewIsPlaying(false);
+                        setPreviewPositionMs(0);
+                    }
+                });
+                return;
+            }
+            const status = await previewSoundRef.current.getStatusAsync();
+            if (!status.isLoaded) return;
+            if (status.isPlaying) {
+                await previewSoundRef.current.pauseAsync();
+                setPreviewIsPlaying(false);
+            } else {
+                const isAtEnd =
+                    (status.durationMillis ?? 0) > 0 &&
+                    (status.positionMillis ?? 0) >= (status.durationMillis ?? 0) - 120;
+                if (isAtEnd) {
+                    await previewSoundRef.current.setPositionAsync(0);
+                    setPreviewPositionMs(0);
+                }
+                await previewSoundRef.current.playAsync();
+                setPreviewIsPlaying(true);
+            }
+        } catch {
+            feedback.toast.error("Error", "Failed to preview recording");
+        }
+    }, [previewAudio, previewDurationMs]);
+
+    const micPanResponder = useMemo(() => PanResponder.create({
+        onMoveShouldSetPanResponder: () => micPressingRef.current && !isRecorderLocked,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderMove: (_, gestureState) => {
+            if (isRecorderLocked) return;
+            if (gestureState.dy < -LOCK_THRESHOLD) {
+                gestureOutcomeRef.current = "locked";
+                if (recorderModeRef.current === "recording") {
+                    setRecorderMode("locked");
+                }
+                return;
+            }
+            if (gestureState.dx < -CANCEL_THRESHOLD) {
+                gestureOutcomeRef.current = "cancelled";
+                if (recorderModeRef.current === "recording" || recorderModeRef.current === "locked") {
+                    void cancelRecording();
+                }
+            }
+        },
+        onPanResponderRelease: () => {
+            micPressingRef.current = false;
+            if (gestureOutcomeRef.current === "none" && recorderModeRef.current === "recording") {
+                void stopRecordingToPreview();
+            }
+        },
+        onPanResponderTerminate: () => {
+            micPressingRef.current = false;
+        },
+    }), [isRecorderLocked, LOCK_THRESHOLD, CANCEL_THRESHOLD, cancelRecording, stopRecordingToPreview]);
 
     const handleFilePress = (url: string) => {
         if (url) Linking.openURL(url);
     };
 
     const handleVideoPress = (url: string) => {
+        stopAudioRouteSession();
         setVideoModalUri(url);
     };
+
+    const handleVideoPlaybackStatusUpdate = useCallback(
+        (status: AVPlaybackStatus) => {
+            if (!status.isLoaded) return;
+            if (!status.didJustFinish) return;
+
+            // Rewind to start after finishing so the user can replay.
+            void videoRef.current?.setStatusAsync({
+                shouldPlay: false,
+                positionMillis: 0,
+            });
+        },
+        []
+    );
 
     const handleImagePress = (uri: string) => {
         setFullScreenImageUri(uri);
@@ -827,8 +1065,83 @@ export default function ChatScreen() {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const applyAudioRoute = useCallback(async () => {
+        if (!audioRouteSessionActive) return;
+        try {
+            const shouldUseEarpiece = !isHeadsetPlugged && isProximityNear;
+            await Audio.setAudioModeAsync({
+                allowsRecordingIOS: false,
+                playsInSilentModeIOS: true,
+                staysActiveInBackground: false,
+                shouldDuckAndroid: true,
+                playThroughEarpieceAndroid: shouldUseEarpiece,
+            });
+
+            if (Platform.OS === "ios") {
+                // On iOS, InCallManager speaker-forcing APIs are unreliable/no-op.
+                return;
+            }
+
+            // Enforce route at native layer too (some Android devices ignore Expo route alone).
+            if (shouldUseEarpiece) {
+                InCallManager.setForceSpeakerphoneOn(false);
+                InCallManager.setSpeakerphoneOn(false);
+            } else {
+                InCallManager.setForceSpeakerphoneOn(true);
+                InCallManager.setSpeakerphoneOn(true);
+            }
+        } catch (error) {
+            console.error("Failed to apply audio route:", error);
+        }
+    }, [audioRouteSessionActive, isHeadsetPlugged, isProximityNear]);
+
+    const startAudioRouteSession = useCallback(() => {
+        if (audioRouteSessionActive) return;
+        try {
+            if (Platform.OS === "ios") {
+                setAudioRouteSessionActive(true);
+                return;
+            }
+
+            // Use "video" profile to avoid forced earpiece defaults on some devices.
+            InCallManager.start({ media: "video", auto: false });
+            InCallManager.startProximitySensor();
+            setAudioRouteSessionActive(true);
+        } catch (error) {
+            console.error("Failed to start audio route session:", error);
+        }
+    }, [audioRouteSessionActive]);
+
+    const stopAudioRouteSession = useCallback(() => {
+        if (!audioRouteSessionActive) return;
+        try {
+            if (Platform.OS !== "ios") {
+                InCallManager.stopProximitySensor();
+                InCallManager.stop();
+            }
+            // Expo AV audio mode is global; reset to speaker route after voice playback.
+            void Audio.setAudioModeAsync({
+                allowsRecordingIOS: false,
+                playsInSilentModeIOS: true,
+                staysActiveInBackground: false,
+                shouldDuckAndroid: true,
+                playThroughEarpieceAndroid: false,
+            });
+        } catch (error) {
+            console.error("Failed to stop audio route session:", error);
+        } finally {
+            setAudioRouteSessionActive(false);
+            setIsProximityNear(false);
+        }
+    }, [audioRouteSessionActive]);
+
     const handleAudioPlay = async (audioUrl: string, messageId: string, durationSeconds?: number) => {
         try {
+            if (!audioUrl?.trim()) {
+                feedback.toast.error("Error", "Audio source is not available");
+                return;
+            }
+
             // Stop current audio if playing
             if (soundRef.current) {
                 await soundRef.current.unloadAsync();
@@ -843,8 +1156,20 @@ export default function ChatScreen() {
             if (playingAudioId === messageId) {
                 setPlayingAudioId(null);
                 setAudioPositions(prev => ({ ...prev, [messageId]: 0 }));
+                stopAudioRouteSession();
                 return;
             }
+
+            // Ensure audio session is in playback mode (record mode can break output routing/playback).
+            await Audio.setAudioModeAsync({
+                allowsRecordingIOS: false,
+                playsInSilentModeIOS: true,
+                staysActiveInBackground: false,
+                shouldDuckAndroid: true,
+                playThroughEarpieceAndroid: false,
+            });
+
+            startAudioRouteSession();
 
             // Load and play new audio
             const { sound } = await Audio.Sound.createAsync(
@@ -874,6 +1199,7 @@ export default function ChatScreen() {
                         setAudioPositions(prev => ({ ...prev, [messageId]: 0 }));
                         sound.unloadAsync();
                         soundRef.current = null;
+                        stopAudioRouteSession();
                         if (positionUpdateInterval.current) {
                             clearInterval(positionUpdateInterval.current);
                             positionUpdateInterval.current = null;
@@ -883,9 +1209,33 @@ export default function ChatScreen() {
             });
         } catch (error: any) {
             console.error('Error playing audio:', error);
+            stopAudioRouteSession();
             feedback.toast.error('Error', 'Failed to play audio');
         }
     };
+
+    useEffect(() => {
+        void applyAudioRoute();
+    }, [applyAudioRoute]);
+
+    useEffect(() => {
+        if (Platform.OS !== "android") return;
+
+        const onProximity = (data: { isNear?: boolean }) => {
+            setIsProximityNear(Boolean(data?.isNear));
+        };
+        const onWiredHeadset = (data: { isPlugged?: boolean }) => {
+            setIsHeadsetPlugged(Boolean(data?.isPlugged));
+        };
+
+        const proximitySubscription = DeviceEventEmitter.addListener("Proximity", onProximity);
+        const wiredHeadsetSubscription = DeviceEventEmitter.addListener("WiredHeadset", onWiredHeadset);
+
+        return () => {
+            proximitySubscription.remove();
+            wiredHeadsetSubscription.remove();
+        };
+    }, []);
 
     useEffect(() => {
         return () => {
@@ -893,11 +1243,18 @@ export default function ChatScreen() {
             if (soundRef.current) {
                 soundRef.current.unloadAsync();
             }
+            if (previewSoundRef.current) {
+                previewSoundRef.current.unloadAsync();
+            }
+            if (recordingRef.current) {
+                recordingRef.current.stopAndUnloadAsync().catch(() => { });
+            }
             if (positionUpdateInterval.current) {
                 clearInterval(positionUpdateInterval.current);
             }
+            stopAudioRouteSession();
         };
-    }, []);
+    }, [stopAudioRouteSession]);
 
     useEffect(() => {
         if (prevConversationIdRef.current !== undefined && prevConversationIdRef.current !== conversationId) {
@@ -1241,6 +1598,165 @@ export default function ChatScreen() {
         return -1;
     }, [messages, currentUserId]);
 
+    const recordingDurationLabel = formatAudioDuration(Math.max(1, Math.round(recordingDurationMs / 1000)));
+    const waveformPoints = recordingWaveform.length
+        ? recordingWaveform
+        : Array.from({ length: WAVEFORM_BAR_COUNT }, () => 0.12);
+    const previewProgress = previewDurationMs > 0 ? Math.min(1, previewPositionMs / previewDurationMs) : 0;
+
+    const renderChatComposer = () => {
+        if (isParentInGroup) {
+            return (
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+                    <Text style={{ fontSize: 13, color: theme.subText || theme.text + "99", textAlign: "center" }}>
+                        Only teachers and admins can send messages in this group.
+                    </Text>
+                </View>
+            );
+        }
+
+        if (isRecorderPreview && previewAudio) {
+            return (
+                <>
+                    <TouchableOpacity
+                        style={[styles.previewActionButton, styles.previewDeleteButton, styles.previewDeleteLeftButton]}
+                        onPress={() => void resetRecorderUi()}
+                    >
+                        <Ionicons name="trash-outline" size={20} color={theme.text} />
+                    </TouchableOpacity>
+                    <View style={styles.recordingContainer}>
+                        <View style={styles.recordingHeader}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 54 }}>
+                                <Text style={styles.recordingTimer}>{formatAudioDuration(Math.max(0, Math.round(previewPositionMs / 1000)))}</Text>
+                            </View>
+                            <View style={styles.waveformRow}>
+                                {waveformPoints.map((point, index) => (
+                                    <View
+                                        key={`preview-wf-${index}`}
+                                        style={[
+                                            styles.waveformBar,
+                                            {
+                                                height: 4 + Math.round(point * 14),
+                                                opacity: index / Math.max(1, waveformPoints.length - 1) <= previewProgress ? 1 : 0.3,
+                                            },
+                                        ]}
+                                    />
+                                ))}
+                            </View>
+                        </View>
+                    </View>
+                    <View style={styles.previewActions}>
+                        <TouchableOpacity style={styles.previewActionButton} onPress={togglePreviewPlayback}>
+                            <Ionicons name={previewIsPlaying ? "pause" : "play"} size={18} color={theme.text} />
+                        </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity style={styles.sendButton} onPress={() => void sendPreviewRecording()}>
+                        <SendIcon color="#fff" size={16} />
+                    </TouchableOpacity>
+                </>
+            );
+        }
+
+        return (
+            <>
+                <View style={styles.inputWrapper}>
+                    <TouchableOpacity
+                        style={styles.attachmentButton}
+                        onPress={handleOpenAttachmentMenu}
+                        disabled={sending || isRecording}
+                    >
+                        <Ionicons
+                            name="add"
+                            size={24}
+                            color={theme.text}
+                        />
+                    </TouchableOpacity>
+                    {isRecording ? (
+                        <View style={styles.recordingContainer}>
+                            <View style={styles.recordingHeader}>
+                                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 54 }}>
+                                    <View style={styles.recordingDot} />
+                                    <Text style={styles.recordingTimer}>{recordingDurationLabel}</Text>
+                                </View>
+                                <View style={styles.waveformRow}>
+                                    {waveformPoints.map((point, index) => (
+                                        <View key={`wf-${index}`} style={[styles.waveformBar, { height: 4 + Math.round(point * 16) }]} />
+                                    ))}
+                                </View>
+                            </View>
+                        </View>
+                    ) : (
+                        <TextInput
+                            style={styles.input}
+                            placeholder={t("placeholders.typeMessage")}
+                            placeholderTextColor={theme.subText || theme.text + "80"}
+                            value={input}
+                            onChangeText={setInput}
+                            multiline={true}
+                            blurOnSubmit={false}
+                            editable={!sending && !uploadingFile}
+                            accessibilityLabel="Message input"
+                            accessibilityHint="Type your message here. Press Enter for a new line, use the send button to send."
+                            accessibilityState={{ disabled: sending || uploadingFile }}
+                            textAlignVertical="top"
+                        />
+                    )}
+                </View>
+
+                {isRecorderLocked ? (
+                    <>
+                        <TouchableOpacity style={styles.recorderLockButton} onPress={() => void cancelRecording()}>
+                            <Ionicons name="trash-outline" size={18} color={theme.text} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.sendButton} onPress={() => void stopRecordingToPreview()}>
+                            <SendIcon color="#fff" size={16} />
+                        </TouchableOpacity>
+                    </>
+                ) : (
+                    <>
+                        <TouchableOpacity
+                            style={[styles.micButton, isRecording && { backgroundColor: theme.tint + "1f", borderColor: theme.tint + "66" }]}
+                            onPressIn={() => {
+                                micPressingRef.current = true;
+                                gestureOutcomeRef.current = "none";
+                                void startRecording();
+                            }}
+                            onPressOut={() => {
+                                micPressingRef.current = false;
+                                if (gestureOutcomeRef.current === "none" && recorderModeRef.current === "recording") {
+                                    void stopRecordingToPreview();
+                                }
+                            }}
+                            disabled={sending || uploadingFile || isRecorderPreview}
+                            accessibilityLabel={isRecording ? "Stop and send voice message" : "Record voice message"}
+                            {...micPanResponder.panHandlers}
+                        >
+                            <VoiceIcon
+                                color={isRecording ? theme.tint : (theme.text || "rgba(18, 18, 18, 1)")}
+                                size={20}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.sendButton, (sending || uploadingFile || !input.trim() || isRecording) && { opacity: 0.5 }]}
+                            onPress={handleSendMessage}
+                            disabled={sending || uploadingFile || !input.trim() || isRecording}
+                            accessibilityRole="button"
+                            accessibilityLabel="Send message"
+                            accessibilityHint="Double tap to send your message"
+                            accessibilityState={{ disabled: sending || uploadingFile || !input.trim() || isRecording }}
+                        >
+                            {(sending || uploadingFile) ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <SendIcon color="#fff" size={16} />
+                            )}
+                        </TouchableOpacity>
+                    </>
+                )}
+            </>
+        );
+    };
+
     if (loading && messages.length === 0) {
         return (
             <View style={[styles.container, styles.loadingContainer]}>
@@ -1335,140 +1851,12 @@ export default function ChatScreen() {
                 {Platform.OS === 'android' ? (
                     <KeyboardStickyView offset={{ opened: -Math.max(insets.bottom, 10), closed: 0 }}>
                         <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-                            {isParentInGroup ? (
-                                <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
-                                    <Text style={{ fontSize: 13, color: theme.subText || theme.text + "99", textAlign: "center" }}>
-                                        Only teachers and admins can send messages in this group.
-                                    </Text>
-                                </View>
-                            ) : (
-                                <>
-                                    <View style={styles.inputWrapper}>
-                                        <TouchableOpacity
-                                            style={styles.attachmentButton}
-                                            onPress={handleOpenAttachmentMenu}
-                                            disabled={sending}
-                                        >
-                                            <Ionicons
-                                                name="add"
-                                                size={24}
-                                                color={theme.text}
-                                            />
-                                        </TouchableOpacity>
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="Type a message..."
-                                            placeholderTextColor={theme.subText || theme.text + '80'}
-                                            value={input}
-                                            onChangeText={setInput}
-                                            multiline={true}
-                                            blurOnSubmit={false}
-                                            editable={!sending && !uploadingFile}
-                                            accessibilityLabel="Message input"
-                                            accessibilityHint="Type your message here. Press Enter for a new line, use the send button to send."
-                                            accessibilityState={{ disabled: sending || uploadingFile }}
-                                            textAlignVertical="top"
-                                        />
-                                    </View>
-
-                                    <TouchableOpacity
-                                        style={[styles.micButton, isRecording && { backgroundColor: theme.tint + '40' }]}
-                                        onPress={handleMicPress}
-                                        disabled={sending || uploadingFile}
-                                        accessibilityLabel={isRecording ? 'Stop and send voice message' : 'Record voice message'}
-                                    >
-                                        <VoiceIcon
-                                            color={isRecording ? theme.tint : (theme.text || 'rgba(18, 18, 18, 1)')}
-                                            size={20}
-                                        />
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={[styles.sendButton, (sending || uploadingFile || !input.trim()) && { opacity: 0.5 }]}
-                                        onPress={handleSendMessage}
-                                        disabled={sending || uploadingFile || !input.trim()}
-                                        accessibilityRole="button"
-                                        accessibilityLabel="Send message"
-                                        accessibilityHint="Double tap to send your message"
-                                        accessibilityState={{ disabled: sending || uploadingFile || !input.trim() }}
-                                    >
-                                        {(sending || uploadingFile) ? (
-                                            <ActivityIndicator size="small" color="#fff" />
-                                        ) : (
-                                            <SendIcon color="#fff" size={16} />
-                                        )}
-                                    </TouchableOpacity>
-                                </>
-                            )}
+                            {renderChatComposer()}
                         </View>
                     </KeyboardStickyView>
                 ) : (
                     <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-                        {isParentInGroup ? (
-                            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
-                                <Text style={{ fontSize: 13, color: theme.subText || theme.text + "99", textAlign: "center" }}>
-                                    Only teachers and admins can send messages in this group.
-                                </Text>
-                            </View>
-                        ) : (
-                            <>
-                                <View style={styles.inputWrapper}>
-                                    <TouchableOpacity
-                                        style={styles.attachmentButton}
-                                        onPress={handleOpenAttachmentMenu}
-                                        disabled={sending}
-                                    >
-                                        <Ionicons
-                                            name="add"
-                                            size={24}
-                                            color={theme.text}
-                                        />
-                                    </TouchableOpacity>
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="Type a message..."
-                                        placeholderTextColor={theme.subText || theme.text + '80'}
-                                        value={input}
-                                        onChangeText={setInput}
-                                        multiline={true}
-                                        blurOnSubmit={false}
-                                        editable={!sending && !uploadingFile}
-                                        accessibilityLabel="Message input"
-                                        accessibilityHint="Type your message here. Press Enter for a new line, use the send button to send."
-                                        accessibilityState={{ disabled: sending || uploadingFile }}
-                                        textAlignVertical="top"
-                                    />
-                                </View>
-
-                                <TouchableOpacity
-                                    style={[styles.micButton, isRecording && { backgroundColor: theme.tint + '40' }]}
-                                    onPress={handleMicPress}
-                                    disabled={sending || uploadingFile}
-                                    accessibilityLabel={isRecording ? 'Stop and send voice message' : 'Record voice message'}
-                                >
-                                    <VoiceIcon
-                                        color={isRecording ? theme.tint : (theme.text || 'rgba(18, 18, 18, 1)')}
-                                        size={20}
-                                    />
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.sendButton, (sending || uploadingFile || !input.trim()) && { opacity: 0.5 }]}
-                                    onPress={handleSendMessage}
-                                    disabled={sending || uploadingFile || !input.trim()}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Send message"
-                                    accessibilityHint="Double tap to send your message"
-                                    accessibilityState={{ disabled: sending || uploadingFile || !input.trim() }}
-                                >
-                                    {(sending || uploadingFile) ? (
-                                        <ActivityIndicator size="small" color="#fff" />
-                                    ) : (
-                                        <SendIcon color="#fff" size={16} />
-                                    )}
-                                </TouchableOpacity>
-                            </>
-                        )}
+                        {renderChatComposer()}
                     </View>
                 )}
 
@@ -1730,7 +2118,7 @@ export default function ChatScreen() {
                                 style={{ flex: 1, width: "100%" }}
                                 useNativeControls
                                 resizeMode={ResizeMode.CONTAIN}
-                                onPlaybackStatusUpdate={() => { }}
+                                onPlaybackStatusUpdate={handleVideoPlaybackStatusUpdate}
                                 onError={(e) => {
                                     console.error("Video error:", e);
                                     feedback.toast.error("Error", "Failed to play video");

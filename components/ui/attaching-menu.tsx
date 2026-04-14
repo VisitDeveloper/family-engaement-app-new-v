@@ -8,11 +8,12 @@ interface AttachingMenuProps {
   onClose: () => void;
   onSelectPoll: () => void;
   onSelectMedia: () => void;
-  onSelectFiles: () => void;
+  onSelectFiles?: () => void;
   onSelectAnnouncement?: () => void;
   /** Distance from bottom to show dropdown above input (default ~100) */
   bottomOffset?: number;
   isGroup?: boolean;
+  showFilesOption?: boolean;
 }
 
 export default function AttachingMenu({
@@ -24,6 +25,7 @@ export default function AttachingMenu({
   onSelectAnnouncement,
   bottomOffset = 100,
   isGroup = false,
+  showFilesOption = true,
 }: AttachingMenuProps) {
   const styles = useThemedStyles((t) => ({
     modalOverlay: {
@@ -121,7 +123,7 @@ export default function AttachingMenu({
         onClose();
       },
     },
-    {
+    ...(showFilesOption && onSelectFiles ? [{
       id: "files",
       icon: <FileIcon color={iconColor} size={22} />,
       title: "Files",
@@ -130,7 +132,7 @@ export default function AttachingMenu({
         onSelectFiles();
         onClose();
       },
-    },
+    }] : []),
   ];
 
   const dropdownContent = (

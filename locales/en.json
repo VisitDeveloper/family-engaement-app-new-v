@@ -639,6 +639,15 @@
     "autoDetect": "Auto (detect)",
     "turnOff": "Turn off translation"
   },
+  "chat": {
+    "slideToCancel": "Slide left to cancel",
+    "slideUpToLock": "Slide up to lock",
+    "lockedRecording": "Recording locked",
+    "previewVoice": "Voice preview",
+    "play": "Play",
+    "pause": "Pause",
+    "voiceTooShort": "Voice message is too short."
+  },
   "ai": {
     "title": "AI Teaching Assistant",
     "buttonLabel": "AI Assistant",

@@ -187,7 +187,7 @@ export default function ProfileScreen() {
             if (shouldPushAppLanguageToServer(profileLang, mergedLang)) {
               void authService
                 .updateSettings({ appLanguage: mergedLang })
-                .catch(() => {});
+                .catch(() => { });
             }
           }
         }
@@ -233,7 +233,7 @@ export default function ProfileScreen() {
 
       // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: (ImagePicker.MediaType?.Image ?? "images"),
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,

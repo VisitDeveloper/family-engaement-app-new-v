@@ -56,7 +56,7 @@ export default function EditResourceScreen() {
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: (ImagePicker.MediaType?.Image ?? "images"),
         allowsEditing: true,
         quality: 0.8,
       });
@@ -97,7 +97,7 @@ export default function EditResourceScreen() {
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes: [(ImagePicker.MediaType?.Image ?? "images"), (ImagePicker.MediaType?.Video ?? "videos")],
         quality: 0.8,
       });
       if (!result.canceled && result.assets[0]) {

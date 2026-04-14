@@ -17,6 +17,8 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location to help you select event locations on the map.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to help you select event locations on the map.",
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos and videos so you can attach media.",
+        "NSPhotoLibraryAddUsageDescription": "Allow $(PRODUCT_NAME) to save selected media when needed.",
         "UIBackgroundModes": [
           "remote-notification"
         ]
@@ -90,6 +92,12 @@
         }
       ],
       "expo-build-properties",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos and videos so you can attach media."
+        }
+      ],
       [
         "expo-document-picker",
         {
