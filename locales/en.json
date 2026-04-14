@@ -624,7 +624,9 @@
     "smsSub": "Text message alerts",
     "recipients": "Recipients",
     "recipientsNote": "This alert will be sent to all 5 family members across all classes.",
-    "sendButton": "Send Emergency Alert",
+    "sendButton": "Send Alert",
+    "confirmTitle": "Confirm Emergency Alert",
+    "confirmMessage": "Are you sure you want to send this emergency alert to all recipients?",
     "charCount": "{{count}}/500 characters"
   },
   "translate": {

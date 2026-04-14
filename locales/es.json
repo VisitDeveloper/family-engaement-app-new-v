@@ -606,7 +606,9 @@
     "smsSub": "Mensaje de texto",
     "recipients": "Quién lo recibe",
     "recipientsNote": "Este aviso llegará a los miembros de familia registrados en todas las clases.",
-    "sendButton": "Enviar aviso de emergencia",
+    "sendButton": "Enviar Aviso",
+    "confirmTitle": "Confirmar aviso de emergencia",
+    "confirmMessage": "¿Estás seguro de querer enviar este aviso de emergencia a todos los destinatarios?",
     "charCount": "{{count}}/500 caracteres"
   },
   "translate": {

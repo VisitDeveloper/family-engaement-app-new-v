@@ -606,7 +606,9 @@
     "smsSub": "Alertes par message texte",
     "recipients": "Destinataires",
     "recipientsNote": "Cette alerte sera envoyée aux 5 membres de la famille dans toutes les classes.",
-    "sendButton": "Envoyer l'alerte d'urgence",
+    "sendButton": "Envoyer Alerte",
+    "confirmTitle": "Confirmer l'alerte d'urgence",
+    "confirmMessage": "Êtes-vous sûr de vouloir envoyer cette alerte d'urgence à tous les destinataires ?",
     "charCount": "{{count}}/500 caractères"
   },
   "translate": {

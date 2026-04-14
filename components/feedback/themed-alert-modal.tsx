@@ -106,11 +106,6 @@ export function ThemedAlertModal() {
               },
             ]}
           >
-            <View style={viewStyles.accentTop}>
-              <View style={[viewStyles.accentStripe, { backgroundColor: theme.tint, opacity: 0.95 }]} />
-              <View style={[viewStyles.accentStripeSoft, { backgroundColor: theme.tint, opacity: 0.35 }]} />
-            </View>
-
             <View style={viewStyles.cardInner}>
               <View
                 style={[
@@ -199,17 +194,6 @@ const viewStyles = StyleSheet.create({
           shadowRadius: 36,
         }
       : { elevation: 16 },
-  accentTop: {
-    flexDirection: "row",
-    height: 4,
-    width: "100%",
-  },
-  accentStripe: {
-    flex: 2,
-  },
-  accentStripeSoft: {
-    flex: 1,
-  },
   cardInner: {
     paddingTop: 22,
     paddingHorizontal: 24,

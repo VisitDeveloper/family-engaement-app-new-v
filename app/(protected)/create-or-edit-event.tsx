@@ -22,8 +22,7 @@ import { useStore } from "@/store";
 import { enumToOptions } from "@/utils/make-array-for-select-box";
 import { getDisplayName, getInitials } from "@/utils/user-name";
 import { Feather } from "@expo/vector-icons";
-import * as Location from "expo-location";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Image, Platform, ScrollView, Switch, TextInput, TouchableOpacity, View } from "react-native";
@@ -153,36 +152,6 @@ function CreateNewEvent() {
   useEffect(() => {
     fetchParents();
   }, [fetchParents]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (Platform.OS === "web") {
-        return;
-      }
-
-      let cancelled = false;
-
-      (async () => {
-        const { status: existing } = await Location.getForegroundPermissionsAsync();
-        let finalStatus = existing;
-        if (existing !== "granted") {
-          const { status } = await Location.requestForegroundPermissionsAsync();
-          finalStatus = status;
-        }
-        if (cancelled) {
-          return;
-        }
-        if (!isEditMode && finalStatus !== "granted") {
-          feedback.toast.info(t("createEvent.locationPermissionTitle"), t("createEvent.locationPermissionRequired"));
-          router.back();
-        }
-      })();
-
-      return () => {
-        cancelled = true;
-      };
-    }, [isEditMode, router, t])
-  );
 
   // Load event data if in edit mode
   const loadEventData = useCallback(async () => {

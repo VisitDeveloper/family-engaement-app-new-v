@@ -47,6 +47,7 @@ export default function MapPicker({
     longitudeDelta: 0.01,
   });
   const [loading, setLoading] = useState(false);
+  const [hasLocationPermission, setHasLocationPermission] = useState(false);
 
   useEffect(() => {
     if (!visible || Platform.OS === "web") {
@@ -55,10 +56,10 @@ export default function MapPicker({
     let cancelled = false;
     (async () => {
       const { status } = await Location.getForegroundPermissionsAsync();
-      if (cancelled || status === "granted") {
+      if (cancelled) {
         return;
       }
-      await Location.requestForegroundPermissionsAsync();
+      setHasLocationPermission(status === "granted");
     })();
     return () => {
       cancelled = true;
@@ -83,10 +84,12 @@ export default function MapPicker({
       setLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
+        setHasLocationPermission(false);
         feedback.toast.info(t("mapPicker.permissionDeniedTitle"), t("mapPicker.permissionDeniedCurrentLocation"));
         setLoading(false);
         return;
       }
+      setHasLocationPermission(true);
 
       const location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
@@ -296,7 +299,7 @@ export default function MapPicker({
                   region={region}
                   onRegionChangeComplete={setRegion}
                   onPress={handleMapPress}
-                  showsUserLocation={true}
+                  showsUserLocation={hasLocationPermission}
                   showsMyLocationButton={false}
                 >
                   {selectedLatitude !== null &&
