@@ -23,7 +23,7 @@ import CountryPicker, {
   Country,
   CountryCode,
 } from "react-native-country-picker-modal";
-import { ActivityIndicator, Image, Platform, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Platform, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
@@ -135,6 +135,12 @@ export default function ProfileScreen() {
     tagText: {
       fontSize: 12,
       color: theme.text,
+    },
+    removePhotoLink: {
+      alignSelf: "center",
+      marginTop: 6,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
     },
   }));
 
@@ -324,6 +330,46 @@ export default function ProfileScreen() {
       setUploading(false);
     }
   }, [profile, setUser, router, fetchProfile, t]);
+
+  const handleRemoveProfilePicture = useCallback(() => {
+    if (!profile?.profilePicture) return;
+    Alert.alert(
+      t("userProfile.removeProfilePictureTitle"),
+      t("userProfile.removeProfilePictureMessage"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("userProfile.removeProfilePictureConfirm"),
+          style: "destructive",
+          onPress: async () => {
+            setUploading(true);
+            try {
+              await authService.removeProfilePicture();
+              await fetchProfile();
+              feedback.toast.success(
+                t("common.success"),
+                t("userProfile.profilePictureRemovedSuccess")
+              );
+            } catch (err) {
+              const apiError = err as ApiError;
+              const errorMessage =
+                apiError.message || t("userProfile.failedRemoveProfilePicture");
+              feedback.toast.error(t("common.error"), errorMessage);
+              if (apiError.status === 401 || apiError.status === 403) {
+                feedback.toast.error(
+                  t("userProfile.sessionExpired"),
+                  t("userProfile.sessionExpiredMessage")
+                );
+                router.replace("/(auth)/login");
+              }
+            } finally {
+              setUploading(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [profile?.profilePicture, fetchProfile, router, t]);
 
   const handleUpdateProfileInfo = useCallback(async () => {
     if (!profile) return;
@@ -609,6 +655,17 @@ export default function ProfileScreen() {
               <Feather name="camera" size={18} color="#fff" />
             )}
           </TouchableOpacity>
+          {profile?.profilePicture ? (
+            <TouchableOpacity
+              style={styles.removePhotoLink}
+              onPress={handleRemoveProfilePicture}
+              disabled={uploading}
+            >
+              <ThemedText type="subText" style={{ color: theme.tint }}>
+                {t("userProfile.removeProfilePicture")}
+              </ThemedText>
+            </TouchableOpacity>
+          ) : null}
           <View style={styles.nameEditRow}>
             <ThemedText type="subtitle" style={styles.name}>
               {displayName}

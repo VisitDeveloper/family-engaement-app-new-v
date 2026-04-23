@@ -104,6 +104,8 @@ export interface UpdateProfileRequest {
   phoneNumber?: string;
   subjects?: string[];
   settings?: Partial<UserSettings>;
+  /** Only `null` is accepted — removes the photo and deletes the stored file on the server. */
+  profilePicture?: null;
 }
 
 /** Auth login/register response */

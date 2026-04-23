@@ -55,6 +55,8 @@ export interface AuthService {
   changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse>;
   getProfile(): Promise<ProfileResponse>;
   updateProfile(body: UpdateProfileRequest): Promise<ProfileResponse>;
+  /** PUT /auth/profile with `{ profilePicture: null }` — deletes stored file when applicable */
+  removeProfilePicture(): Promise<ProfileResponse>;
   /** PATCH /auth/settings — only send fields to update */
   updateSettings(body: UpdateSettingsRequest): Promise<{ settings: UserSettings }>;
   updateProfilePicture(imageUri: string): Promise<UpdateProfilePictureResponse>;
@@ -323,6 +325,10 @@ class AuthServiceImpl implements AuthService {
         data: apiError.data,
       } as ApiError;
     }
+  }
+
+  async removeProfilePicture(): Promise<ProfileResponse> {
+    return this.updateProfile({ profilePicture: null });
   }
 
   async updateSettings(body: UpdateSettingsRequest): Promise<{ settings: UserSettings }> {
