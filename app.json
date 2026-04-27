@@ -2,14 +2,14 @@
   "expo": {
     "name": "MeBo",
     "slug": "family-app-engagment-new",
-    "version": "1.1.2",
+    "version": "1.1.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mebo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "buildNumber": "5",
+      "buildNumber": "16",
       "supportsTablet": true,
       "bundleIdentifier": "com.familyapp.engagement",
       "usesIcloudStorage": true,
@@ -25,7 +25,7 @@
       }
     },
     "android": {
-      "versionCode": 5,
+      "versionCode": 16,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
