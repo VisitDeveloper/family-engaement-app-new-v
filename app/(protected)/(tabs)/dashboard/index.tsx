@@ -59,8 +59,9 @@ export default function Dashboard() {
   const [, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true);
+  const fetchDashboard = useCallback(async (opts?: { showLoading?: boolean }) => {
+    const showLoading = opts?.showLoading ?? true;
+    if (showLoading) setLoading(true);
     setError(null);
     try {
       const data = await dashboardService.getDashboard();
@@ -69,19 +70,20 @@ export default function Dashboard() {
       setError((err as { message?: string })?.message ?? t("dashboard.failedLoad"));
       setDashboardData(null);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [t]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchDashboard();
+      // Don't drive RefreshControl spinner on focus refetch
+      fetchDashboard({ showLoading: false });
     }, [fetchDashboard])
   );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchDashboard();
+    await fetchDashboard({ showLoading: false });
     setRefreshing(false);
   }, [fetchDashboard]);
 
@@ -317,7 +319,7 @@ export default function Dashboard() {
                             borderRadius: 8,
                           }}
                         >
-                          <ThemedText type="subText" style={{ color: theme.bg }}>
+                          <ThemedText type="subText" style={{ color: "#fff" }}>
                             {teacher.engagementPercent + "%"}
                           </ThemedText>
                         </View>

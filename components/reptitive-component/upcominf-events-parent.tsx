@@ -32,7 +32,7 @@ export default function UpcomingEventsCard({ events, onPressAllEvents }: Upcomin
             justifyContent: 'space-between',
             marginBottom: 15,
         },
-        title: { fontSize: 16, fontWeight: '700' },
+        title: { fontSize: 16, fontWeight: '700', color: t.text },
         row: {
             flexDirection: 'row',
             justifyContent: 'space-between',
@@ -42,12 +42,12 @@ export default function UpcomingEventsCard({ events, onPressAllEvents }: Upcomin
         eventTime: { color: t.subText },
         dateBadge: {
             borderWidth: 1,
-            borderColor: '#E5E7EB',
+            borderColor: t.border,
             borderRadius: 6,
             paddingHorizontal: 8,
             paddingVertical: 4,
         },
-        dateText: { fontSize: 12 },
+        dateText: { fontSize: 12, color: t.text },
         footer: {
             flexDirection: 'row',
             alignItems: 'center',

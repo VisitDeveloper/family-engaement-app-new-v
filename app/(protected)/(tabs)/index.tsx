@@ -117,7 +117,7 @@ const MessageItem = ({
           <Image source={{ uri: item.avatar }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarPlaceholder}>
-            <Text style={{ color: "#fff" }}>
+            <Text style={{ color: theme.text }}>
               {item.name[0]}
               {item.name.split(" ")[1] ? item.name.split(" ")[1][0] : ""}
             </Text>
@@ -179,6 +179,7 @@ export default function MessagesScreen() {
 
   const [query, setQuery] = useState("");
   const [filteredContacts, setFilteredContacts] = useState<Messages[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // console.log(
   //   "conversations123",
@@ -272,8 +273,9 @@ export default function MessagesScreen() {
     [currentUserId]
   );
 
-  const loadConversations = useCallback(async () => {
-    setLoading(true);
+  const loadConversations = useCallback(async (opts?: { showLoading?: boolean }) => {
+    const showLoading = opts?.showLoading ?? true;
+    if (showLoading) setLoading(true);
     try {
       const convs = await messagingService.getConversations();
       setConversations(convs.conversations);
@@ -281,7 +283,7 @@ export default function MessagesScreen() {
       console.error("Error loading conversations:", error);
       feedback.toast.error("Error", error.message || "Failed to load conversations");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [setLoading, setConversations]);
 
@@ -325,7 +327,8 @@ export default function MessagesScreen() {
   // Refresh conversations when screen comes into focus (e.g., after creating a group or sending a message)
   useFocusEffect(
     useCallback(() => {
-      loadConversations();
+      // Don't drive RefreshControl spinner on focus refetch
+      loadConversations({ showLoading: false });
     }, [loadConversations])
   );
 
@@ -396,8 +399,8 @@ export default function MessagesScreen() {
           paddingRight: 32,
           paddingBottom: 16,
           paddingLeft: 32,
-          backgroundColor: "#FFFFFF",
-          borderColor: "#DADADA",
+          backgroundColor: theme.panel,
+          borderColor: theme.border,
           marginBottom: 10,
         },
 
@@ -414,7 +417,9 @@ export default function MessagesScreen() {
           width: 50,
           height: 50,
           borderRadius: 25,
-          backgroundColor: theme.subText,
+          backgroundColor: theme.panel,
+          borderWidth: 1,
+          borderColor: theme.border,
           justifyContent: "center",
           alignItems: "center",
         },
@@ -493,7 +498,7 @@ export default function MessagesScreen() {
             style={styles.filterBtn}
           >
             <EmergencyIcon size={16} color={theme.emergencyColor} />
-            <Text>{t("buttons.emergency")}</Text>
+            <Text style={{ color: theme.text }}>{t("buttons.emergency")}</Text>
           </TouchableOpacity>
 
         </View>
@@ -517,8 +522,15 @@ export default function MessagesScreen() {
           contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
           refreshControl={
             <RefreshControl
-              refreshing={loading}
-              onRefresh={loadConversations}
+              refreshing={refreshing}
+              onRefresh={async () => {
+                setRefreshing(true);
+                try {
+                  await loadConversations({ showLoading: false });
+                } finally {
+                  setRefreshing(false);
+                }
+              }}
               tintColor={theme.tint}
             />
           }

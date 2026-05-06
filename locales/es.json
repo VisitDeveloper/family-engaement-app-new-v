@@ -494,7 +494,14 @@
     "noFileToDownload": "No hay archivo disponible para descargar.",
     "cannotOpenFile": "No se puede abrir este archivo.",
     "downloadFailed": "Error al abrir o descargar el archivo.",
-    "editNotAllowed": "Solo el creador o un administrador pueden editar o eliminar este recurso."
+    "editNotAllowed": "Solo el creador o un administrador pueden editar o eliminar este recurso.",
+    "accessibility": {
+      "openHint": "Toca dos veces para ver los detalles de {{title}}",
+      "saveLabel": "Guardar {{title}}",
+      "unsaveLabel": "Quitar {{title}} de guardados",
+      "saveHint": "Toca dos veces para guardar este recurso",
+      "unsaveHint": "Toca dos veces para quitar este recurso de guardados"
+    }
   },
   "feed": {
     "backToTimeline": "Volver a la cronología",

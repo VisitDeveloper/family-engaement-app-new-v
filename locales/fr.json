@@ -494,7 +494,14 @@
     "noFileToDownload": "Aucun fichier disponible à télécharger.",
     "cannotOpenFile": "Impossible d'ouvrir ce fichier.",
     "downloadFailed": "Échec de l'ouverture ou du téléchargement du fichier.",
-    "editNotAllowed": "Seul le créateur ou un administrateur peut modifier ou supprimer cette ressource."
+    "editNotAllowed": "Seul le créateur ou un administrateur peut modifier ou supprimer cette ressource.",
+    "accessibility": {
+      "openHint": "Appuyez deux fois pour voir les détails de {{title}}",
+      "saveLabel": "Enregistrer {{title}}",
+      "unsaveLabel": "Retirer {{title}} des enregistrés",
+      "saveHint": "Appuyez deux fois pour enregistrer cette ressource",
+      "unsaveHint": "Appuyez deux fois pour retirer cette ressource des enregistrés"
+    }
   },
   "feed": {
     "backToTimeline": "Retour au fil d'actualité",

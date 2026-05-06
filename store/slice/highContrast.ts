@@ -11,6 +11,7 @@ export interface Theme {
   tint: string;
   passDesc: string;
   iconDash: string;
+  iconSecondColor: string;
   emergencyColor: string;
   emergencyBackground: string;
   star: string;
@@ -80,9 +81,10 @@ export function buildTheme(colorScheme: "light" | "dark", isHighContrast: boolea
     tint: isHighContrast ? "#d17fe0" : baseTheme.tint,
     passDesc: isHighContrast ? "#4CAF50" : baseTheme.passwordDescriptionText,
     iconDash: isHighContrast ? "#fff" : baseTheme.dashboardColorNumber,
+    iconSecondColor: baseTheme.iconSecondColor,
     emergencyColor: isHighContrast ? "#f87171" : baseTheme.emergencyColor,
     emergencyBackground: isHighContrast ? "#f87171" : baseTheme.emergencyBackground,
-    star: isHighContrast ? "#efb000" : baseTheme.star
+    star: isHighContrast ? "#efb000" : baseTheme.star,
   };
 }
 

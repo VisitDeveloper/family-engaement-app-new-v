@@ -71,13 +71,19 @@ const ResourceLibrary = () => {
     ResourceItemProps[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch resources from API
   const fetchResources = useCallback(
-    async (searchQuery?: string, category?: string) => {
+    async (
+      searchQuery?: string,
+      category?: string,
+      opts?: { showLoading?: boolean }
+    ) => {
       try {
-        setLoading(true);
+        const showLoading = opts?.showLoading ?? true;
+        if (showLoading) setLoading(true);
         setError(null);
 
         // Map display category to API filter
@@ -113,7 +119,7 @@ const ResourceLibrary = () => {
         feedback.toast.error("Error", errorMessage);
         console.error("Error fetching resources:", err);
       } finally {
-        setLoading(false);
+        if (opts?.showLoading ?? true) setLoading(false);
       }
     },
     [selectedCategory]
@@ -128,7 +134,8 @@ const ResourceLibrary = () => {
   // Refresh resources when screen comes into focus (e.g., after rating)
   useFocusEffect(
     useCallback(() => {
-      fetchResources(query, selectedCategory);
+      // Don't drive RefreshControl spinner on focus refetch
+      fetchResources(query, selectedCategory, { showLoading: false });
     }, [query, selectedCategory, fetchResources])
   );
 
@@ -415,8 +422,15 @@ const ResourceLibrary = () => {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={loading && filteredResources.length > 0}
-              onRefresh={() => fetchResources(query, selectedCategory)}
+              refreshing={refreshing}
+              onRefresh={async () => {
+                setRefreshing(true);
+                try {
+                  await fetchResources(query, selectedCategory, { showLoading: false });
+                } finally {
+                  setRefreshing(false);
+                }
+              }}
               tintColor={theme.tint}
             />
           }

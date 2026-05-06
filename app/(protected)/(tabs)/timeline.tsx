@@ -216,6 +216,7 @@ const TimelineScreen = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [posts, setPosts] = useState<PostResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Helper function to format time ago
@@ -236,9 +237,13 @@ const TimelineScreen = () => {
 
   // Fetch posts from API
   const fetchPosts = useCallback(
-    async (filter?: "all" | "media" | "reports" | "recommended" | "saved") => {
+    async (
+      filter?: "all" | "media" | "reports" | "recommended" | "saved",
+      opts?: { showLoading?: boolean }
+    ) => {
       try {
-        setLoading(true);
+        const showLoading = opts?.showLoading ?? true;
+        if (showLoading) setLoading(true);
         setError(null);
 
         const params = {
@@ -257,7 +262,7 @@ const TimelineScreen = () => {
         feedback.toast.error(t("common.error"), errorMessage);
         console.error("Error fetching posts:", err);
       } finally {
-        setLoading(false);
+        if (opts?.showLoading ?? true) setLoading(false);
       }
     },
     []
@@ -266,7 +271,8 @@ const TimelineScreen = () => {
   // Refresh posts when screen comes into focus (e.g., after creating a post)
   useFocusEffect(
     useCallback(() => {
-      fetchPosts(tabsData[activeTab].filter);
+      // Don't drive RefreshControl spinner on focus refetch
+      fetchPosts(tabsData[activeTab].filter, { showLoading: false });
     }, [fetchPosts, activeTab, tabsData])
   );
 
@@ -438,8 +444,15 @@ const TimelineScreen = () => {
               keyboardShouldPersistTaps="handled"
               refreshControl={
                 <RefreshControl
-                  refreshing={loading && posts.length > 0}
-                  onRefresh={() => fetchPosts(tabsData[activeTab].filter)}
+                  refreshing={refreshing}
+                  onRefresh={async () => {
+                    setRefreshing(true);
+                    try {
+                      await fetchPosts(tabsData[activeTab].filter, { showLoading: false });
+                    } finally {
+                      setRefreshing(false);
+                    }
+                  }}
                   tintColor={theme.tint}
                 />
               }

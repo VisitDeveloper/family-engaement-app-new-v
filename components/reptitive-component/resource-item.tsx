@@ -1,5 +1,6 @@
 import { useStore } from "@/store";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "./../themed-text";
 
@@ -23,6 +24,7 @@ export interface ResourceItemProps {
 
 const ResourceItem = (props: ResourceItemProps) => {
   const theme = useStore((state) => state.theme);
+  const { t } = useTranslation();
 
   // Handle backward compatibility: use imageUrl if available, fallback to image
   const imageSource = props.imageUrl
@@ -36,10 +38,23 @@ const ResourceItem = (props: ResourceItemProps) => {
   // Handle backward compatibility: use ageRange if available, fallback to age
   const age = props.ageRange || props.age || "";
 
-  // Capitalize type for display
-  const displayType = props.type
-    ? props.type.charAt(0).toUpperCase() + props.type.slice(1)
-    : "";
+  const normalize = (v: string) => v.trim().toLowerCase();
+
+  const translateKnownLabel = (value: string) => {
+    const v = normalize(value);
+    if (v === "all") return t("resource.categoryAll");
+    if (v === "book" || v === "books") return t("resource.categoryBook");
+    if (v === "activity" || v === "activities")
+      return t("resource.categoryActivity");
+    if (v === "video" || v === "videos") return t("resource.categoryVideo");
+    if (v === "saved") return t("resource.categorySaved");
+    return value;
+  };
+
+  const displayType = props.type ? translateKnownLabel(props.type) : "";
+  // `category` is a user-facing label coming from the API (not a stable key).
+  // So we should render it as-is to avoid wrong-language transforms.
+  const displayCategory = (props.category ?? "").trim();
 
   const handleSavePress = () => {
     if (props.id && props.onSavePress) {
@@ -53,10 +68,11 @@ const ResourceItem = (props: ResourceItemProps) => {
         onPress={props.onPress}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={`${
-          props.title
-        }, ${displayType}, Rating: ${rating.toFixed(1)}`}
-        accessibilityHint={`Double tap to view details of ${props.title}`}
+        accessibilityLabel={`${props.title
+          }, ${displayType}, Rating: ${rating.toFixed(1)}`}
+        accessibilityHint={t("resource.accessibility.openHint", {
+          title: props.title,
+        })}
         style={{ flex: 1 }}
       >
         <View>
@@ -86,7 +102,7 @@ const ResourceItem = (props: ResourceItemProps) => {
                 color="#FACC15"
                 style={{ marginHorizontal: 2 }}
               />
-              <Text>{rating.toFixed(1)}</Text>
+              <ThemedText type="subText">{rating.toFixed(1)}</ThemedText>
             </View>
           </View>
           <Text style={props.styles.title}>{props.title}</Text>
@@ -110,7 +126,7 @@ const ResourceItem = (props: ResourceItemProps) => {
             ]}
           >
             <ThemedText type="subText" style={{ color: theme.subText }}>
-              {props.category}
+              {displayCategory}
             </ThemedText>
           </View>
         </View>
@@ -121,13 +137,13 @@ const ResourceItem = (props: ResourceItemProps) => {
           accessibilityRole="button"
           accessibilityLabel={
             props.isSaved
-              ? `Remove ${props.title} from saved`
-              : `Save ${props.title}`
+              ? t("resource.accessibility.unsaveLabel", { title: props.title })
+              : t("resource.accessibility.saveLabel", { title: props.title })
           }
           accessibilityHint={
             props.isSaved
-              ? "Double tap to unsave this resource"
-              : "Double tap to save this resource"
+              ? t("resource.accessibility.unsaveHint")
+              : t("resource.accessibility.saveHint")
           }
           accessibilityState={{ selected: props.isSaved }}
         >

@@ -99,7 +99,15 @@ export default function HeaderTabItem({ buttonVariant = "default", ...props }: H
               {props.buttonIcon ? props.buttonIcon : null}
               <ThemedText
                 type="subText"
-                style={[styles.eventText, { color: buttonVariant === "primary" ? theme.bg : theme.tint }]}
+                style={[
+                  styles.eventText,
+                  {
+                    color:
+                      buttonVariant === "primary"
+                        ? "#fff"
+                        : theme.tint,
+                  },
+                ]}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >

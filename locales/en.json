@@ -512,7 +512,14 @@
     "noFileToDownload": "No file available to download.",
     "cannotOpenFile": "Cannot open this file.",
     "downloadFailed": "Failed to open or download the file.",
-    "editNotAllowed": "Only the creator or an admin can edit or delete this resource."
+    "editNotAllowed": "Only the creator or an admin can edit or delete this resource.",
+    "accessibility": {
+      "openHint": "Double tap to view details of {{title}}",
+      "saveLabel": "Save {{title}}",
+      "unsaveLabel": "Remove {{title}} from saved",
+      "saveHint": "Double tap to save this resource",
+      "unsaveHint": "Double tap to unsave this resource"
+    }
   },
   "feed": {
     "backToTimeline": "Back to Timeline",
