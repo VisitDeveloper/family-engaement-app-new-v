@@ -1,15 +1,14 @@
 import { messagingService, PollResponseDto, VotePollDto } from "@/services/messaging.service";
 import { feedback } from "@/lib/feedback";
+import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
-const POLL_CARD = {
-  background: "rgba(215, 169, 227, 0.1)",
+const POLL_ACCENT = {
   buttonBg: "#A846C3",
-  text: "#121212",
   radioSelected: "#A846C3",
   radioUnselectedBorder: "#A846C3",
   borderRadius: 12,
@@ -39,6 +38,7 @@ export default function PollMessageCard({
 }: PollMessageCardProps) {
   const { t } = useTranslation();
   const currentUser = useStore((state: any) => state.user);
+  const theme = useStore((state: any) => state.theme);
   const [poll, setPoll] = useState<PollResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
@@ -65,6 +65,192 @@ export default function PollMessageCard({
     fetchPoll();
   }, [fetchPoll]);
 
+  const styles = useThemedStyles((t) => ({
+    card: {
+      backgroundColor: "rgba(215, 169, 227, 0.1)",
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderTopLeftRadius: POLL_ACCENT.borderRadiusTop,
+      borderTopRightRadius: POLL_ACCENT.borderRadiusTop,
+      borderBottomLeftRadius: POLL_ACCENT.borderRadius,
+      borderBottomRightRadius: POLL_ACCENT.borderRadius,
+      borderWidth: 0.5,
+      borderStyle: "solid" as const,
+      borderColor: "#A846C3",
+      maxWidth: "100%" as const,
+      elevation: 0,
+      minWidth: 256,
+    },
+    cardLeft: {
+      alignSelf: "flex-start" as const,
+    },
+    cardRight: {
+      alignSelf: "flex-end" as const,
+    },
+    loadingCard: {
+      minHeight: 80,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+    },
+    newPollBadge: {
+      backgroundColor: "rgba(215, 169, 227, 0.25)",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 4,
+      alignSelf: "flex-start" as const,
+      borderColor: "#D7A9E3",
+      borderWidth: 1,
+      borderStyle: "solid" as const,
+      marginBottom: 12,
+    },
+    newPollBadgeText: {
+      color: t.tint,
+      fontSize: 12,
+      fontWeight: "400" as const,
+    },
+    question: {
+      fontSize: 14,
+      fontWeight: "400" as const,
+      color: t.text,
+      marginBottom: 14,
+    },
+    optionRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginBottom: 10,
+    },
+    radioOuter: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 1,
+      borderColor: POLL_ACCENT.radioUnselectedBorder,
+      backgroundColor: "transparent",
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginRight: 12,
+    },
+    radioOuterSelected: {
+      borderColor: POLL_ACCENT.radioSelected,
+      backgroundColor: "transparent",
+    },
+    radioOuterUnselected: {
+      borderColor: POLL_ACCENT.radioUnselectedBorder,
+    },
+    radioInner: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: POLL_ACCENT.radioSelected,
+    },
+    optionText: {
+      flex: 1,
+      fontSize: 15,
+      color: t.text,
+      fontWeight: "400" as const,
+    },
+    resultOptionRow: {
+      marginBottom: 4,
+    },
+    resultOptionText: {
+      fontSize: 15,
+      color: t.text,
+      fontWeight: "500" as const,
+      position: "absolute" as const,
+      zIndex: 1,
+      top: 11,
+      left: 8,
+      right: 8,
+    },
+    barRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 10,
+      marginTop: 4,
+    },
+    barBg: {
+      flex: 1,
+      height: 32,
+      borderRadius: 4,
+      overflow: "hidden" as const,
+    },
+    barFill: {
+      height: "100%" as const,
+      backgroundColor: POLL_ACCENT.radioSelected,
+      borderRadius: 4,
+      minWidth: 0,
+    },
+    pctText: {
+      fontSize: 14,
+      fontWeight: "600" as const,
+      color: t.text,
+      minWidth: 36,
+      textAlign: "right" as const,
+    },
+    viewResultsButton: {
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderStyle: "solid" as const,
+      borderColor: t.tint,
+      borderRadius: 4,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      flexDirection: "row" as const,
+      gap: 4,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginTop: 14,
+      width: "100%" as const,
+    },
+    adminActionsRow: {
+      flexDirection: "row" as const,
+      gap: 12,
+      marginTop: 12,
+    },
+    adminButton: {
+      flex: 1,
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderStyle: "solid" as const,
+      borderColor: t.tint,
+      borderRadius: 4,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    adminButtonDisabled: {
+      opacity: 0.6,
+    },
+    adminButtonText: {
+      color: t.tint,
+      fontSize: 14,
+      fontWeight: "400" as const,
+    },
+    finalizeButton: {
+      backgroundColor: POLL_ACCENT.buttonBg,
+      borderRadius: 4,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginTop: 14,
+      width: "100%" as const,
+    },
+    finalizeButtonDisabled: {
+      opacity: 0.7,
+    },
+    finalizeButtonText: {
+      color: "#ffffff",
+      fontSize: 14,
+      fontWeight: "400" as const,
+    },
+    cardText: {
+      color: t.text,
+      fontSize: 14,
+    },
+  }));
+
   const handleVote = async () => {
     if (!poll || !selectedOptionId || voting || poll.isClosed) return;
     try {
@@ -83,7 +269,6 @@ export default function PollMessageCard({
   const hasVoted = poll?.options.some((opt) => opt.userVoted) ?? false;
   const canVote = !poll?.isClosed && !hasVoted;
 
-  // Admin view: app admin (role === "admin") OR the person who created this poll
   const isAdmin =
     poll &&
     (currentUser?.role === "admin" || isMe);
@@ -118,7 +303,7 @@ export default function PollMessageCard({
   if (loading) {
     return (
       <View style={[styles.card, styles.loadingCard]}>
-        <ActivityIndicator size="small" color={POLL_CARD.text} />
+        <ActivityIndicator size="small" color={theme.tint} />
       </View>
     );
   }
@@ -137,7 +322,6 @@ export default function PollMessageCard({
   const getOptionDisplay = (optionId: string, original: string) =>
     isTranslating && translatedOptions === undefined ? "…" : (translatedOptions?.[optionId] ?? original);
 
-  // Admin view: options or results inline; "View Poll Results" / "Back"; Edit Poll, Close poll
   if (isAdmin) {
     const totalVotes = poll.options.reduce((s, o) => s + o.voteCount, 0);
 
@@ -181,20 +365,7 @@ export default function PollMessageCard({
               return (
                 <View key={option.id} style={styles.resultOptionRow}>
                   <View>
-                    <Text
-                      style={{
-                        fontSize: 15,
-                        color: POLL_CARD.text,
-                        fontWeight: "500",
-                        position: "absolute",
-                        zIndex: 1,
-                        top: 11,
-                        left: 8,
-                        right: 8,
-                      }}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
+                    <Text style={styles.resultOptionText} numberOfLines={1} ellipsizeMode="tail">
                       {getOptionDisplay(option.id, option.text)}
                     </Text>
                   </View>
@@ -216,7 +387,7 @@ export default function PollMessageCard({
                 onPress={() => setShowAdminResults(false)}
                 activeOpacity={0.9}
               >
-                <Feather name="chevron-left" size={16} color="#87189D" />
+                <Feather name="chevron-left" size={16} color={theme.tint} />
                 <Text style={styles.adminButtonText}>{t("buttons.back")}</Text>
               </TouchableOpacity>
             </View>
@@ -246,7 +417,6 @@ export default function PollMessageCard({
     );
   }
 
-  // Parent/viewer: voting UI
   return (
     <View style={[styles.card, isMe ? styles.cardRight : styles.cardLeft]}>
       <View style={styles.newPollBadge}>
@@ -293,7 +463,7 @@ export default function PollMessageCard({
             activeOpacity={0.9}
           >
             {voting ? (
-              <ActivityIndicator size="small" color={POLL_CARD.text} />
+              <ActivityIndicator size="small" color="#ffffff" />
             ) : (
               <Text style={styles.finalizeButtonText}>Finalize Vote</Text>
             )}
@@ -326,198 +496,3 @@ export default function PollMessageCard({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: POLL_CARD.background,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderTopLeftRadius: POLL_CARD.borderRadiusTop,
-    borderTopRightRadius: POLL_CARD.borderRadiusTop,
-    borderBottomLeftRadius: POLL_CARD.borderRadius,
-    borderBottomRightRadius: POLL_CARD.borderRadius,
-    borderWidth: 0.5,
-    borderStyle: "solid",
-    borderColor: "#A846C3",
-    maxWidth: "100%",
-    // Keep card flat on Android too (avoid default raised/3D look).
-    elevation: 0,
-    minWidth: 256
-  },
-  cardLeft: {
-    alignSelf: "flex-start",
-  },
-  cardRight: {
-    alignSelf: "flex-end",
-  },
-  loadingCard: {
-    minHeight: 80,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  newPollBadge: {
-    backgroundColor: "rgba(215, 169, 227, 0.25)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    alignSelf: "flex-start",
-    borderColor: "#D7A9E3",
-    borderWidth: 1,
-    borderStyle: "solid",
-    marginBottom: 12
-  },
-  newPollBadgeText: {
-    color: "#87189D",
-    fontSize: 12,
-    fontWeight: "400",
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: POLL_CARD.text,
-    marginBottom: 6,
-  },
-  question: {
-    fontSize: 14,
-    fontWeight: "400",
-    color: POLL_CARD.text,
-    marginBottom: 14,
-  },
-  optionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  radioOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: POLL_CARD.radioUnselectedBorder,
-    backgroundColor: "transparent",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  radioOuterSelected: {
-    borderColor: POLL_CARD.radioSelected,
-    backgroundColor: "transparent",
-  },
-  radioOuterUnselected: {
-    borderColor: POLL_CARD.radioUnselectedBorder,
-  },
-  resultOptionRow: {
-    marginBottom: 4,
-  },
-  barRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 4,
-  },
-  barBg: {
-    flex: 1,
-    height: 32,
-    // backgroundColor: "rgba(168, 70, 195, 0.25)",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  barFill: {
-    height: "100%",
-    backgroundColor: POLL_CARD.radioSelected,
-    borderRadius: 4,
-    minWidth: 0,
-  },
-  pctText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: POLL_CARD.text,
-    minWidth: 36,
-    textAlign: "right",
-  },
-  viewResultsButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#87189D",
-    borderRadius: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    display: "flex",
-    flexDirection: "row",
-    gap: 4,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 14,
-    width: "100%",
-  },
-  adminActionsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 12,
-  },
-  adminButton: {
-    flex: 1,
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#87189D",
-    borderRadius: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  adminButtonDisabled: {
-    opacity: 0.6,
-  },
-  adminButtonText: {
-    color: "#87189D",
-    fontSize: 14,
-    fontWeight: "400",
-  },
-  radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: POLL_CARD.radioSelected,
-  },
-  optionText: {
-    flex: 1,
-    fontSize: 15,
-    color: POLL_CARD.text,
-    fontWeight: "400",
-  },
-  finalizeButton: {
-    backgroundColor: POLL_CARD.buttonBg,
-    borderRadius: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 14,
-    width: "100%",
-  },
-  finalizeButtonDisabled: {
-    opacity: 0.7,
-  },
-  finalizeButtonText: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "400",
-  },
-  cardText: {
-    color: POLL_CARD.text,
-    fontSize: 14,
-  },
-  votedLabel: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.9)",
-    marginTop: 10,
-  },
-  closedLabel: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.8)",
-    marginTop: 10,
-  },
-});

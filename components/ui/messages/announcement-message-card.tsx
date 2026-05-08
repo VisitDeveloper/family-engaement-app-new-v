@@ -35,8 +35,7 @@ export default function AnnouncementMessageCard({
   myReaction,
 }: AnnouncementMessageCardProps) {
 
-  const { theme } = useStore((state) => state);
-
+  const { theme, colorScheme } = useStore((state) => state);
 
   const styles = useThemedStyles((t) => ({
     container: {
@@ -49,7 +48,7 @@ export default function AnnouncementMessageCard({
       borderColor: "#46A0C3",
     },
     announcementTag: {
-      backgroundColor: "background: rgba(169, 210, 227, 0.25)",
+      backgroundColor: "rgba(169, 210, 227, 0.25)",
       paddingHorizontal: 8,
       paddingVertical: 2,
       borderRadius: 4,
@@ -59,14 +58,14 @@ export default function AnnouncementMessageCard({
       marginBottom: 12,
     },
     announcementTagText: {
-      color: "#18709D",
+      color: colorScheme === "dark" ? "#A9D2E3" : "#18709D",
       fontSize: 12,
       fontWeight: "400",
       letterSpacing: 0.2,
     },
     content: {
       fontSize: 15,
-      color: "#121212",
+      color: t.text,
       lineHeight: 22,
       marginBottom: 10,
     },
@@ -78,7 +77,7 @@ export default function AnnouncementMessageCard({
     },
     timestamp: {
       fontSize: 11,
-      color: "#666",
+      color: t.subText,
     },
     actions: {
       flexDirection: "row",
