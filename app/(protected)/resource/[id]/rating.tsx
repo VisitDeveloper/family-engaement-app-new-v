@@ -5,9 +5,10 @@ import Rating from '@/components/ui/rating';
 import { useThemedStyles } from '@/hooks/use-theme-style';
 import { resourceService } from '@/services/resource.service';
 import { useStore } from '@/store';
+import { resolveCoreAssetUrl } from '@/utils/core-asset-url';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, TouchableOpacity, View } from "react-native";
 
 const RatingScreen = () => {
@@ -19,6 +20,10 @@ const RatingScreen = () => {
         state.getResourceById(`${id}`)
     );
     const addResource = useStore((state: any) => state.addResource);
+    const coverUri = useMemo(() => {
+        const raw = typeof resourceItem?.imageUrl === "string" ? resourceItem.imageUrl.trim() : "";
+        return raw ? resolveCoreAssetUrl(raw) : "";
+    }, [resourceItem?.imageUrl]);
     const [rating, setRating] = useState<number>(resourceItem?.userRating || 0);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -177,7 +182,7 @@ const RatingScreen = () => {
                 </View>
 
                 <Image
-                    source={{ uri: resourceItem?.imageUrl ? resourceItem.imageUrl : "" }}
+                    source={{ uri: coverUri }}
                     style={styles.cover}
                     resizeMode="cover"
                     accessibilityRole="image"

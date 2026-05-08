@@ -491,6 +491,7 @@
     "deleteConfirmTitle": "Eliminar recurso",
     "deleteConfirmMessage": "¿Seguro que quieres eliminar este recurso? Esta acción no se puede deshacer.",
     "downloadFile": "Descargar archivo",
+    "viewActivity": "Ver actividad",
     "noFileToDownload": "No hay archivo disponible para descargar.",
     "cannotOpenFile": "No se puede abrir este archivo.",
     "downloadFailed": "Error al abrir o descargar el archivo.",

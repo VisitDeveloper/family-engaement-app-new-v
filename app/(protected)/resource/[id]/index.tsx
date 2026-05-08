@@ -8,11 +8,14 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { resourceService } from "@/services/resource.service";
 import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
+import { resolveCoreAssetUrl } from "@/utils/core-asset-url";
 import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Image, Linking, ScrollView, TouchableOpacity, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system/legacy";
+import { ActivityIndicator, Image, Linking, Platform, ScrollView, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const BookDetailScreen = () => {
@@ -52,23 +55,73 @@ const BookDetailScreen = () => {
 
   const ratingValue = Number(resourceItem?.averageRating ?? resourceItem?.rating ?? 0) || 0;
 
-  const handleDownload = useCallback(async () => {
-    const url = resourceItem?.contentUrl?.trim();
+  const coverUri = useMemo(() => {
+    const key =
+      typeof resourceItem?.imageUrl === "string" && resourceItem.imageUrl.trim()
+        ? resourceItem.imageUrl.trim()
+        : typeof resourceItem?.image === "string" && resourceItem.image.trim()
+          ? resourceItem.image.trim()
+          : "";
+    return key ? resolveCoreAssetUrl(key) : "";
+  }, [resourceItem?.imageUrl, resourceItem?.image]);
+
+  const openResourceContent = useCallback(async () => {
+    const raw = resourceItem?.contentUrl?.trim();
+    if (!raw) {
+      feedback.toast.error(t("common.error"), t("resource.noFileToDownload"));
+      return;
+    }
+    const url = resolveCoreAssetUrl(raw);
     if (!url) {
       feedback.toast.error(t("common.error"), t("resource.noFileToDownload"));
       return;
     }
     try {
-      const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        await Linking.openURL(url);
-      } else {
-        feedback.toast.error(t("common.error"), t("resource.cannotOpenFile"));
+      const isProtectedUploadFile = /\/uploads\/files\//.test(url);
+
+      // If the file is behind auth (uploads/files), opening URL directly won't include Authorization header.
+      if (isProtectedUploadFile) {
+        const token = await AsyncStorage.getItem("auth_token");
+        if (!token) {
+          feedback.toast.error(t("common.error"), t("auth.sessionExpired"));
+          return;
+        }
+
+        const rawName = url.split("/").pop() || "";
+        const filename = (rawName.split("?")[0] || "").trim() || `resource-${id || "file"}`;
+        const targetUri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory || ""}${filename}`;
+
+        const result = await FileSystem.downloadAsync(url, targetUri, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const uriToOpen =
+          Platform.OS === "android"
+            ? await FileSystem.getContentUriAsync(result.uri)
+            : result.uri;
+
+        const canOpenLocal = await Linking.canOpenURL(uriToOpen);
+        if (!canOpenLocal) {
+          feedback.toast.error(t("common.error"), t("resource.cannotOpenFile"));
+          return;
+        }
+
+        await Linking.openURL(uriToOpen);
+        return;
       }
+
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        feedback.toast.error(t("common.error"), t("resource.cannotOpenFile"));
+        return;
+      }
+      await Linking.openURL(url);
     } catch (err: any) {
       feedback.toast.error(t("common.error"), err?.message || t("resource.downloadFailed"));
     }
-  }, [resourceItem?.contentUrl, t]);
+  }, [resourceItem?.contentUrl, t, id]);
+
+  const handleDownload = openResourceContent;
 
   // Refresh resource data when screen comes into focus (e.g., after rating)
   useFocusEffect(
@@ -331,11 +384,7 @@ const BookDetailScreen = () => {
       >
         {/* Cover */}
         <Image
-          source={{
-            uri: resourceItem?.imageUrl
-              ? resourceItem.imageUrl
-              : resourceItem?.image || "",
-          }}
+          source={{ uri: coverUri }}
           style={styles.cover}
           resizeMode="cover"
           accessibilityRole="image"
@@ -377,7 +426,14 @@ const BookDetailScreen = () => {
 
         {/* Action Buttons */}
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.readBtn}>
+          <TouchableOpacity
+            style={[styles.readBtn, !hasContentUrl && { opacity: 0.5 }]}
+            onPress={openResourceContent}
+            disabled={!hasContentUrl}
+            accessibilityRole="button"
+            accessibilityLabel={t("resource.viewActivity")}
+            accessibilityState={{ disabled: !hasContentUrl }}
+          >
             <Feather name="eye" size={18} color="white" />
             <ThemedText style={styles.readText}>View Activity</ThemedText>
           </TouchableOpacity>

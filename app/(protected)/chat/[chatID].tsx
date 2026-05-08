@@ -22,6 +22,7 @@ import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { Ionicons } from "@expo/vector-icons";
 import { AVPlaybackStatus, Audio, ResizeMode, Video } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -542,8 +543,43 @@ export default function ChatScreen() {
         setUploadingFile(true);
         setUploadProgress(0);
 
+        const ensureUploadableFileUri = async (inputUri: string): Promise<string> => {
+            const u = inputUri.trim();
+            if (!u) return inputUri;
+
+            if (u.startsWith("file://")) {
+                try {
+                    const info = await FileSystem.getInfoAsync(u);
+                    if (info.exists) return u;
+                } catch {
+                    // fallthrough
+                }
+            }
+
+            const baseDir = (FileSystem.cacheDirectory ?? FileSystem.documentDirectory ?? "") as string;
+            const uploadsDir = `${baseDir}uploads`;
+            const extMatch = /\.([a-z0-9]+)(?:\?.*)?$/i.exec(u);
+            const ext = extMatch?.[1] ? `.${extMatch[1]}` : "";
+            const dest = `${uploadsDir}/${Date.now()}-${Math.random().toString(16).slice(2)}${ext}`;
+
+            try {
+                if (baseDir) {
+                    await FileSystem.makeDirectoryAsync(uploadsDir, { intermediates: true }).catch(() => { });
+                }
+                await FileSystem.copyAsync({ from: u, to: dest });
+                return dest;
+            } catch {
+                if (/^https?:\/\//i.test(u)) {
+                    await FileSystem.makeDirectoryAsync(uploadsDir, { intermediates: true }).catch(() => { });
+                    const result = await FileSystem.downloadAsync(u, dest);
+                    return result.uri;
+                }
+                return inputUri;
+            }
+        };
+
         // Extract filename from URI if not provided
-        const fileUri = uri;
+        const fileUri = await ensureUploadableFileUri(uri);
         const name = fileName || fileUri.split('/').pop() || 'file';
         setUploadingFileName(name);
 

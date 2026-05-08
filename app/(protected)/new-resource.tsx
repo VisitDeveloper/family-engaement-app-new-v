@@ -15,12 +15,11 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Image, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
-
-type SelectedUploadFile = {
-  uri: string;
-  name: string;
-  mimeType?: string;
-};
+import {
+  ensureUploadableFileUri,
+  uploadResourceContentFile,
+  type SelectedUploadFile,
+} from "@/utils/content-upload";
 
 const RESOURCE_TYPES: { value: ResourceType; labelKey: string }[] = [
   { value: "book", labelKey: "resource.categoryBook" },
@@ -199,12 +198,13 @@ export default function NewResourceScreen() {
       let contentUrl: string | null = null;
 
       if (selectedImage) {
-        const filename = selectedImage.split("/").pop() || "image.jpg";
+        const uploadableUri = await ensureUploadableFileUri(selectedImage);
+        const filename = uploadableUri.split("/").pop() || "image.jpg";
         const match = /\.(\w+)$/.exec(filename);
         const mimeType = match ? `image/${match[1]}` : "image/jpeg";
         const formData = new FormData();
         formData.append("file", {
-          uri: selectedImage,
+          uri: uploadableUri,
           name: filename,
           type: mimeType,
         } as any);
@@ -213,13 +213,12 @@ export default function NewResourceScreen() {
       }
 
       if (selectedFile) {
-        const fileFormData = new FormData();
-        fileFormData.append("file", {
-          uri: file.uri,
-          name: file.name,
-          type: file.mimeType || "application/octet-stream",
-        } as any);
-        const uploadResponse = await messagingService.uploadFile(fileFormData);
+        const uploadableUri = await ensureUploadableFileUri(selectedFile.uri);
+        const uploadResponse = await uploadResourceContentFile(
+          uploadableUri,
+          selectedFile,
+          type
+        );
         contentUrl = uploadResponse.url;
       }
 

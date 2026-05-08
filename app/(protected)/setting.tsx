@@ -8,6 +8,7 @@ import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import i18n from "@/i18n";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
+import { getAppVersionLabel } from "@/utils/app-version";
 import { getDisplayName } from "@/utils/user-name";
 import {
   AntDesign,
@@ -738,7 +739,7 @@ export default function SettingsScreen() {
             {t("settings.familyConnect")}
           </ThemedText>
           <ThemedText type="subText" style={{ color: theme.subText }}>
-            {t("settings.version")} 2.1.0
+            {t("settings.version")} {getAppVersionLabel()}
           </ThemedText>
           <View
             style={{

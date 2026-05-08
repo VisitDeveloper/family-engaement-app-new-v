@@ -6,6 +6,7 @@ import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { resourceService } from "@/services/resource.service";
+import { resolveCoreAssetUrl } from "@/utils/core-asset-url";
 import { useStore } from "@/store";
 import type { ResourceType } from "@/types";
 import * as DocumentPicker from "expo-document-picker";
@@ -14,12 +15,11 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Image, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
-
-type SelectedUploadFile = {
-  uri: string;
-  name: string;
-  mimeType?: string;
-};
+import {
+  ensureUploadableFileUri,
+  uploadResourceContentFile,
+  type SelectedUploadFile,
+} from "@/utils/content-upload";
 
 const RESOURCE_TYPES: { value: ResourceType; labelKey: string }[] = [
   { value: "book", labelKey: "resource.categoryBook" },
@@ -255,13 +255,12 @@ export default function EditResourceScreen() {
       }
 
       if (selectedFile) {
-        const fileFormData = new FormData();
-        fileFormData.append("file", {
-          uri: file.uri,
-          name: file.name,
-          type: file.mimeType || "application/octet-stream",
-        } as any);
-        const uploadResponse = await messagingService.uploadFile(fileFormData);
+        const uploadableUri = await ensureUploadableFileUri(selectedFile.uri);
+        const uploadResponse = await uploadResourceContentFile(
+          uploadableUri,
+          selectedFile,
+          type
+        );
         contentUrl = uploadResponse.url;
       }
 
@@ -412,7 +411,7 @@ export default function EditResourceScreen() {
               />
             ) : existingImageUrl ? (
               <Image
-                source={{ uri: existingImageUrl }}
+                source={{ uri: resolveCoreAssetUrl(existingImageUrl) }}
                 style={styles.imagePreview}
                 resizeMode="cover"
               />

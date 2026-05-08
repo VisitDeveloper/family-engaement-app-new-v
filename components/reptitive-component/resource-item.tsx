@@ -1,4 +1,5 @@
 import { useStore } from "@/store";
+import { resolveCoreAssetUrl } from "@/utils/core-asset-url";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { Image, Text, TouchableOpacity, View } from "react-native";
@@ -27,9 +28,8 @@ const ResourceItem = (props: ResourceItemProps) => {
   const { t } = useTranslation();
 
   // Handle backward compatibility: use imageUrl if available, fallback to image
-  const imageSource = props.imageUrl
-    ? { uri: props.imageUrl }
-    : props.image || "";
+  const resolvedUri = props.imageUrl ? resolveCoreAssetUrl(props.imageUrl) : "";
+  const imageSource = resolvedUri ? { uri: resolvedUri } : props.image || "";
 
   // Handle backward compatibility: use averageRating if available, fallback to rating
   const rating =

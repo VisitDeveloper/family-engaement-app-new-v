@@ -491,6 +491,7 @@
     "deleteConfirmTitle": "Supprimer la ressource",
     "deleteConfirmMessage": "Voulez-vous vraiment supprimer cette ressource ? Cette action est irréversible.",
     "downloadFile": "Télécharger le fichier",
+    "viewActivity": "Voir l'activité",
     "noFileToDownload": "Aucun fichier disponible à télécharger.",
     "cannotOpenFile": "Impossible d'ouvrir ce fichier.",
     "downloadFailed": "Échec de l'ouverture ou du téléchargement du fichier.",

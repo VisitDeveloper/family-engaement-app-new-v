@@ -509,6 +509,7 @@
     "deleteConfirmTitle": "Delete Resource",
     "deleteConfirmMessage": "Are you sure you want to delete this resource? This cannot be undone.",
     "downloadFile": "Download file",
+    "viewActivity": "View activity",
     "noFileToDownload": "No file available to download.",
     "cannotOpenFile": "Cannot open this file.",
     "downloadFailed": "Failed to open or download the file.",
