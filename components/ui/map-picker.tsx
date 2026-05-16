@@ -1,10 +1,16 @@
 import { ThemedText } from "@/components/themed-text";
+import MapPickerGoogleWeb from "@/components/ui/map-picker-google-web";
 import { feedback } from "@/lib/feedback";
+import {
+  refreshMobileMapsConfigFromServer,
+  resolveAndroidMapsApiKey,
+  shouldUseWebMapsOnAndroid,
+} from "@/lib/maps-client-config";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Modal, Platform, TouchableOpacity, View } from "react-native";
 import { MapView, Marker } from "./map-view-wrapper";
@@ -48,6 +54,50 @@ export default function MapPicker({
   });
   const [loading, setLoading] = useState(false);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
+  const [mapsBootstrapLoading, setMapsBootstrapLoading] = useState(false);
+  const [androidMapsApiKey, setAndroidMapsApiKey] = useState<string | null>(null);
+  const [useWebMaps, setUseWebMaps] = useState(false);
+  const mapsBootstrapIdRef = useRef(0);
+
+  useEffect(() => {
+    if (!visible || Platform.OS !== "android") {
+      setMapsBootstrapLoading(false);
+      setAndroidMapsApiKey(null);
+      setUseWebMaps(false);
+      return;
+    }
+
+    const bootstrapId = ++mapsBootstrapIdRef.current;
+    setMapsBootstrapLoading(true);
+    setAndroidMapsApiKey(null);
+    setUseWebMaps(false);
+
+    (async () => {
+      try {
+        const config = await refreshMobileMapsConfigFromServer();
+        if (bootstrapId !== mapsBootstrapIdRef.current) {
+          return;
+        }
+
+        const effectiveKey = resolveAndroidMapsApiKey(config);
+        const preferWeb = shouldUseWebMapsOnAndroid(config);
+
+        setUseWebMaps(preferWeb);
+        setAndroidMapsApiKey(effectiveKey || null);
+      } catch (error) {
+        console.error("Failed to refresh Google Maps config:", error);
+        if (bootstrapId !== mapsBootstrapIdRef.current) {
+          return;
+        }
+        setUseWebMaps(false);
+        setAndroidMapsApiKey(null);
+      } finally {
+        if (bootstrapId === mapsBootstrapIdRef.current) {
+          setMapsBootstrapLoading(false);
+        }
+      }
+    })();
+  }, [visible]);
 
   useEffect(() => {
     if (!visible || Platform.OS === "web") {
@@ -292,9 +342,55 @@ export default function MapPicker({
                   {t("mapPicker.webUnavailable")}
                 </ThemedText>
               </View>
+            ) : Platform.OS === "android" && mapsBootstrapLoading ? (
+              <View
+                style={[
+                  styles.map,
+                  {
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: theme.panel,
+                  },
+                ]}
+              >
+                <ActivityIndicator size="large" color={theme.tint} />
+                <ThemedText
+                  style={{
+                    color: theme.subText,
+                    textAlign: "center",
+                    padding: 20,
+                    marginTop: 12,
+                  }}
+                >
+                  {t("mapPicker.preparingMap")}
+                </ThemedText>
+              </View>
+            ) : Platform.OS === "android" &&
+              useWebMaps &&
+              androidMapsApiKey ? (
+              <MapPickerGoogleWeb
+                apiKey={androidMapsApiKey}
+                latitude={region.latitude}
+                longitude={region.longitude}
+                style={styles.map}
+                onCoordinateChange={(latitude, longitude) => {
+                  setSelectedLatitude(latitude);
+                  setSelectedLongitude(longitude);
+                  setRegion((prev) => ({
+                    ...prev,
+                    latitude,
+                    longitude,
+                  }));
+                }}
+              />
             ) : (
               <>
                 <MapView
+                  key={
+                    Platform.OS === "android"
+                      ? androidMapsApiKey ?? "default"
+                      : "ios"
+                  }
                   style={styles.map}
                   region={region}
                   onRegionChangeComplete={setRegion}

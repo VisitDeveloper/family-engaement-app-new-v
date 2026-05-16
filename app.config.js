@@ -1,7 +1,6 @@
-// Build-time Google Maps keys (required for Android native MapView in the binary).
-// Optional org-level overrides are returned from GET /auth/profile (see lib/maps-client-config.ts);
-// the native SDK still reads the manifest key baked in here — rotate that key via EAS rebuild
-// when you change the org default in the portal, or keep them identical.
+// Build-time Google Maps keys (Android native MapView fallback in the binary).
+// Portal keys are fetched before the map opens (see lib/maps-client-config.ts and map-picker.tsx).
+// When the portal key differs from this build key, Android uses the Maps JavaScript API instead.
 const appJson = require("./app.json");
 
 const androidKey =

@@ -354,6 +354,7 @@
   },
   "mapPicker": {
     "title": "Choisir un lieu",
+    "preparingMap": "Chargement de la carte…",
     "webUnavailable": "La carte n’est pas disponible sur le web. Utilisez l’application mobile pour choisir un lieu.",
     "markerTitle": "Lieu sélectionné",
     "locationSelected": "Lieu sélectionné",

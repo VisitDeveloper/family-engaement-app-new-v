@@ -372,6 +372,7 @@
   },
   "mapPicker": {
     "title": "Select location",
+    "preparingMap": "Loading map…",
     "webUnavailable": "The map is not available on the web. Please use the mobile app to choose a location.",
     "markerTitle": "Selected location",
     "locationSelected": "Location selected",

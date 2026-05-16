@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 
+import { apiClient } from "@/services/api";
 import type { ProfileResponseDto } from "@/types/user.types";
 
 const STORAGE_KEY = "@mebo/mobile_maps_config_v1";
@@ -11,10 +12,6 @@ export type MobileMapsConfigPayload = NonNullable<
 
 /**
  * Caches server-wide map keys from GET /auth/profile (portal DB overrides env).
- *
- * Note: `react-native-maps` on Android reads the Google Maps API key from the
- * native manifest (baked at EAS build via app.config.js). This cache does not
- * replace that manifest key at runtime.
  */
 export async function persistMobileMapsConfigFromProfile(
   profile: ProfileResponseDto
@@ -44,4 +41,32 @@ export function getBuildTimeGoogleMapsAndroidApiKey(): string {
     Constants.expoConfig?.android?.config?.googleMaps?.apiKey ?? "";
   if (fromExpo) return fromExpo;
   return process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY ?? "";
+}
+
+/** Fetch latest map keys from the server and update the local cache. */
+export async function refreshMobileMapsConfigFromServer(): Promise<MobileMapsConfigPayload | null> {
+  const profile = await apiClient.get<ProfileResponseDto>("/auth/profile");
+  await persistMobileMapsConfigFromProfile(profile);
+  return profile.mobileMapsConfig ?? (await getCachedMobileMapsConfig());
+}
+
+/** Portal/server key when set, otherwise the build-time manifest key. */
+export function resolveAndroidMapsApiKey(
+  config: MobileMapsConfigPayload | null
+): string {
+  const server = config?.googleMapsAndroidApiKey?.trim() ?? "";
+  const build = getBuildTimeGoogleMapsAndroidApiKey().trim();
+  return server || build;
+}
+
+/**
+ * When the portal key differs from the EAS manifest key, native MapView cannot
+ * reliably pick up the new key after Maps SDK has initialized — use JS Maps instead.
+ */
+export function shouldUseWebMapsOnAndroid(
+  config: MobileMapsConfigPayload | null
+): boolean {
+  const server = config?.googleMapsAndroidApiKey?.trim() ?? "";
+  const build = getBuildTimeGoogleMapsAndroidApiKey().trim();
+  return !!server && server !== build;
 }
