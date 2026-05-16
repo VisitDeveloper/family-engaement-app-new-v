@@ -232,6 +232,7 @@ export default function ParentDashboard() {
                             sub={t("dashboard.postsInScope", { count: newPosts.postsViewed + newPosts.count })}
                             icon={<MediaIcon size={30} color={theme.iconDash} />}
                             rate={newPostsRate}
+                            onPress={() => router.push("/(protected)/(tabs)/timeline")}
                         />
                         <StatCardParent
                             label={t("dashboard.unread")}
@@ -241,6 +242,7 @@ export default function ParentDashboard() {
                             positive={unreadMessages.count > unreadMessages.messagesRead}
                             icon={<MessagesIcon size={30} color={theme.iconDash} />}
                             rate={unreadRate}
+                            onPress={() => router.push("/(protected)/(tabs)")}
                         />
                     </View>
 

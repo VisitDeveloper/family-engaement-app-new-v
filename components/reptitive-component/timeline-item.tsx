@@ -11,6 +11,7 @@ import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { getDisplayName, getInitials } from "@/utils/user-name";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import * as ExpoLinking from "expo-linking";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -501,10 +502,17 @@ export default function TimelineItem({
   // Handle share
   const handleShare = async () => {
     try {
-      const shareMessage = `${props.name} shared:\n\n${props.desc}\n\n${props.tags && props.tags.length > 0 ? `Tags: ${props.tags.join(", ")}\n` : ""}${props.postId ? `\nView post in app` : ""}`;
+      const postDeepLink = props.postId
+        ? ExpoLinking.createURL(`feed/${props.postId}`)
+        : "";
+      const linkBlock = postDeepLink
+        ? `\nView post in app:\n${postDeepLink}`
+        : "";
+      const shareMessage = `${props.name} shared:\n\n${props.desc}\n\n${props.tags && props.tags.length > 0 ? `Tags: ${props.tags.join(", ")}\n` : ""}${linkBlock}`;
 
       const result = await Share.share({
         message: shareMessage,
+        ...(postDeepLink ? { url: postDeepLink } : {}),
         title: `Post by ${props.name}`,
       });
 
@@ -1688,34 +1696,34 @@ export default function TimelineItem({
                               }}
                               onPress={() => handleCommentLike(commentItem.id)}
                             >
-                            <AntDesign
-                              name={
-                                commentLikes[commentItem.id]?.isLiked ??
-                                  commentItem.isLiked
-                                  ? "heart"
-                                  : ("hearto" as any)
-                              }
-                              size={14}
-                              color={
-                                commentLikes[commentItem.id]?.isLiked ??
-                                  commentItem.isLiked
-                                  ? theme.tint
-                                  : theme.subText
-                              }
-                            />
-                            {((commentLikes[commentItem.id]?.likesCount ??
-                              commentItem.likesCount) ||
-                              0) > 0 && (
-                                <ThemedText
-                                  type="subLittleText"
-                                  style={{ color: theme.subText, fontSize: 11 }}
-                                >
-                                  {commentLikes[commentItem.id]?.likesCount ??
-                                    commentItem.likesCount ??
-                                    0}
-                                </ThemedText>
-                              )}
-                          </TouchableOpacity>
+                              <AntDesign
+                                name={
+                                  commentLikes[commentItem.id]?.isLiked ??
+                                    commentItem.isLiked
+                                    ? "heart"
+                                    : ("hearto" as any)
+                                }
+                                size={14}
+                                color={
+                                  commentLikes[commentItem.id]?.isLiked ??
+                                    commentItem.isLiked
+                                    ? theme.tint
+                                    : theme.subText
+                                }
+                              />
+                              {((commentLikes[commentItem.id]?.likesCount ??
+                                commentItem.likesCount) ||
+                                0) > 0 && (
+                                  <ThemedText
+                                    type="subLittleText"
+                                    style={{ color: theme.subText, fontSize: 11 }}
+                                  >
+                                    {commentLikes[commentItem.id]?.likesCount ??
+                                      commentItem.likesCount ??
+                                      0}
+                                  </ThemedText>
+                                )}
+                            </TouchableOpacity>
                           </View>
                         </View>
                       </View>

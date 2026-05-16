@@ -397,7 +397,8 @@ const SchoolCalendarScreen = () => {
       justifyContent: "center",
       alignItems: "center",
       gap: 10,
-      marginTop: 20,
+      marginTop: 28,
+      marginBottom: 8,
     },
     dropdownSection: {
       marginTop: 12,
@@ -409,12 +410,14 @@ const SchoolCalendarScreen = () => {
       flexDirection: "row",
       gap: 8,
       flexWrap: "wrap",
+      alignSelf: "stretch",
     },
     rsvpButton: {
       flex: 1,
-      minWidth: 90,
+      flexBasis: 0,
+      minWidth: 0,
       paddingVertical: 10,
-      paddingHorizontal: 12,
+      paddingHorizontal: 8,
       borderRadius: 8,
       borderWidth: 1,
       alignItems: "center",
@@ -708,11 +711,20 @@ const SchoolCalendarScreen = () => {
             }
 
             return (
-              <TouchableOpacity
+              <View
                 key={ev.id}
-                onPress={() => router.push(`/event/${ev.id}`)}
+                style={{
+                  zIndex: expandedRsvpEventId === ev.id ? 20 : 0,
+                  elevation: expandedRsvpEventId === ev.id && Platform.OS === "android" ? 12 : 0,
+                }}
               >
                 <ThemedView style={styles.card}>
+                  <Pressable
+                    onPress={() => router.push(`/event/${ev.id}`)}
+                    style={({ pressed }) =>
+                      pressed ? { opacity: Platform.OS === "ios" ? 0.92 : 1 } : undefined
+                    }
+                  >
                   <View
                     style={{
                       flexDirection: "row",
@@ -864,6 +876,7 @@ const SchoolCalendarScreen = () => {
                       {descriptionText}
                     </ThemedText>
                   )}
+                  </Pressable>
 
                   {/* Time Slot Button */}
                   {ev.requestRSVP && ev.multipleTimeSlots && (
@@ -927,7 +940,10 @@ const SchoolCalendarScreen = () => {
                   {ev.requestRSVP &&
                     !ev.multipleTimeSlots &&
                     rsvpButtonDisplay && (
-                      <View style={{ marginTop: 12 }}>
+                      <View
+                        style={{ marginTop: 12 }}
+                        collapsable={false}
+                      >
                         <TouchableOpacity
                           style={{
                             paddingVertical: 10,
@@ -1021,7 +1037,11 @@ const SchoolCalendarScreen = () => {
                                       currentRsvpStatus === "going"
                                         ? "600"
                                         : "400",
+                                    textAlign: "center",
                                   }}
+                                  numberOfLines={2}
+                                  adjustsFontSizeToFit
+                                  minimumFontScale={0.85}
                                 >
                                   {t("buttons.going")}
                                 </ThemedText>
@@ -1066,7 +1086,11 @@ const SchoolCalendarScreen = () => {
                                       currentRsvpStatus === "maybe"
                                         ? "600"
                                         : "400",
+                                    textAlign: "center",
                                   }}
+                                  numberOfLines={2}
+                                  adjustsFontSizeToFit
+                                  minimumFontScale={0.85}
                                 >
                                   {t("buttons.maybe")}
                                 </ThemedText>
@@ -1111,7 +1135,11 @@ const SchoolCalendarScreen = () => {
                                       currentRsvpStatus === "not_going"
                                         ? "600"
                                         : "400",
+                                    textAlign: "center",
                                   }}
+                                  numberOfLines={2}
+                                  adjustsFontSizeToFit
+                                  minimumFontScale={0.85}
                                 >
                                   {t("buttons.notGoing")}
                                 </ThemedText>
@@ -1122,7 +1150,7 @@ const SchoolCalendarScreen = () => {
                       </View>
                     )}
                 </ThemedView>
-              </TouchableOpacity>
+              </View>
             );
           })
         )}

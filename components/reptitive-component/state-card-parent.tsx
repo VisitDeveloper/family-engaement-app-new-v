@@ -1,6 +1,6 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { ThemedText } from "../themed-text";
 
 interface StatCardProps {
@@ -12,10 +12,10 @@ interface StatCardProps {
     negative?: boolean;
     rate?: number | string;
     icon?: React.ReactNode | React.ReactElement;
-
+    onPress?: () => void;
 }
 
-function StatCardParent({ label, value, sub, positive, negative, rate, icon, labelIcon }: StatCardProps) {
+function StatCardParent({ label, value, sub, positive, negative, rate, icon, labelIcon, onPress }: StatCardProps) {
     const { theme } = useStore(state => state);
 
     const styles = useThemedStyles((t) => ({
@@ -56,9 +56,8 @@ function StatCardParent({ label, value, sub, positive, negative, rate, icon, lab
         },
     }))
 
-    return (
-
-        <View style={styles.card}>
+    const body = (
+        <>
             <View style={styles.cardTitle}>
                 <ThemedText type="subtitle" style={styles.statValue}>
                     {typeof value === 'number' ? value.toLocaleString() : value}
@@ -77,7 +76,21 @@ function StatCardParent({ label, value, sub, positive, negative, rate, icon, lab
             <ThemedText type="subText">
                 {sub}
             </ThemedText>
-        </View >
+        </>
     );
+
+    if (onPress) {
+        return (
+            <Pressable
+                onPress={onPress}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.card, pressed && { opacity: 0.88 }]}
+            >
+                {body}
+            </Pressable>
+        );
+    }
+
+    return <View style={styles.card}>{body}</View>;
 }
 export default StatCardParent;

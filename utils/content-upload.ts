@@ -23,13 +23,13 @@ export async function ensureUploadableFileUri(inputUri: string): Promise<string>
 
   try {
     if (baseDir) {
-      await FileSystem.makeDirectoryAsync(uploadsDir, { intermediates: true }).catch(() => {});
+      await FileSystem.makeDirectoryAsync(uploadsDir, { intermediates: true }).catch(() => { });
     }
     await FileSystem.copyAsync({ from: uri, to: dest });
     return dest;
   } catch {
     if (/^https?:\/\//i.test(uri)) {
-      await FileSystem.makeDirectoryAsync(uploadsDir, { intermediates: true }).catch(() => {});
+      await FileSystem.makeDirectoryAsync(uploadsDir, { intermediates: true }).catch(() => { });
       const result = await FileSystem.downloadAsync(uri, dest);
       return result.uri;
     }

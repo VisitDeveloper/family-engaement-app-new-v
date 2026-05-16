@@ -11,6 +11,7 @@ import {
 } from "@/services/messaging.service";
 import { postService } from "@/services/post.service";
 import { useStore } from "@/store";
+import { isVideoMediaUrl } from "@/utils/media-url";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
@@ -55,8 +56,16 @@ const CreateOrEditPost = () => {
   const [selectedClassroom, setSelectedClassroom] =
     useState<OptionsList | null>(null);
   const [loadingClassrooms, setLoadingClassrooms] = useState<boolean>(false);
-  const [selectAllClassrooms, setSelectAllClassrooms] = useState<boolean>(false);
-  const isTeacher = user?.role === "teacher" || user?.role === "admin";
+  const [selectedGalleryAsset, setSelectedGalleryAsset] =
+    useState<ImagePicker.ImagePickerAsset | null>(null);
+
+  const canPickPostClassroom = useMemo(
+    () =>
+      user?.role === "admin" ||
+      user?.role === "organization_manager" ||
+      user?.role === "site_manager",
+    [user?.role]
+  );
 
   const styles = useThemedStyles((t) => ({
     container: { flex: 1, padding: 0, backgroundColor: t.bg },
@@ -226,14 +235,16 @@ const CreateOrEditPost = () => {
 
       // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: (ImagePicker.MediaType?.Image ?? "images"),
-        allowsEditing: true,
+        mediaTypes: ["images", "videos"],
+        allowsEditing: false,
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets[0]) {
-        setSelectedImage(result.assets[0].uri);
-        setSelectedFile(null); // Clear file if image is selected
+        const asset = result.assets[0];
+        setSelectedGalleryAsset(asset);
+        setSelectedImage(asset.uri);
+        setSelectedFile(null);
       }
     } catch (error) {
       console.error("Error picking image:", error);
@@ -250,7 +261,8 @@ const CreateOrEditPost = () => {
 
       if (!result.canceled && result.assets[0]) {
         setSelectedFile(result);
-        setSelectedImage(null); // Clear image if file is selected
+        setSelectedImage(null);
+        setSelectedGalleryAsset(null);
       }
     } catch (error) {
       console.error("Error picking document:", error);
@@ -260,6 +272,7 @@ const CreateOrEditPost = () => {
 
   const removeSelectedMedia = () => {
     setSelectedImage(null);
+    setSelectedGalleryAsset(null);
     setSelectedFile(null);
   };
 
@@ -271,8 +284,8 @@ const CreateOrEditPost = () => {
     setExistingFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const loadClassrooms = useCallback(async () => {
-    if (!isTeacher) return;
+  const loadClassrooms = useCallback(async (): Promise<OptionsList[] | null> => {
+    if (!canPickPostClassroom) return null;
 
     setLoadingClassrooms(true);
     try {
@@ -292,13 +305,15 @@ const CreateOrEditPost = () => {
         }
       );
       setClassrooms(mappedClassrooms);
+      return mappedClassrooms;
     } catch (error: any) {
       console.error("Error loading classrooms:", error);
       feedback.toast.error(t("common.error"), t("createPost.failedLoadClassrooms"));
+      return null;
     } finally {
       setLoadingClassrooms(false);
     }
-  }, [isTeacher, t]);
+  }, [canPickPostClassroom, t]);
 
   useEffect(() => {
     loadClassrooms();
@@ -321,49 +336,45 @@ const CreateOrEditPost = () => {
           value: post.visibility,
         },
       ]);
-      if (post.classroom?.id) {
-        // Wait for classrooms to be loaded first
-        if (classrooms.length === 0) {
-          await loadClassrooms();
-        }
-        // Find classroom in the loaded classrooms list
-        const classroom = classrooms.find((c) => c.value === post.classroom?.id);
-        if (classroom) {
-          setSelectedClassroom(classroom);
-          setSelectAllClassrooms(false);
-        } else {
-          // If not found in list, load it directly
-          const classroomsData = await messagingService.getClassrooms();
-          const classroomData = classroomsData.find(
-            (c) => c.id === post.classroomId
-          );
-          if (classroomData) {
-            const name =
-              typeof classroomData.name === "string"
-                ? classroomData.name
-                : classroomData.name && typeof classroomData.name === "object"
-                  ? (Object.values(classroomData.name)[0] as string) ||
-                  t("createPost.classroom")
-                  : t("createPost.classroom");
-            const classroomOption = {
-              label: name,
-              value: classroomData.id,
-            };
-            setSelectedClassroom(classroomOption);
-            setSelectAllClassrooms(false);
-            // Also add it to classrooms list if not already there
-            setClassrooms((prev) => {
-              if (!prev.find((c) => c.value === classroomData.id)) {
-                return [...prev, classroomOption];
-              }
-              return prev;
-            });
+      if (canPickPostClassroom) {
+        if (post.classroom?.id) {
+          let list = classrooms;
+          if (list.length === 0) {
+            const loaded = await loadClassrooms();
+            list = loaded ?? [];
           }
+          const classroom = list.find((c) => c.value === post.classroom?.id);
+          if (classroom) {
+            setSelectedClassroom(classroom);
+          } else {
+            const classroomsData = await messagingService.getClassrooms();
+            const classroomData = classroomsData.find(
+              (c) => c.id === post.classroomId
+            );
+            if (classroomData) {
+              const name =
+                typeof classroomData.name === "string"
+                  ? classroomData.name
+                  : classroomData.name && typeof classroomData.name === "object"
+                    ? (Object.values(classroomData.name)[0] as string) ||
+                    t("createPost.classroom")
+                    : t("createPost.classroom");
+              const classroomOption = {
+                label: name,
+                value: classroomData.id,
+              };
+              setSelectedClassroom(classroomOption);
+              setClassrooms((prev) => {
+                if (!prev.find((c) => c.value === classroomData.id)) {
+                  return [...prev, classroomOption];
+                }
+                return prev;
+              });
+            }
+          }
+        } else {
+          setSelectedClassroom(null);
         }
-      } else {
-        // If no classroomId, default to "No Classroom"
-        setSelectAllClassrooms(false);
-        setSelectedClassroom(null);
       }
     } catch (error: any) {
       console.error("Error loading post:", error);
@@ -372,7 +383,7 @@ const CreateOrEditPost = () => {
     } finally {
       setLoadingPost(false);
     }
-  }, [postId, router, classrooms, loadClassrooms, visibilityOptions, t]);
+  }, [postId, router, classrooms, loadClassrooms, visibilityOptions, t, canPickPostClassroom]);
 
   // Load post data if in edit mode
   useEffect(() => {
@@ -464,28 +475,41 @@ const CreateOrEditPost = () => {
         tags: tagsArray,
         recommended: textMessages,
         visibility: visibilityValue as "everyone" | "followers" | "private",
-        classroomId: selectAllClassrooms
-          ? null
-          : selectedClassroom?.value || null,
       };
 
-      // Handle images
-      if (selectedImage) {
-        // New image selected - upload it
-        const filename = selectedImage.split("/").pop() || "image.jpg";
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : "image/jpeg";
+      if (canPickPostClassroom) {
+        postData.classroomId = selectedClassroom?.value ?? null;
+      }
 
-        const imageFormData = new FormData();
-        imageFormData.append("file", {
+      // Handle gallery image or video
+      if (selectedImage) {
+        const asset = selectedGalleryAsset;
+        const isVideo =
+          asset?.type === "video" ||
+          asset?.type === "pairedVideo" ||
+          (asset?.mimeType?.startsWith("video/") ?? false) ||
+          isVideoMediaUrl(selectedImage);
+        const filename =
+          asset?.fileName?.replace(/\s+/g, "_") ||
+          selectedImage.split("/").pop() ||
+          (isVideo ? "clip.mp4" : "image.jpg");
+        const mimeType =
+          asset?.mimeType ||
+          (isVideo ? "video/mp4" : (() => {
+            const match = /\.(\w+)$/.exec(filename);
+            return match ? `image/${match[1]}` : "image/jpeg";
+          })());
+
+        const mediaFormData = new FormData();
+        mediaFormData.append("file", {
           uri: selectedImage,
           name: filename,
-          type: type,
+          type: mimeType,
         } as any);
 
-        const uploadResponse = await messagingService.uploadImage(
-          imageFormData
-        );
+        const uploadResponse = isVideo
+          ? await messagingService.uploadVideo(mediaFormData)
+          : await messagingService.uploadImage(mediaFormData);
         postData.images = [uploadResponse.url];
       } else if (isEditMode && existingImages.length > 0) {
         // Keep existing images in edit mode
@@ -610,10 +634,31 @@ const CreateOrEditPost = () => {
 
         {selectedImage && (
           <View style={{ marginTop: 10 }}>
-            <Image
-              source={{ uri: selectedImage }}
-              style={styles.selectedImage}
-            />
+            {selectedGalleryAsset?.type === "video" ||
+            selectedGalleryAsset?.type === "pairedVideo" ||
+            (selectedGalleryAsset?.mimeType?.startsWith("video/") ?? false) ||
+            isVideoMediaUrl(selectedImage) ? (
+              <View
+                style={[
+                  styles.selectedImage,
+                  {
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: theme.panel,
+                  },
+                ]}
+              >
+                <Ionicons name="videocam" size={48} color={theme.subText} />
+                <ThemedText type="subText" style={{ marginTop: 8 }}>
+                  {t("createPost.videoSelected")}
+                </ThemedText>
+              </View>
+            ) : (
+              <Image
+                source={{ uri: selectedImage }}
+                style={styles.selectedImage}
+              />
+            )}
             <TouchableOpacity
               style={styles.removeButton}
               onPress={removeSelectedMedia}
@@ -750,7 +795,7 @@ const CreateOrEditPost = () => {
           />
         </View>
 
-        {isTeacher && (
+        {canPickPostClassroom && (
           <View style={styles.column}>
             <View style={{ flex: 1 }}>
               <View
@@ -763,9 +808,9 @@ const CreateOrEditPost = () => {
                   {t("createPost.selectClassroom")}
                 </ThemedText>
               </View>
-              {/* <ThemedText type="subText" style={[styles.rowSubtitle, {}]}>
-                Choose a classroom for this post (optional)
-              </ThemedText> */}
+              <ThemedText type="subText" style={[styles.rowSubtitle, {}]}>
+                {t("createPost.classroomScopeHint")}
+              </ThemedText>
             </View>
 
             {loadingClassrooms ? (
@@ -773,24 +818,14 @@ const CreateOrEditPost = () => {
             ) : (
               <SelectBox
                 options={[
-                  { label: t("createPost.allClassrooms"), value: "all" },
-                  { label: t("createPost.noClassroom"), value: "" },
+                  { label: t("createPost.schoolWideOption"), value: "" },
                   ...classrooms,
                 ]}
-                value={
-                  selectAllClassrooms
-                    ? "all"
-                    : selectedClassroom?.value || ""
-                }
+                value={selectedClassroom?.value || ""}
                 onChange={(val) => {
-                  if (val === "all") {
-                    setSelectAllClassrooms(true);
-                    setSelectedClassroom(null);
-                  } else if (val === "") {
-                    setSelectAllClassrooms(false);
+                  if (val === "") {
                     setSelectedClassroom(null);
                   } else {
-                    setSelectAllClassrooms(false);
                     const selectedOption = classrooms.find(
                       (opt) => opt.value === val
                     );
