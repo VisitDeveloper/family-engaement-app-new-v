@@ -529,7 +529,8 @@
     "failedLoadContacts": "Error al cargar los contactos",
     "failedPickImage": "Error al elegir imagen. Inténtalo de nuevo.",
     "pleaseEnterGroupName": "Por favor introduce un nombre de grupo",
-    "failedCreateGroup": "Error al crear el grupo"
+    "failedCreateGroup": "Error al crear el grupo",
+    "parentCannotCreate": "Los padres no pueden crear conversaciones grupales"
   },
   "map": {
     "selectedLocation": "Ubicación seleccionada"

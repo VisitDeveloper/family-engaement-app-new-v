@@ -362,7 +362,7 @@ export default function NewMessageScreen() {
 
       {/* Groups */}
       <Text style={[styles.sectionTitle, { marginBottom: 4 }]}>Groups</Text>
-      {currentUser?.role !== "parent" && (
+      {effectiveRole !== "parent" && (
         <TouchableOpacity
           style={styles.row}
           onPress={() => router.push("/create-group")}

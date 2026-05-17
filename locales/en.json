@@ -547,7 +547,8 @@
     "failedLoadContacts": "Failed to load contacts",
     "failedPickImage": "Failed to pick image. Please try again.",
     "pleaseEnterGroupName": "Please enter a group name",
-    "failedCreateGroup": "Failed to create group"
+    "failedCreateGroup": "Failed to create group",
+    "parentCannotCreate": "Parents cannot create group conversations"
   },
   "map": {
     "selectedLocation": "Selected Location"

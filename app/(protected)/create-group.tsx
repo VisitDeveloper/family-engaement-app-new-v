@@ -6,7 +6,9 @@ import Divider from "@/components/ui/divider";
 import { CheckboxIcon, CheckedboxIcon } from "@/components/ui/icons/common-icons";
 import { CameraIcon, PencilIcon, PersonWithPlusIcon, SmallUsersIcon, UsersIcon } from "@/components/ui/icons/messages-icons";
 import SelectListBottomSheet from "@/components/ui/select-list-bottom-sheet";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { isManagementRole, shouldHideFromContactList } from "@/utils/roles";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
 import { useStore } from "@/store";
@@ -45,6 +47,9 @@ export default function CreateGroupScreen() {
   const currentUser = useStore((state: any) => state.user);
   const currentUserId = currentUser?.id || null;
   const addConversation = useStore((state: any) => state.addConversation);
+  const effectiveRole = useEffectiveRole();
+  const isTeacher = effectiveRole === "teacher";
+  const isParent = effectiveRole === "parent";
 
   const [data, setData] = useState<Invitee[]>([]);
   const [group, setGroup] = useState<Classroom[]>([]);
@@ -158,6 +163,12 @@ export default function CreateGroupScreen() {
   }));
 
   const loadContacts = useCallback(async () => {
+    if (isTeacher) {
+      setData([]);
+      setLoadingContacts(false);
+      return;
+    }
+
     setLoadingContacts(true);
     try {
 
@@ -165,16 +176,22 @@ export default function CreateGroupScreen() {
         | "parent"
         | "teacher"
         | "student"
-        | ("parent" | "teacher" | "student")[] = ["parent", "teacher"]
-      if (currentUser.role === "teacher") {
+        | ("parent" | "teacher" | "student")[] = ["parent", "teacher"];
+      if (effectiveRole === "teacher") {
         role = ["parent"];
-      } else if (currentUser.role === "parent") {
+      } else if (effectiveRole === "parent") {
         role = ["teacher"];
+      } else if (isManagementRole(effectiveRole)) {
+        role = ["parent", "teacher"];
       }
 
       const response = await userService.getAll({ limit: 100, role });
       const mappedContacts: Invitee[] = response.users
-        .filter((user) => user.id !== currentUserId)
+        .filter((user) => {
+          if (user.id === currentUserId) return false;
+          if (shouldHideFromContactList(user.role)) return false;
+          return true;
+        })
         .map((user) => ({
           id: user.id,
           name: getDisplayName(user.firstName, user.lastName, user.email),
@@ -204,8 +221,7 @@ export default function CreateGroupScreen() {
     } finally {
       setLoadingContacts(false);
     }
-    // eslint-disable-next-line
-  }, [currentUserId]);
+  }, [currentUserId, effectiveRole, isTeacher]);
 
   const loadClassrooms = useCallback(async () => {
     setLoadingClassrooms(true);
@@ -240,9 +256,14 @@ export default function CreateGroupScreen() {
   }, []);
 
   useEffect(() => {
+    if (isParent) {
+      feedback.toast.error(t("common.error"), t("createGroup.parentCannotCreate"));
+      router.back();
+      return;
+    }
     loadContacts();
     loadClassrooms();
-  }, [loadContacts, loadClassrooms]);
+  }, [isParent, loadContacts, loadClassrooms, router, t]);
 
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -318,6 +339,11 @@ export default function CreateGroupScreen() {
       return;
     }
 
+    if (isTeacher && selectedGroup.length < 1) {
+      feedback.toast.error(t("common.error"), "Please attach at least one classroom");
+      return;
+    }
+
     setCreating(true);
     try {
       let imageUrl: string | undefined;
@@ -340,7 +366,7 @@ export default function CreateGroupScreen() {
           selectedGroup.length > 0
             ? `Attached ${selectedGroup.length} classroom(s)`
             : undefined,
-        memberIds: selected,
+        memberIds: isTeacher ? [] : selected,
         imageUrl,
         classroomIds: selectedGroup.length > 0 ? selectedGroup : undefined,
       });
@@ -614,7 +640,8 @@ export default function CreateGroupScreen() {
           )}
         </View>
 
-        {/* Add Members */}
+        {/* Add Members — teachers add parents via classroom selection only */}
+        {!isTeacher && (
         <View style={styles.card}>
           <View
             style={{
@@ -808,6 +835,7 @@ export default function CreateGroupScreen() {
             </TouchableOpacity>
           )}
         </View>
+        )}
 
         {/* Footer Button */}
         <TouchableOpacity
@@ -815,7 +843,9 @@ export default function CreateGroupScreen() {
             styles.footerButton,
             (creating ||
               !groupName.trim() ||
-              (selectedGroup.length < 1 && selected.length < 3)) && {
+              (isTeacher
+                ? selectedGroup.length < 1
+                : selectedGroup.length < 1 && selected.length < 3)) && {
               opacity: 0.5,
             },
           ]}
@@ -823,7 +853,9 @@ export default function CreateGroupScreen() {
           disabled={
             creating ||
             !groupName.trim() ||
-            (selectedGroup.length < 1 && selected.length < 3)
+            (isTeacher
+              ? selectedGroup.length < 1
+              : selectedGroup.length < 1 && selected.length < 3)
           }
         >
           {creating ? (

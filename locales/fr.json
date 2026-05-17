@@ -529,7 +529,8 @@
     "failedLoadContacts": "Échec du chargement des contacts",
     "failedPickImage": "Échec de la sélection de l'image. Veuillez réessayer.",
     "pleaseEnterGroupName": "Veuillez entrer un nom de groupe",
-    "failedCreateGroup": "Échec de la création du groupe"
+    "failedCreateGroup": "Échec de la création du groupe",
+    "parentCannotCreate": "Les parents ne peuvent pas créer de conversations de groupe"
   },
   "map": {
     "selectedLocation": "Emplacement sélectionné"
