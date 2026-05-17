@@ -20,7 +20,16 @@ import { useStore } from "@/store";
 import { getDisplayName } from "@/utils/user-name";
 import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { Ionicons } from "@expo/vector-icons";
-import { AVPlaybackStatus, Audio, ResizeMode, Video } from "expo-av";
+import { AppVideoPlayerModal } from "@/components/ui/app-video-player-modal";
+import { setPlaybackAudioMode, setRecordingAudioMode } from "@/lib/audio-session";
+import {
+    createAudioPlayer,
+    type AudioPlayer,
+    RecordingPresets,
+    requestRecordingPermissionsAsync,
+    useAudioRecorder,
+    useAudioRecorderState,
+} from "expo-audio";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
@@ -31,6 +40,13 @@ import { ActivityIndicator, Clipboard, DeviceEventEmitter, Dimensions, FlatList,
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import InCallManager from "react-native-incall-manager";
+
+const WAVEFORM_BAR_COUNT = 28;
+
+const VOICE_RECORDING_OPTIONS = {
+    ...RecordingPresets.HIGH_QUALITY,
+    isMeteringEnabled: true,
+};
 
 export default function ChatScreen() {
     type RecorderMode = "idle" | "recording" | "locked" | "preview" | "sending";
@@ -61,25 +77,28 @@ export default function ChatScreen() {
     const [selectedOtherMessage, setSelectedOtherMessage] = useState<MessageResponseDto | null>(null);
     const [showReactionPicker, setShowReactionPicker] = useState(false);
     const messageViewRefs = useRef<Record<string, View | null>>({});
-    const videoRef = useRef<Video | null>(null);
     const [recorderMode, setRecorderMode] = useState<RecorderMode>("idle");
-    const recordingRef = useRef<Audio.Recording | null>(null);
+    const audioRecorder = useAudioRecorder(VOICE_RECORDING_OPTIONS);
+    const recorderState = useAudioRecorderState(audioRecorder, 120);
+    const isStartingRecordingRef = useRef(false);
     const [recordingDurationMs, setRecordingDurationMs] = useState(0);
     const [recordingWaveform, setRecordingWaveform] = useState<number[]>([]);
     const [previewAudio, setPreviewAudio] = useState<{ uri: string; durationSeconds?: number } | null>(null);
     const [previewIsPlaying, setPreviewIsPlaying] = useState(false);
     const [previewPositionMs, setPreviewPositionMs] = useState(0);
     const [previewDurationMs, setPreviewDurationMs] = useState(0);
-    const previewSoundRef = useRef<Audio.Sound | null>(null);
+    const previewPlayerRef = useRef<AudioPlayer | null>(null);
+    const previewStatusSubscriptionRef = useRef<{ remove: () => void } | null>(null);
     const recorderModeRef = useRef<RecorderMode>("idle");
     const micPressingRef = useRef(false);
     const gestureOutcomeRef = useRef<"none" | "locked" | "cancelled">("none");
-    /** If user cancels before `Recording.createAsync` finishes, drop the recording when it appears. */
+    /** If user cancels before prepare/record finishes, drop the recording when it starts. */
     const discardRecordingAfterPrepareRef = useRef(false);
     const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
     const [audioPositions, setAudioPositions] = useState<Record<string, number>>({});
     const [audioDurations, setAudioDurations] = useState<Record<string, number>>({});
-    const soundRef = useRef<Audio.Sound | null>(null);
+    const messagePlayerRef = useRef<AudioPlayer | null>(null);
+    const messageStatusSubscriptionRef = useRef<{ remove: () => void } | null>(null);
     const positionUpdateInterval = useRef<NodeJS.Timeout | null>(null);
     const [audioRouteSessionActive, setAudioRouteSessionActive] = useState(false);
     const [isProximityNear, setIsProximityNear] = useState(false);
@@ -104,7 +123,6 @@ export default function ChatScreen() {
     const isRecording = recorderMode === "recording" || recorderMode === "locked";
     const isRecorderLocked = recorderMode === "locked";
     const isRecorderPreview = recorderMode === "preview";
-    const WAVEFORM_BAR_COUNT = 28;
     /** Distance (px) from touch start; kept moderate so slow drags still count. */
     const LOCK_THRESHOLD = 32;
     const CANCEL_THRESHOLD = 42;
@@ -112,6 +130,16 @@ export default function ChatScreen() {
     useEffect(() => {
         recorderModeRef.current = recorderMode;
     }, [recorderMode]);
+
+    useEffect(() => {
+        if (recorderMode !== "recording" && recorderMode !== "locked") return;
+        if (!recorderState.isRecording) return;
+        setRecordingDurationMs(recorderState.durationMillis ?? 0);
+        if (typeof recorderState.metering === "number") {
+            const normalized = Math.max(0.08, Math.min(1, (recorderState.metering + 160) / 160));
+            setRecordingWaveform((prev) => [...prev.slice(-(WAVEFORM_BAR_COUNT - 1)), normalized]);
+        }
+    }, [recorderMode, recorderState]);
 
     const setRecorderModeImmediate = useCallback((mode: RecorderMode) => {
         recorderModeRef.current = mode;
@@ -686,8 +714,8 @@ export default function ChatScreen() {
     };
 
     const requestRecordingPermission = useCallback(async (): Promise<boolean> => {
-        const { status } = await Audio.requestPermissionsAsync();
-        if (status !== 'granted') {
+        const { granted } = await requestRecordingPermissionsAsync();
+        if (!granted) {
             feedback.alert(
                 'Microphone access',
                 'Microphone permission is needed to record voice messages.',
@@ -695,31 +723,27 @@ export default function ChatScreen() {
             );
             return false;
         }
-        await Audio.setAudioModeAsync({
-            allowsRecordingIOS: true,
-            playsInSilentModeIOS: true,
-            staysActiveInBackground: false,
-            shouldDuckAndroid: true,
-            playThroughEarpieceAndroid: false,
-        });
+        await setRecordingAudioMode();
         return true;
     }, []);
 
-    const cleanupPreviewSound = useCallback(async () => {
-        if (!previewSoundRef.current) return;
-        try {
-            await previewSoundRef.current.unloadAsync();
-        } catch {
-            // noop
-        } finally {
-            previewSoundRef.current = null;
-            setPreviewIsPlaying(false);
-            setPreviewPositionMs(0);
+    const cleanupPreviewPlayer = useCallback(() => {
+        previewStatusSubscriptionRef.current?.remove();
+        previewStatusSubscriptionRef.current = null;
+        if (previewPlayerRef.current) {
+            try {
+                previewPlayerRef.current.remove();
+            } catch {
+                // noop
+            }
+            previewPlayerRef.current = null;
         }
+        setPreviewIsPlaying(false);
+        setPreviewPositionMs(0);
     }, []);
 
     const resetRecorderUi = useCallback(async () => {
-        await cleanupPreviewSound();
+        cleanupPreviewPlayer();
         setRecordingDurationMs(0);
         setRecordingWaveform([]);
         setPreviewAudio(null);
@@ -727,60 +751,44 @@ export default function ChatScreen() {
         setPreviewDurationMs(0);
         gestureOutcomeRef.current = "none";
         setRecorderModeImmediate("idle");
-    }, [cleanupPreviewSound, setRecorderModeImmediate]);
+    }, [cleanupPreviewPlayer, setRecorderModeImmediate]);
 
     const startRecording = useCallback(async () => {
         if (!conversationId || uploadingFile || sending) return;
         if (isParentInGroup) return;
-        if (recordingRef.current) return;
+        if (audioRecorder.isRecording || isStartingRecordingRef.current) return;
         const ok = await requestRecordingPermission();
         if (!ok) {
             await resetRecorderUi();
             return;
         }
 
+        isStartingRecordingRef.current = true;
         try {
-            await cleanupPreviewSound();
-            const options = {
-                ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
-                ios: {
-                    ...Audio.RecordingOptionsPresets.HIGH_QUALITY.ios,
-                    isMeteringEnabled: true,
-                },
-                android: {
-                    ...Audio.RecordingOptionsPresets.HIGH_QUALITY.android,
-                    isMeteringEnabled: true,
-                },
-            };
-            const { recording } = await Audio.Recording.createAsync(options as any);
-            recording.setProgressUpdateInterval(120);
-            recording.setOnRecordingStatusUpdate((status) => {
-                if (!status.isRecording) return;
-                setRecordingDurationMs(status.durationMillis ?? 0);
-                const metering = typeof status.metering === "number" ? status.metering : -160;
-                const normalized = Math.max(0.08, Math.min(1, (metering + 160) / 160));
-                setRecordingWaveform((prev) => [...prev.slice(-(WAVEFORM_BAR_COUNT - 1)), normalized]);
-            });
-            recordingRef.current = recording;
+            cleanupPreviewPlayer();
             setRecordingDurationMs(0);
             setRecordingWaveform([]);
+            await audioRecorder.prepareToRecordAsync();
             if (discardRecordingAfterPrepareRef.current) {
                 discardRecordingAfterPrepareRef.current = false;
                 try {
-                    await recording.stopAndUnloadAsync();
+                    await audioRecorder.stop();
                 } catch {
                     // noop
                 }
-                recordingRef.current = null;
                 await resetRecorderUi();
                 return;
             }
             if (gestureOutcomeRef.current === "cancelled") {
-                await recording.stopAndUnloadAsync();
-                recordingRef.current = null;
+                try {
+                    await audioRecorder.stop();
+                } catch {
+                    // noop
+                }
                 await resetRecorderUi();
                 return;
             }
+            audioRecorder.record();
             if (gestureOutcomeRef.current === "locked") {
                 if (!micPressingRef.current) {
                     setRecorderModeImmediate("locked");
@@ -792,21 +800,21 @@ export default function ChatScreen() {
             console.error("Failed to start recording:", error);
             feedback.toast.error("Error", error?.message || "Could not start recording");
             await resetRecorderUi();
+        } finally {
+            isStartingRecordingRef.current = false;
         }
-    }, [conversationId, uploadingFile, sending, isParentInGroup, requestRecordingPermission, cleanupPreviewSound, WAVEFORM_BAR_COUNT, resetRecorderUi, setRecorderModeImmediate]);
+    }, [conversationId, uploadingFile, sending, isParentInGroup, requestRecordingPermission, cleanupPreviewPlayer, resetRecorderUi, setRecorderModeImmediate, audioRecorder]);
 
     const stopRecordingToPreview = useCallback(async () => {
-        const recording = recordingRef.current;
-        if (!recording) return;
+        if (!audioRecorder.isRecording && !isStartingRecordingRef.current) return;
         try {
             setRecorderModeImmediate("preview");
-            recordingRef.current = null;
-            const status = await recording.getStatusAsync();
-            const durationMillis = status.durationMillis ?? recordingDurationMs;
-            if (!status.isDoneRecording) {
-                await recording.stopAndUnloadAsync();
+            if (audioRecorder.isRecording) {
+                await audioRecorder.stop();
             }
-            const uri = recording.getURI();
+            const status = audioRecorder.getStatus();
+            const durationMillis = status.durationMillis ?? recordingDurationMs;
+            const uri = audioRecorder.uri;
             if (!uri) {
                 await resetRecorderUi();
                 feedback.toast.error("Error", "Recording file not available");
@@ -826,28 +834,23 @@ export default function ChatScreen() {
             await resetRecorderUi();
             feedback.toast.error("Error", error?.message || "Failed to process voice message");
         }
-    }, [recordingDurationMs, resetRecorderUi, t, setRecorderModeImmediate]);
+    }, [recordingDurationMs, resetRecorderUi, t, setRecorderModeImmediate, audioRecorder]);
 
     const cancelRecording = useCallback(async () => {
-        const recording = recordingRef.current;
-        const hadRecording = !!recording;
+        const hadRecording = audioRecorder.isRecording || isStartingRecordingRef.current;
         try {
-            if (recording) {
-                const status = await recording.getStatusAsync();
-                if (!status.isDoneRecording) {
-                    await recording.stopAndUnloadAsync();
-                }
+            if (audioRecorder.isRecording) {
+                await audioRecorder.stop();
             }
         } catch {
             // noop
         } finally {
-            recordingRef.current = null;
             if (!hadRecording) {
                 discardRecordingAfterPrepareRef.current = true;
             }
             await resetRecorderUi();
         }
-    }, [resetRecorderUi]);
+    }, [resetRecorderUi, audioRecorder]);
 
     const sendPreviewRecording = useCallback(async () => {
         if (!previewAudio || !conversationId) return;
@@ -862,44 +865,48 @@ export default function ChatScreen() {
         }
     }, [previewAudio, conversationId, uploadAndSendFile, resetRecorderUi, setRecorderModeImmediate]);
 
-    const togglePreviewPlayback = useCallback(async () => {
+    const togglePreviewPlayback = useCallback(() => {
         if (!previewAudio?.uri) return;
         try {
-            if (!previewSoundRef.current) {
-                const { sound } = await Audio.Sound.createAsync({ uri: previewAudio.uri }, { shouldPlay: true });
-                previewSoundRef.current = sound;
-                setPreviewIsPlaying(true);
-                sound.setOnPlaybackStatusUpdate((status) => {
-                    if (!status.isLoaded) return;
-                    setPreviewPositionMs(status.positionMillis ?? 0);
-                    setPreviewDurationMs(status.durationMillis ?? previewDurationMs);
-                    if (status.didJustFinish) {
-                        setPreviewIsPlaying(false);
-                        setPreviewPositionMs(0);
+            if (!previewPlayerRef.current) {
+                const player = createAudioPlayer(previewAudio.uri, { updateInterval: 100 });
+                previewPlayerRef.current = player;
+                previewStatusSubscriptionRef.current = player.addListener(
+                    "playbackStatusUpdate",
+                    (status) => {
+                        if (!status.isLoaded) return;
+                        setPreviewPositionMs(status.currentTime * 1000);
+                        setPreviewDurationMs(status.duration * 1000);
+                        if (status.didJustFinish) {
+                            setPreviewIsPlaying(false);
+                            setPreviewPositionMs(0);
+                            player.seekTo(0);
+                        }
                     }
-                });
+                );
+                player.play();
+                setPreviewIsPlaying(true);
                 return;
             }
-            const status = await previewSoundRef.current.getStatusAsync();
-            if (!status.isLoaded) return;
-            if (status.isPlaying) {
-                await previewSoundRef.current.pauseAsync();
+            const player = previewPlayerRef.current;
+            if (player.playing) {
+                player.pause();
                 setPreviewIsPlaying(false);
             } else {
+                const durationMs = previewDurationMs > 0 ? previewDurationMs : player.duration * 1000;
                 const isAtEnd =
-                    (status.durationMillis ?? 0) > 0 &&
-                    (status.positionMillis ?? 0) >= (status.durationMillis ?? 0) - 120;
+                    durationMs > 0 && previewPositionMs >= durationMs - 120;
                 if (isAtEnd) {
-                    await previewSoundRef.current.setPositionAsync(0);
+                    player.seekTo(0);
                     setPreviewPositionMs(0);
                 }
-                await previewSoundRef.current.playAsync();
+                player.play();
                 setPreviewIsPlaying(true);
             }
         } catch {
             feedback.toast.error("Error", "Failed to preview recording");
         }
-    }, [previewAudio, previewDurationMs]);
+    }, [previewAudio, previewDurationMs, previewPositionMs]);
 
     const micPanResponder = useMemo(
         () =>
@@ -935,7 +942,7 @@ export default function ChatScreen() {
                         return;
                     }
                     if (recorderModeRef.current === "recording") {
-                        if (recordingRef.current) {
+                        if (audioRecorder.isRecording || isStartingRecordingRef.current) {
                             void stopRecordingToPreview();
                         } else {
                             discardRecordingAfterPrepareRef.current = true;
@@ -953,7 +960,7 @@ export default function ChatScreen() {
                         return;
                     }
                     if (recorderModeRef.current === "recording") {
-                        if (recordingRef.current) {
+                        if (audioRecorder.isRecording || isStartingRecordingRef.current) {
                             void stopRecordingToPreview();
                         } else {
                             discardRecordingAfterPrepareRef.current = true;
@@ -973,6 +980,7 @@ export default function ChatScreen() {
             cancelRecording,
             stopRecordingToPreview,
             resetRecorderUi,
+            audioRecorder.isRecording,
         ]
     );
 
@@ -984,20 +992,6 @@ export default function ChatScreen() {
         stopAudioRouteSession();
         setVideoModalUri(url);
     };
-
-    const handleVideoPlaybackStatusUpdate = useCallback(
-        (status: AVPlaybackStatus) => {
-            if (!status.isLoaded) return;
-            if (!status.didJustFinish) return;
-
-            // Rewind to start after finishing so the user can replay.
-            void videoRef.current?.setStatusAsync({
-                shouldPlay: false,
-                positionMillis: 0,
-            });
-        },
-        []
-    );
 
     const handleImagePress = (uri: string) => {
         setFullScreenImageUri(uri);
@@ -1180,13 +1174,7 @@ export default function ChatScreen() {
         if (!audioRouteSessionActive) return;
         try {
             const shouldUseEarpiece = !isHeadsetPlugged && isProximityNear;
-            await Audio.setAudioModeAsync({
-                allowsRecordingIOS: false,
-                playsInSilentModeIOS: true,
-                staysActiveInBackground: false,
-                shouldDuckAndroid: true,
-                playThroughEarpieceAndroid: shouldUseEarpiece,
-            });
+            await setPlaybackAudioMode({ routeThroughEarpiece: shouldUseEarpiece });
 
             if (Platform.OS === "ios") {
                 // On iOS, InCallManager speaker-forcing APIs are unreliable/no-op.
@@ -1230,14 +1218,7 @@ export default function ChatScreen() {
                 InCallManager.stopProximitySensor();
                 InCallManager.stop();
             }
-            // Expo AV audio mode is global; reset to speaker route after voice playback.
-            void Audio.setAudioModeAsync({
-                allowsRecordingIOS: false,
-                playsInSilentModeIOS: true,
-                staysActiveInBackground: false,
-                shouldDuckAndroid: true,
-                playThroughEarpieceAndroid: false,
-            });
+            void setPlaybackAudioMode();
         } catch (error) {
             console.error("Failed to stop audio route session:", error);
         } finally {
@@ -1246,6 +1227,23 @@ export default function ChatScreen() {
         }
     }, [audioRouteSessionActive]);
 
+    const stopMessagePlayer = useCallback(() => {
+        messageStatusSubscriptionRef.current?.remove();
+        messageStatusSubscriptionRef.current = null;
+        if (messagePlayerRef.current) {
+            try {
+                messagePlayerRef.current.remove();
+            } catch {
+                // noop
+            }
+            messagePlayerRef.current = null;
+        }
+        if (positionUpdateInterval.current) {
+            clearInterval(positionUpdateInterval.current);
+            positionUpdateInterval.current = null;
+        }
+    }, []);
+
     const handleAudioPlay = async (audioUrl: string, messageId: string, durationSeconds?: number) => {
         try {
             if (!audioUrl?.trim()) {
@@ -1253,15 +1251,7 @@ export default function ChatScreen() {
                 return;
             }
 
-            // Stop current audio if playing
-            if (soundRef.current) {
-                await soundRef.current.unloadAsync();
-                soundRef.current = null;
-            }
-            if (positionUpdateInterval.current) {
-                clearInterval(positionUpdateInterval.current);
-                positionUpdateInterval.current = null;
-            }
+            stopMessagePlayer();
 
             // If clicking the same audio, toggle pause
             if (playingAudioId === messageId) {
@@ -1271,55 +1261,42 @@ export default function ChatScreen() {
                 return;
             }
 
-            // Ensure audio session is in playback mode (record mode can break output routing/playback).
-            await Audio.setAudioModeAsync({
-                allowsRecordingIOS: false,
-                playsInSilentModeIOS: true,
-                staysActiveInBackground: false,
-                shouldDuckAndroid: true,
-                playThroughEarpieceAndroid: false,
-            });
-
+            await setPlaybackAudioMode();
             startAudioRouteSession();
 
-            // Load and play new audio
-            const { sound } = await Audio.Sound.createAsync(
-                { uri: audioUrl },
-                { shouldPlay: true }
-            );
-            soundRef.current = sound;
+            const player = createAudioPlayer(audioUrl, { updateInterval: 100 });
+            messagePlayerRef.current = player;
+            player.play();
 
-            const status = await sound.getStatusAsync();
-            const duration = (status.isLoaded && 'durationMillis' in status && status.durationMillis)
-                ? status.durationMillis / 1000
-                : (durationSeconds || 0);
+            const initialDuration =
+                player.duration > 0 ? player.duration : (durationSeconds || 0);
 
-            setAudioDurations(prev => ({ ...prev, [messageId]: duration }));
+            setAudioDurations(prev => ({ ...prev, [messageId]: initialDuration }));
             setPlayingAudioId(messageId);
             setAudioPositions(prev => ({ ...prev, [messageId]: 0 }));
 
-            // Update position using status callback
-            sound.setOnPlaybackStatusUpdate((status) => {
-                if (status.isLoaded) {
-                    if (status.positionMillis !== undefined) {
-                        const position = status.positionMillis / 1000;
-                        setAudioPositions(prev => ({ ...prev, [messageId]: position }));
+            messageStatusSubscriptionRef.current = player.addListener(
+                "playbackStatusUpdate",
+                (status) => {
+                    if (!status.isLoaded) return;
+                    if (status.duration > 0) {
+                        setAudioDurations(prev => ({ ...prev, [messageId]: status.duration }));
                     }
+                    setAudioPositions(prev => ({
+                        ...prev,
+                        [messageId]: status.currentTime,
+                    }));
                     if (status.didJustFinish) {
                         setPlayingAudioId(null);
                         setAudioPositions(prev => ({ ...prev, [messageId]: 0 }));
-                        sound.unloadAsync();
-                        soundRef.current = null;
+                        stopMessagePlayer();
                         stopAudioRouteSession();
-                        if (positionUpdateInterval.current) {
-                            clearInterval(positionUpdateInterval.current);
-                            positionUpdateInterval.current = null;
-                        }
                     }
                 }
-            });
+            );
         } catch (error: any) {
             console.error('Error playing audio:', error);
+            stopMessagePlayer();
             stopAudioRouteSession();
             feedback.toast.error('Error', 'Failed to play audio');
         }
@@ -1350,22 +1327,14 @@ export default function ChatScreen() {
 
     useEffect(() => {
         return () => {
-            // Cleanup on unmount
-            if (soundRef.current) {
-                soundRef.current.unloadAsync();
-            }
-            if (previewSoundRef.current) {
-                previewSoundRef.current.unloadAsync();
-            }
-            if (recordingRef.current) {
-                recordingRef.current.stopAndUnloadAsync().catch(() => { });
-            }
-            if (positionUpdateInterval.current) {
-                clearInterval(positionUpdateInterval.current);
+            stopMessagePlayer();
+            cleanupPreviewPlayer();
+            if (audioRecorder.isRecording) {
+                audioRecorder.stop().catch(() => { });
             }
             stopAudioRouteSession();
         };
-    }, [stopAudioRouteSession]);
+    }, [stopAudioRouteSession, stopMessagePlayer, cleanupPreviewPlayer, audioRecorder]);
 
     useEffect(() => {
         if (prevConversationIdRef.current !== undefined && prevConversationIdRef.current !== conversationId) {
@@ -2203,36 +2172,11 @@ export default function ChatScreen() {
                     </TouchableOpacity>
                 </Modal>
 
-                {/* Video player modal */}
-                <Modal
+                <AppVideoPlayerModal
                     visible={!!videoModalUri}
-                    animationType="slide"
-                    onRequestClose={() => setVideoModalUri(null)}
-                >
-                    <View style={{ flex: 1, backgroundColor: "#000" }}>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: insets.top + 8, paddingHorizontal: 16, paddingBottom: 8 }}>
-                            <TouchableOpacity onPress={() => setVideoModalUri(null)}>
-                                <Ionicons name="arrow-back" size={28} color="#fff" />
-                            </TouchableOpacity>
-                            <Text style={{ color: "#fff", fontSize: 16 }}>{t("buttons.video")}</Text>
-                            <View style={{ width: 28 }} />
-                        </View>
-                        {videoModalUri && (
-                            <Video
-                                ref={videoRef}
-                                source={{ uri: videoModalUri }}
-                                style={{ flex: 1, width: "100%" }}
-                                useNativeControls
-                                resizeMode={ResizeMode.CONTAIN}
-                                onPlaybackStatusUpdate={handleVideoPlaybackStatusUpdate}
-                                onError={(e) => {
-                                    console.error("Video error:", e);
-                                    feedback.toast.error("Error", "Failed to play video");
-                                }}
-                            />
-                        )}
-                    </View>
-                </Modal>
+                    uri={videoModalUri}
+                    onClose={() => setVideoModalUri(null)}
+                />
             </KeyboardAvoidingView>
         </View>
     );

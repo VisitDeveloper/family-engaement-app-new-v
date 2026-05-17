@@ -7,6 +7,7 @@ export interface PostResponseDto {
   recommended: boolean;
   visibility: 'everyone' | 'followers' | 'private';
   images?: string[] | null;
+  imageThumbnails?: string[] | null;
   files?: string[] | null;
   classroomId?: string | null;
   classroom?: { id: string; name: string } | null;
@@ -40,6 +41,7 @@ export interface CreatePostDto {
   recommended?: boolean;
   visibility?: 'everyone' | 'followers' | 'private';
   images?: string[];
+  imageThumbnails?: string[];
   files?: string[];
   classroomId?: string | null;
 }
@@ -50,6 +52,7 @@ export interface UpdatePostDto {
   recommended?: boolean;
   visibility?: 'everyone' | 'followers' | 'private';
   images?: string[];
+  imageThumbnails?: string[];
   files?: string[];
   classroomId?: string | null;
 }

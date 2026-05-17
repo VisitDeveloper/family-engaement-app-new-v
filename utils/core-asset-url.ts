@@ -7,27 +7,60 @@ function trimTrailingSlashes(s: string): string {
   return s.replace(/\/+$/, "");
 }
 
+function isLoopbackHost(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
 /**
- * Resolves resource image/content URLs for this app: relative `/uploads/...` gets the API origin,
- * and absolute URLs whose path is under `/uploads/` use the API origin (fixes FILE_BASE_URL ≠ EXPO_PUBLIC_API_URL).
+ * Resolves resource image/content URLs for this app.
+ * - Relative `/uploads/...` → EXPO_PUBLIC_API_URL
+ * - Absolute loopback URLs on device → API URL when API is a reachable LAN host
+ * - Absolute LAN/public URLs from FILE_BASE_URL → kept as-is (do not force localhost)
  */
 export function resolveCoreAssetUrl(path: string | null | undefined): string {
   if (path == null || typeof path !== "string") return "";
   const trimmed = path.trim();
   if (!trimmed) return "";
 
+  const apiBase = trimTrailingSlashes(API_BASE_URL);
+
   if (trimmed.startsWith("/uploads/")) {
-    return `${trimTrailingSlashes(API_BASE_URL)}${trimmed}`;
+    return `${apiBase}${trimmed}`;
   }
 
   try {
     const u = new URL(trimmed);
-    if (u.pathname.startsWith("/uploads/")) {
-      return `${trimTrailingSlashes(API_BASE_URL)}${u.pathname}${u.search}`;
+    if (!u.pathname.startsWith("/uploads/")) {
+      return trimmed;
     }
-  } catch {
-    // not parseable as absolute URL — return as-is (e.g. legacy scheme)
-  }
 
-  return trimmed;
+    let api: URL;
+    try {
+      api = new URL(apiBase);
+    } catch {
+      return trimmed;
+    }
+
+    const assetLoopback = isLoopbackHost(u.hostname);
+    const apiLoopback = isLoopbackHost(api.hostname);
+
+    // Simulator: both loopback — keep stored URL
+    if (assetLoopback && apiLoopback) {
+      return trimmed;
+    }
+
+    // Server returned localhost but app targets LAN IP — rewrite to API host
+    if (assetLoopback && !apiLoopback) {
+      return `${apiBase}${u.pathname}${u.search}`;
+    }
+
+    // Server returned LAN/public URL — device should use it directly
+    if (!assetLoopback) {
+      return trimmed;
+    }
+
+    return `${apiBase}${u.pathname}${u.search}`;
+  } catch {
+    return trimmed;
+  }
 }

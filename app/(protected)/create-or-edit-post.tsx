@@ -12,16 +12,40 @@ import {
 import { postService } from "@/services/post.service";
 import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useStore } from "@/store";
-import { isManagementRole } from "@/utils/roles";
+import { isManagementOrTeacher } from "@/utils/roles";
+import { resolveCoreAssetUrl } from "@/utils/core-asset-url";
 import { isVideoMediaUrl } from "@/utils/media-url";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { AppVideoPreview } from "@/components/ui/app-video-preview";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
+import * as VideoThumbnails from "expo-video-thumbnails";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Image, Switch, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { KeyboardAwareScrollViewPlatform } from "@/components/ui/keyboard-aware-scroll-view";
+
+function isGalleryVideo(
+  asset: ImagePicker.ImagePickerAsset | null,
+  uri: string | null
+): boolean {
+  if (!uri) return false;
+  return (
+    asset?.type === "video" ||
+    asset?.type === "pairedVideo" ||
+    (asset?.mimeType?.startsWith("video/") ?? false) ||
+    isVideoMediaUrl(uri)
+  );
+}
 
 const CreateOrEditPost = () => {
   const { t } = useTranslation();
@@ -41,6 +65,12 @@ const CreateOrEditPost = () => {
   const [selectedFile, setSelectedFile] =
     useState<DocumentPicker.DocumentPickerResult | null>(null);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [existingImageThumbnails, setExistingImageThumbnails] = useState<
+    string[]
+  >([]);
+  const [localVideoPosterUri, setLocalVideoPosterUri] = useState<string | null>(
+    null
+  );
   const [existingFiles, setExistingFiles] = useState<string[]>([]);
   const [loadingPost, setLoadingPost] = useState<boolean>(false);
   const hasLoadedFromParams = useRef(false);
@@ -63,7 +93,7 @@ const CreateOrEditPost = () => {
     useState<ImagePicker.ImagePickerAsset | null>(null);
 
   const canPickPostClassroom = useMemo(
-    () => isManagementRole(effectiveRole),
+    () => isManagementOrTeacher(effectiveRole),
     [effectiveRole]
   );
 
@@ -263,6 +293,7 @@ const CreateOrEditPost = () => {
         setSelectedFile(result);
         setSelectedImage(null);
         setSelectedGalleryAsset(null);
+        setLocalVideoPosterUri(null);
       }
     } catch (error) {
       console.error("Error picking document:", error);
@@ -270,14 +301,36 @@ const CreateOrEditPost = () => {
     }
   };
 
+  useEffect(() => {
+    if (!selectedImage || !isGalleryVideo(selectedGalleryAsset, selectedImage)) {
+      setLocalVideoPosterUri(null);
+      return;
+    }
+
+    let cancelled = false;
+    void VideoThumbnails.getThumbnailAsync(selectedImage, { time: 1000 })
+      .then(({ uri }) => {
+        if (!cancelled) setLocalVideoPosterUri(uri);
+      })
+      .catch(() => {
+        if (!cancelled) setLocalVideoPosterUri(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedImage, selectedGalleryAsset]);
+
   const removeSelectedMedia = () => {
     setSelectedImage(null);
     setSelectedGalleryAsset(null);
+    setLocalVideoPosterUri(null);
     setSelectedFile(null);
   };
 
   const removeExistingImage = (index: number) => {
     setExistingImages((prev) => prev.filter((_, i) => i !== index));
+    setExistingImageThumbnails((prev) => prev.filter((_, i) => i !== index));
   };
 
   const removeExistingFile = (index: number) => {
@@ -329,6 +382,7 @@ const CreateOrEditPost = () => {
       setTags(post.tags?.join(",") || "");
       setTextMessages(post.recommended);
       setExistingImages(post.images || []);
+      setExistingImageThumbnails(post.imageThumbnails || []);
       setExistingFiles(post.files || []);
       setVisibility([
         visibilityOptions.find((o) => o.value === post.visibility) || {
@@ -399,6 +453,12 @@ const CreateOrEditPost = () => {
         const imageUrls = (params.images as string).split(",").filter(Boolean);
         setExistingImages(imageUrls);
       }
+      if (params.imageThumbnails) {
+        const thumbUrls = (params.imageThumbnails as string)
+          .split(",")
+          .filter(Boolean);
+        setExistingImageThumbnails(thumbUrls);
+      }
       if (params.files) {
         const fileUrls = (params.files as string).split(",").filter(Boolean);
         setExistingFiles(fileUrls);
@@ -468,6 +528,7 @@ const CreateOrEditPost = () => {
         recommended: boolean;
         visibility: "everyone" | "followers" | "private";
         images?: string[];
+        imageThumbnails?: string[];
         files?: string[];
         classroomId?: string | null;
       } = {
@@ -484,11 +545,7 @@ const CreateOrEditPost = () => {
       // Handle gallery image or video
       if (selectedImage) {
         const asset = selectedGalleryAsset;
-        const isVideo =
-          asset?.type === "video" ||
-          asset?.type === "pairedVideo" ||
-          (asset?.mimeType?.startsWith("video/") ?? false) ||
-          isVideoMediaUrl(selectedImage);
+        const isVideo = isGalleryVideo(asset, selectedImage);
         const filename =
           asset?.fileName?.replace(/\s+/g, "_") ||
           selectedImage.split("/").pop() ||
@@ -511,9 +568,14 @@ const CreateOrEditPost = () => {
           ? await messagingService.uploadVideo(mediaFormData)
           : await messagingService.uploadImage(mediaFormData);
         postData.images = [uploadResponse.url];
+        if (isVideo && uploadResponse.thumbnailUrl) {
+          postData.imageThumbnails = [uploadResponse.thumbnailUrl];
+        }
       } else if (isEditMode && existingImages.length > 0) {
-        // Keep existing images in edit mode
         postData.images = existingImages;
+        if (existingImageThumbnails.length > 0) {
+          postData.imageThumbnails = existingImageThumbnails;
+        }
       }
 
       // Handle files
@@ -634,24 +696,24 @@ const CreateOrEditPost = () => {
 
         {selectedImage && (
           <View style={{ marginTop: 10 }}>
-            {selectedGalleryAsset?.type === "video" ||
-            selectedGalleryAsset?.type === "pairedVideo" ||
-            (selectedGalleryAsset?.mimeType?.startsWith("video/") ?? false) ||
-            isVideoMediaUrl(selectedImage) ? (
+            {isGalleryVideo(selectedGalleryAsset, selectedImage) ? (
               <View
                 style={[
                   styles.selectedImage,
-                  {
-                    justifyContent: "center",
-                    alignItems: "center",
-                    backgroundColor: theme.panel,
-                  },
+                  { backgroundColor: theme.panel, overflow: "hidden" },
                 ]}
               >
-                <Ionicons name="videocam" size={48} color={theme.subText} />
-                <ThemedText type="subText" style={{ marginTop: 8 }}>
-                  {t("createPost.videoSelected")}
-                </ThemedText>
+                {localVideoPosterUri ? (
+                  <Image
+                    source={{ uri: localVideoPosterUri }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                ) : null}
+                <AppVideoPreview
+                  uri={selectedImage}
+                  style={{ flex: 1, width: "100%" }}
+                  contentFit="contain"
+                />
               </View>
             ) : (
               <Image
@@ -697,10 +759,37 @@ const CreateOrEditPost = () => {
           <View style={{ marginTop: 10 }}>
             {existingImages.map((imageUrl, index) => (
               <View key={index} style={{ marginBottom: 10 }}>
-                <Image
-                  source={{ uri: imageUrl }}
-                  style={styles.selectedImage}
-                />
+                {isVideoMediaUrl(imageUrl) ? (
+                  <View
+                    style={[
+                      styles.selectedImage,
+                      { backgroundColor: theme.panel, overflow: "hidden" },
+                    ]}
+                  >
+                    {existingImageThumbnails[index] ? (
+                      <Image
+                        source={{
+                          uri:
+                            resolveCoreAssetUrl(existingImageThumbnails[index]) ||
+                            existingImageThumbnails[index],
+                        }}
+                        style={StyleSheet.absoluteFillObject}
+                      />
+                    ) : null}
+                    <AppVideoPreview
+                      uri={resolveCoreAssetUrl(imageUrl) || imageUrl}
+                      style={{ flex: 1, width: "100%" }}
+                      contentFit="contain"
+                    />
+                  </View>
+                ) : (
+                  <Image
+                    source={{
+                      uri: resolveCoreAssetUrl(imageUrl) || imageUrl,
+                    }}
+                    style={styles.selectedImage}
+                  />
+                )}
                 <TouchableOpacity
                   style={styles.removeButton}
                   onPress={() => removeExistingImage(index)}

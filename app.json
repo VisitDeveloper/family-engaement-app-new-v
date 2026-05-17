@@ -86,7 +86,14 @@
         }
       ],
       [
-        "expo-av",
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ],
+      [
+        "expo-audio",
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone to record voice messages."
         }

@@ -191,6 +191,7 @@ const FeedDetailScreen = () => {
           numberOfLike={post.likesCount}
           tags={post.tags || []}
           images={post.images || []}
+          imageThumbnails={post.imageThumbnails || []}
           files={post.files || []}
           recommended={post.recommended}
           isLiked={post.isLiked}
@@ -227,6 +228,7 @@ const FeedDetailScreen = () => {
                 recommended: post.recommended ? "true" : "false",
                 visibility: post.visibility,
                 images: post.images?.join(",") || "",
+                imageThumbnails: post.imageThumbnails?.join(",") || "",
                 files: post.files?.join(",") || "",
               },
             });

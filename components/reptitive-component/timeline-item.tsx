@@ -9,15 +9,27 @@ import {
 } from "@/services/comment.service";
 import { likeService } from "@/services/like.service";
 import { useStore } from "@/store";
+import { resolveCoreAssetUrl } from "@/utils/core-asset-url";
 import { formatTimeAgoShort } from "@/utils/format-time-ago";
+import { isVideoMediaUrl } from "@/utils/media-url";
 import { getDisplayName, getInitials } from "@/utils/user-name";
 import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
+import { setPlaybackAudioMode } from "@/lib/audio-session";
+import { AppVideoPlayerModal } from "@/components/ui/app-video-player-modal";
 import { Image } from "expo-image";
 import * as ExpoLinking from "expo-linking";
 import { useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Linking, Pressable, Share, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Linking,
+  Pressable,
+  Share,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SvgXml } from "react-native-svg";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
@@ -43,6 +55,7 @@ export interface ResourceItemProps {
   commenter?: string;
   comment?: string;
   images?: string[];
+  imageThumbnails?: string[];
   files?: string[];
   tags?: string[];
   recommended?: boolean;
@@ -72,6 +85,7 @@ export default function TimelineItem({
   const user = useStore((state) => state.user);
   const effectiveRole = useEffectiveRole();
   const router = useRouter();
+  const [videoPlayerUri, setVideoPlayerUri] = useState<string | null>(null);
 
   const isAuthor = user?.id === props.author?.id;
   const canEditDelete =
@@ -137,6 +151,21 @@ export default function TimelineItem({
       setPostImageLoadState("loading");
     }
   }, [firstImageUrl]);
+
+  const openPostVideo = useCallback(async (rawUrl: string) => {
+    const url = resolveMediaUrl(rawUrl);
+    if (!url) return;
+    try {
+      await setPlaybackAudioMode();
+    } catch {
+      // ignore audio mode errors
+    }
+    setVideoPlayerUri(url);
+  }, []);
+
+  const closePostVideo = useCallback(() => {
+    setVideoPlayerUri(null);
+  }, []);
 
   // Local state for comments to sync with bottom sheet
   const [localComments, setLocalComments] = useState<CommentResponseDto[]>([]);
@@ -455,6 +484,13 @@ export default function TimelineItem({
     return url.startsWith("/") ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
   };
 
+  const resolveMediaUrl = (url: string | undefined | null): string | null => {
+    if (!url || url.trim() === "") return null;
+    const fromCore = resolveCoreAssetUrl(url);
+    if (fromCore) return fromCore;
+    return formatImageUrl(url);
+  };
+
   // Helper function to format file URL
   const formatFileUrl = (url: string | undefined | null): string | null => {
     if (!url || url.trim() === "") return null;
@@ -630,6 +666,18 @@ export default function TimelineItem({
         backgroundColor: theme.panel,
         justifyContent: "center",
         alignItems: "center",
+      },
+      postVideoThumbnail: {
+        backgroundColor: theme.panel,
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "hidden",
+      },
+      postVideoPlayOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0,0,0,0.35)",
       },
       filesContainer: {
         marginTop: 10,
@@ -928,10 +976,39 @@ export default function TimelineItem({
           </View>
         )}
 
-        {/* Post Image */}
+        {/* Post image or video */}
         {(() => {
-          const imageUrl = formatImageUrl(props.images?.[0]);
-          if (!imageUrl) return null;
+          const rawMediaUrl = props.images?.[0];
+          if (!rawMediaUrl) return null;
+          const mediaUrl = resolveMediaUrl(rawMediaUrl);
+          if (!mediaUrl) return null;
+
+          if (isVideoMediaUrl(rawMediaUrl) || isVideoMediaUrl(mediaUrl)) {
+            const posterUrl = resolveMediaUrl(props.imageThumbnails?.[0]);
+
+            return (
+              <Pressable
+                style={[styles.postImage, styles.postVideoThumbnail]}
+                onPress={() => void openPostVideo(rawMediaUrl)}
+                accessibilityRole="button"
+                accessibilityLabel={t("buttons.video")}
+              >
+                {posterUrl ? (
+                  <Image
+                    source={{ uri: posterUrl }}
+                    style={StyleSheet.absoluteFillObject}
+                    contentFit="cover"
+                    accessibilityRole="image"
+                    accessibilityLabel="Video poster"
+                  />
+                ) : null}
+                <View style={styles.postVideoPlayOverlay} pointerEvents="none">
+                  <Ionicons name="play-circle" size={64} color="#fff" />
+                </View>
+              </Pressable>
+            );
+          }
+
           return (
             <View>
               {postImageLoadState === "loading" && (
@@ -939,7 +1016,7 @@ export default function TimelineItem({
               )}
               {postImageLoadState !== "error" && (
                 <Image
-                  source={{ uri: imageUrl }}
+                  source={{ uri: mediaUrl }}
                   style={[
                     styles.postImage,
                     postImageLoadState === "loading" && { position: "absolute", opacity: 0 },
@@ -1778,6 +1855,12 @@ export default function TimelineItem({
           )}
         </TouchableOpacity>
       </ThemedView>
+
+      <AppVideoPlayerModal
+        visible={!!videoPlayerUri}
+        uri={videoPlayerUri}
+        onClose={closePostVideo}
+      />
 
       {props.postId && (
         <CommentsBottomSheet

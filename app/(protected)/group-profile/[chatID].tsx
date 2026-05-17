@@ -2,6 +2,7 @@ import HeaderInnerPage from "@/components/reptitive-component/header-inner-page"
 import { ThemedText } from "@/components/themed-text";
 import { ShareIcon } from "@/components/ui/icons/common-icons";
 import { SmallUsersIcon, UsersIcon } from "@/components/ui/icons/messages-icons";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { useStore } from "@/store";
@@ -45,6 +46,8 @@ export default function GroupProfileScreen() {
   const [conversation, setConversation] = useState<ConversationResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const theme = useStore((state: any) => state.theme);
+  const effectiveRole = useEffectiveRole();
+  const canShareGroupInvite = effectiveRole !== "parent";
 
   const loadGroup = useCallback(async () => {
     if (!chatID) return;
@@ -282,26 +285,27 @@ export default function GroupProfileScreen() {
           )}
         </View>
 
-        {/* Group Invite Link */}
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Group Invite Link</Text>
-            <TouchableOpacity style={styles.shareIcon} onPress={handleShareInvite}>
-              <ShareIcon size={20} color={theme.tint} />
-            </TouchableOpacity>
+        {canShareGroupInvite && (
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Group Invite Link</Text>
+              <TouchableOpacity style={styles.shareIcon} onPress={handleShareInvite}>
+                <ShareIcon size={20} color={theme.tint} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.qrWrap}>
+              <QRCode
+                value={inviteLink}
+                size={160}
+                color="#000"
+                backgroundColor="#fff"
+              />
+            </View>
+            <Text style={styles.inviteUrl} numberOfLines={2}>
+              {inviteLink}
+            </Text>
           </View>
-          <View style={styles.qrWrap}>
-            <QRCode
-              value={inviteLink}
-              size={160}
-              color="#000"
-              backgroundColor="#fff"
-            />
-          </View>
-          <Text style={styles.inviteUrl} numberOfLines={2}>
-            {inviteLink}
-          </Text>
-        </View>
+        )}
 
         {/* Group Members */}
         <View style={styles.card}>
