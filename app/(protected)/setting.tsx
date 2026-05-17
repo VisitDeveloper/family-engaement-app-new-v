@@ -1,4 +1,5 @@
 import RoleGuard from "@/components/check-permisions";
+import { MANAGEMENT_AND_TEACHER_ROLES } from "@/utils/roles";
 import { feedback } from "@/lib/feedback";
 import HeaderInnerPage from "@/components/reptitive-component/header-inner-page";
 import { ThemedText } from "@/components/themed-text";
@@ -554,7 +555,7 @@ export default function SettingsScreen() {
             </ThemedText>
           </View>
 
-          <RoleGuard roles={["admin", "teacher"]}>
+          <RoleGuard roles={[...MANAGEMENT_AND_TEACHER_ROLES]}>
             <TouchableOpacity
               style={[
                 styles.dataSecurityLink,
@@ -640,7 +641,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* accont manager  */}
-        <RoleGuard roles={["admin", "teacher"]}>
+        <RoleGuard roles={[...MANAGEMENT_AND_TEACHER_ROLES]}>
           <View
             style={[
               styles.card,

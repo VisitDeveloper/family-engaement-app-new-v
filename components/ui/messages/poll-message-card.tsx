@@ -1,7 +1,9 @@
 import { messagingService, PollResponseDto, VotePollDto } from "@/services/messaging.service";
 import { feedback } from "@/lib/feedback";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
+import { isManagementRole } from "@/utils/roles";
 import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -38,6 +40,7 @@ export default function PollMessageCard({
 }: PollMessageCardProps) {
   const { t } = useTranslation();
   const currentUser = useStore((state: any) => state.user);
+  const effectiveRole = useEffectiveRole();
   const theme = useStore((state: any) => state.theme);
   const [poll, setPoll] = useState<PollResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -271,7 +274,7 @@ export default function PollMessageCard({
 
   const isAdmin =
     poll &&
-    (currentUser?.role === "admin" || isMe);
+    (isManagementRole(effectiveRole) || isMe);
 
   const handleClosePoll = useCallback(() => {
     if (!poll || poll.isClosed) return;

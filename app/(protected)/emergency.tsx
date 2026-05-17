@@ -5,7 +5,9 @@ import { EmergencyIcon, SendIcon, UsersIcon } from '@/components/ui/icons/messag
 import { useThemedStyles } from '@/hooks/use-theme-style';
 import { messagingService } from '@/services/messaging.service';
 import { userService } from '@/services/user.service';
+import { useEffectiveRole } from '@/hooks/use-effective-role';
 import { useStore } from '@/store';
+import { isManagementRole, shouldHideFromContactList } from '@/utils/roles';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -25,7 +27,7 @@ const EmergencyAlertScreen = () => {
     const theme = useStore(state => state.theme);
     const currentUser = useStore(state => state.user);
     const currentUserId = currentUser?.id;
-    const currentUserRole = currentUser?.role;
+    const currentUserRole = useEffectiveRole();
 
     const styles = useThemedStyles((theme) => ({
         container: { flex: 1, backgroundColor: theme.bg },
@@ -135,7 +137,7 @@ const EmergencyAlertScreen = () => {
     }));
 
     const loadRecipientsCount = useCallback(async () => {
-        if (!currentUserRole || (currentUserRole !== 'admin' && currentUserRole !== 'teacher')) {
+        if (!currentUserRole || (!isManagementRole(currentUserRole) && currentUserRole !== 'teacher')) {
             setLoadingRecipients(false);
             return;
         }
@@ -158,7 +160,7 @@ const EmergencyAlertScreen = () => {
                 apiParams.role = ['parent'];
             }
             // If admin, get all roles (parent, teacher, student)
-            else if (currentUserRole === 'admin') {
+            else if (isManagementRole(currentUserRole)) {
                 apiParams.role = ['parent', 'teacher', 'student'];
             }
 
@@ -167,7 +169,7 @@ const EmergencyAlertScreen = () => {
             // Filter out current user and admins (same as new-message.tsx)
             const filteredUsers = response.users.filter((user) => {
                 if (user.id === currentUserId) return false;
-                if (user.role === 'admin') return false;
+                if (shouldHideFromContactList(user.role)) return false;
                 return true;
             });
 
@@ -179,7 +181,7 @@ const EmergencyAlertScreen = () => {
             if (response.total) {
                 // Check if we got all users in the first page
                 const excludedInPage = response.users.filter(u =>
-                    u.id === currentUserId || u.role === 'admin'
+                    u.id === currentUserId || shouldHideFromContactList(u.role)
                 ).length;
 
                 if (response.users.length >= response.total) {

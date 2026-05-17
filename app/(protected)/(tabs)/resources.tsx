@@ -1,4 +1,5 @@
 import RoleGuard from "@/components/check-permisions";
+import { MANAGEMENT_AND_TEACHER_ROLES } from "@/utils/roles";
 import { feedback } from "@/lib/feedback";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import ResourceItem, {
@@ -300,7 +301,7 @@ const ResourceLibrary = () => {
           buttonIcon: <NewIcon size={16} color="#ffffff" />,
           buttonLink: "/new-resource",
           buttonTitle: t("tabs.newButton"),
-          buttonRoles: ["admin", "teacher"],
+          buttonRoles: [...MANAGEMENT_AND_TEACHER_ROLES],
           buttonVariant: "primary",
         })}
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
@@ -446,7 +447,7 @@ const ResourceLibrary = () => {
       )}
 
       {isAndroid && (
-        <RoleGuard roles={["admin", "teacher"]}>
+        <RoleGuard roles={[...MANAGEMENT_AND_TEACHER_ROLES]}>
           <FAB
             href="/new-resource"
             icon={<NewIcon size={24} color="#ffffff" />}

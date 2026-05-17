@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router'
 import React from 'react'
 import { TouchableOpacity, View } from 'react-native'
 import RoleGuard from '../check-permisions'
+import { MANAGEMENT_TEACHER_PARENT_ROLES } from '@/utils/roles';
 import { ThemedText } from '../themed-text'
 
 export interface HeaderRightAction {
@@ -91,7 +92,7 @@ export default function HeaderThreeSections({ titlePrefix = <></>, ...props }: H
                     </View>
                 )}
             </View>
-            <RoleGuard roles={props.buttonRoles || ["admin", "teacher", "parent"]}>
+            <RoleGuard roles={props.buttonRoles || [...MANAGEMENT_TEACHER_PARENT_ROLES]}>
                 {props.rightActions && props.rightActions.length > 0 ? (
                     <View style={styles.headerRight}>
                         {props.rightActions.map((action, index) => (

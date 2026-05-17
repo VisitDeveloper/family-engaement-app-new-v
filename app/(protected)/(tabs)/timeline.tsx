@@ -1,4 +1,5 @@
 import RoleGuard from "@/components/check-permisions";
+import { MANAGEMENT_AND_TEACHER_ROLES, MANAGEMENT_TEACHER_PARENT_ROLES } from "@/utils/roles";
 import { feedback } from "@/lib/feedback";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import TimelineItem from "@/components/reptitive-component/timeline-item";
@@ -314,7 +315,7 @@ const TimelineScreen = () => {
           buttonIcon={<EventIcon size={16} color={theme.tint} />}
           buttonLink="/event"
           buttonTitle={t("event.schoolCalendar")}
-          buttonRoles={["admin", "teacher", "parent"]}
+          buttonRoles={[...MANAGEMENT_TEACHER_PARENT_ROLES]}
         />
       </View>
 
@@ -338,7 +339,7 @@ const TimelineScreen = () => {
           flex: 1,
         }}
       >
-        <RoleGuard roles={["teacher", "admin"]}>
+        <RoleGuard roles={[...MANAGEMENT_AND_TEACHER_ROLES]}>
           <TouchableOpacity
             onPress={() => router.push("/create-or-edit-post")}
             style={{ marginTop: -5 }}

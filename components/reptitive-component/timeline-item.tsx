@@ -1,4 +1,6 @@
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { isManagementRole } from "@/utils/roles";
 import { feedback } from "@/lib/feedback";
 import {
   CommentResponseDto,
@@ -68,12 +70,13 @@ export default function TimelineItem({
   const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
   const user = useStore((state) => state.user);
+  const effectiveRole = useEffectiveRole();
   const router = useRouter();
 
-  // Check if current user is the author and is a teacher or admin
   const isAuthor = user?.id === props.author?.id;
   const canEditDelete =
-    isAuthor && (user?.role === "teacher" || user?.role === "admin");
+    isAuthor &&
+    (effectiveRole === "teacher" || isManagementRole(effectiveRole));
   const [showDropdown, setShowDropdown] = useState(false);
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);

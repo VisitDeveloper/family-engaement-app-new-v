@@ -1,4 +1,5 @@
 import RoleGuard from "@/components/check-permisions";
+import { MANAGEMENT_AND_TEACHER_ROLES, MANAGEMENT_TEACHER_PARENT_ROLES } from "@/utils/roles";
 import { feedback } from "@/lib/feedback";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
@@ -465,7 +466,7 @@ export default function MessagesScreen() {
           buttonIcon: <NewIcon size={16} color="#ffffff" />,
           buttonLink: "/new-message",
           buttonTitle: t("tabs.newButton"),
-          buttonRoles: ["admin", "teacher", "parent"],
+          buttonRoles: [...MANAGEMENT_TEACHER_PARENT_ROLES],
           buttonVariant: "primary",
         })}
         addstyles={{ paddingHorizontal: 10, paddingTop: 10 }}
@@ -480,7 +481,7 @@ export default function MessagesScreen() {
         />
       </View>
 
-      <RoleGuard roles={["admin", "teacher"]}>
+      <RoleGuard roles={[...MANAGEMENT_AND_TEACHER_ROLES]}>
         {/* Filter Buttons */}
         <View style={styles.filterContainer}>
 
@@ -553,7 +554,7 @@ export default function MessagesScreen() {
       )}
 
       {isAndroid && (
-        <RoleGuard roles={["admin", "teacher", "parent"]}>
+        <RoleGuard roles={[...MANAGEMENT_TEACHER_PARENT_ROLES]}>
           <FAB
             href="/new-message"
             icon={<NewMessageIcon size={24} color="#ffffff" />}

@@ -1,15 +1,15 @@
-import { useStore } from "@/store";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 
 interface RoleGuardProps {
-    roles: string[];
-    children: React.ReactNode;
+  roles: string[];
+  children: React.ReactNode;
 }
 
 function RoleGuard({ roles, children }: RoleGuardProps) {
-    const role = useStore((s) => s.role);
-    console.log('RoleGuard check:', { role, roles });
-    if (!role || !roles.includes(role)) return null;
+  const effectiveRole = useEffectiveRole();
+  if (!effectiveRole || !roles.includes(effectiveRole)) return null;
 
-    return children;
+  return children;
 }
+
 export default RoleGuard;

@@ -68,7 +68,10 @@ const convertParentToInvitee = (parent: ParentDto): Invitee => {
     subtitle: parent.email,
     avatar: parent.profilePicture || undefined,
     initials,
-    isAdmin: parent.role === "admin",
+    isAdmin:
+      parent.role === "admin" ||
+      parent.role === "organization_manager" ||
+      parent.role === "site_manager",
   };
 };
 

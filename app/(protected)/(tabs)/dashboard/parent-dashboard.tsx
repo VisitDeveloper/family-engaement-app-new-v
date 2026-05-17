@@ -9,6 +9,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { dashboardService, isParentDashboardResponse } from "@/services/dashboard.service";
 import { eventService } from "@/services/event.service";
 import { useStore } from "@/store";
+import { isManagementRole } from "@/utils/roles";
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -182,7 +183,7 @@ export default function ParentDashboard() {
         },
     }));
 
-    if (role === 'admin' || role === 'organization_manager' || role === 'site_manager') {
+    if (isManagementRole(role)) {
         return <Redirect href="/(protected)/(tabs)/dashboard" />;
     }
 

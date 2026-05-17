@@ -10,7 +10,9 @@ import {
   messagingService,
 } from "@/services/messaging.service";
 import { postService } from "@/services/post.service";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useStore } from "@/store";
+import { isManagementRole } from "@/utils/roles";
 import { isVideoMediaUrl } from "@/utils/media-url";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
@@ -25,6 +27,7 @@ const CreateOrEditPost = () => {
   const { t } = useTranslation();
   const theme = useStore((s) => s.theme);
   const user = useStore((s) => s.user);
+  const effectiveRole = useEffectiveRole();
   const router = useRouter();
   const params = useLocalSearchParams();
   const postId = params.postId as string | undefined;
@@ -60,11 +63,8 @@ const CreateOrEditPost = () => {
     useState<ImagePicker.ImagePickerAsset | null>(null);
 
   const canPickPostClassroom = useMemo(
-    () =>
-      user?.role === "admin" ||
-      user?.role === "organization_manager" ||
-      user?.role === "site_manager",
-    [user?.role]
+    () => isManagementRole(effectiveRole),
+    [effectiveRole]
   );
 
   const styles = useThemedStyles((t) => ({

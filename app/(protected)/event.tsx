@@ -4,7 +4,9 @@ import HeaderThreeSections from "@/components/reptitive-component/header-three-s
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { CheckMarkCircleFillIcon, QuestionMarkCircleFillIcon, XMarkCircleFillIcon } from "@/components/ui/icons/event-icons";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { isManagementRole, MANAGEMENT_AND_TEACHER_ROLES } from "@/utils/roles";
 import {
   EventResponseDto,
   eventService,
@@ -259,12 +261,13 @@ const SchoolCalendarScreen = () => {
   );
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const currentUser = useStore((s) => s.user);
-  const isAdmin = currentUser?.role === "admin";
-  const isTeacher = currentUser?.role === "teacher";
+  const effectiveRole = useEffectiveRole();
+  const isManagement = isManagementRole(effectiveRole);
+  const isTeacher = effectiveRole === "teacher";
 
   // Helper function to check if user can edit/delete an event
   const canEditDeleteEvent = (event: EventResponseDto): boolean => {
-    if (isAdmin) return true; // Admins can edit/delete any event
+    if (isManagement) return true;
     if (isTeacher) {
       // Teachers can only edit/delete events they created
       return event.creatorId === currentUser?.id;
@@ -594,7 +597,7 @@ const SchoolCalendarScreen = () => {
         }
         colorDesc={theme.subText}
         onPress={() => router.push("/create-or-edit-event")}
-        buttonRoles={["admin", "teacher"]}
+        buttonRoles={[...MANAGEMENT_AND_TEACHER_ROLES]}
       />
 
       {/* Month Selector */}

@@ -274,7 +274,7 @@ export default function SwitchProfileScreen() {
           childName: u.childName,
           subjects: u.subjects,
         });
-        setRole(u.role);
+        setRole(profile.role);
         setCurrentProfile({
           id: profile.id ?? `${profile.role}|${profile.organizationId ?? ""}|${profile.siteId ?? ""}`,
           role: profile.role,

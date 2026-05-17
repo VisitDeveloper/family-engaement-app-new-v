@@ -181,12 +181,19 @@ export default function CreateGroupScreen() {
           subtitle:
             user.role === "admin"
               ? "Admin"
-              : user.role === "teacher"
-                ? "Teacher"
-                : "Parent",
+              : user.role === "organization_manager"
+                ? "Org manager"
+                : user.role === "site_manager"
+                  ? "Site manager"
+                  : user.role === "teacher"
+                    ? "Teacher"
+                    : "Parent",
           avatar: user.profilePicture || null,
           initials: getInitials(user.firstName, user.lastName, user.email),
-          isAdmin: user.role === "admin",
+          isAdmin:
+            user.role === "admin" ||
+            user.role === "organization_manager" ||
+            user.role === "site_manager",
           role: user.role,
           lastOnline: user.lastOnline,
         }));

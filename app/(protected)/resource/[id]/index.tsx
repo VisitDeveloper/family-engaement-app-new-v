@@ -4,7 +4,9 @@ import HeaderThreeSections, { type HeaderRightAction } from "@/components/reptit
 import { ThemedText } from "@/components/themed-text";
 import { PencilIcon, TrashIcon } from "@/components/ui/icons/messages-icons";
 import { DownloadIcon } from "@/components/ui/icons/settings-icons";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { isManagementRole } from "@/utils/roles";
 import { resourceService } from "@/services/resource.service";
 import { saveService } from "@/services/save.service";
 import { useStore } from "@/store";
@@ -47,8 +49,9 @@ const BookDetailScreen = () => {
       : typeof resourceItem.createdBy === "string"
         ? resourceItem.createdBy
         : resourceItem.createdBy?.id;
+  const effectiveRole = useEffectiveRole();
   const canEditDelete =
-    user?.role === "admin" ||
+    isManagementRole(effectiveRole) ||
     (!!user?.id && !!creatorId && user.id === creatorId);
 
   const hasContentUrl = !!(resourceItem?.contentUrl?.trim());

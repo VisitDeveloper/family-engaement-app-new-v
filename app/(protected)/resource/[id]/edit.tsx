@@ -3,7 +3,9 @@ import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { FileIcon, MediaIcon } from "@/components/ui/icons/messages-icons";
 import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { isManagementRole } from "@/utils/roles";
 import { messagingService } from "@/services/messaging.service";
 import { resourceService } from "@/services/resource.service";
 import { resolveCoreAssetUrl } from "@/utils/core-asset-url";
@@ -31,6 +33,7 @@ export default function EditResourceScreen() {
   const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
   const user = useStore((state: any) => state.user);
+  const effectiveRole = useEffectiveRole();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const addResource = useStore((state: any) => state.addResource);
@@ -148,9 +151,8 @@ export default function EditResourceScreen() {
       setLoading(true);
       const res = await resourceService.getById(id);
       const creatorId = res.createdBy?.id ?? null;
-      const isAdmin = user?.role === "admin";
       const isCreator = !!user?.id && !!creatorId && user.id === creatorId;
-      if (!isAdmin && !isCreator) {
+      if (!isManagementRole(effectiveRole) && !isCreator) {
         feedback.toast.error(t("common.error"), t("resource.editNotAllowed") || "You are not allowed to edit this resource.");
         router.back();
         return;
@@ -170,7 +172,7 @@ export default function EditResourceScreen() {
     } finally {
       setLoading(false);
     }
-  }, [id, t, router, user?.id, user?.role]);
+  }, [id, t, router, user?.id, effectiveRole]);
 
   useFocusEffect(
     useCallback(() => {

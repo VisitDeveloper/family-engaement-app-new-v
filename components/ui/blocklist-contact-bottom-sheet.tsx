@@ -4,7 +4,9 @@ import Divider from "@/components/ui/divider";
 import { UserAllowIcon, UserBlockIcon } from "@/components/ui/icons/settings-icons";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { userService } from "@/services/user.service";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useStore } from "@/store";
+import { isManagementRole, shouldHideFromContactList } from "@/utils/roles";
 import type { UserListItemDto } from "@/types";
 import { getDisplayName, getInitials } from "@/utils/user-name";
 import {
@@ -39,6 +41,7 @@ export default function BlocklistContactBottomSheet({
   const { t } = useTranslation();
   const theme = useStore((state) => state.theme);
   const currentUser = useStore((state: any) => state.user);
+  const effectiveRole = useEffectiveRole();
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [contacts, setContacts] = useState<UserListItemDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -58,8 +61,6 @@ export default function BlocklistContactBottomSheet({
       }
 
       try {
-        const currentUserRole = currentUser?.role;
-
         let apiParams: {
           page: number;
           limit: number;
@@ -73,11 +74,11 @@ export default function BlocklistContactBottomSheet({
           limit: PAGE_SIZE,
         };
 
-        if (currentUserRole === "teacher") {
+        if (effectiveRole === "teacher") {
           apiParams.role = ["parent"];
-        } else if (currentUserRole === "parent") {
+        } else if (effectiveRole === "parent") {
           apiParams.role = ["teacher"];
-        } else if (currentUserRole === "admin") {
+        } else if (isManagementRole(effectiveRole)) {
           apiParams.role = ["parent", "teacher"];
         }
 
@@ -85,7 +86,7 @@ export default function BlocklistContactBottomSheet({
 
         const filteredContacts = response.users.filter((user) => {
           if (user.id === currentUser?.id) return false;
-          if (user.role === "admin") return false;
+          if (shouldHideFromContactList(user.role)) return false;
           return true;
         });
 
@@ -110,7 +111,7 @@ export default function BlocklistContactBottomSheet({
         setLoadingMore(false);
       }
     },
-    [currentUser]
+    [currentUser, effectiveRole]
   );
 
   useEffect(() => {

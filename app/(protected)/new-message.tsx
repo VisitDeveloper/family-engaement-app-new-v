@@ -5,7 +5,9 @@ import { Person2WithPlusIcon, SmallUsersIcon } from "@/components/ui/icons/messa
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { messagingService } from "@/services/messaging.service";
 import { userService } from "@/services/user.service";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useStore } from "@/store";
+import { isManagementRole, shouldHideFromContactList } from "@/utils/roles";
 import { getDisplayName, getInitials } from "@/utils/user-name";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -33,6 +35,7 @@ export default function NewMessageScreen() {
   const router = useRouter();
   const currentUser = useStore((state: any) => state.user);
   const currentUserId = currentUser?.id || null;
+  const effectiveRole = useEffectiveRole();
 
   const [groups, setGroups] = useState<GroupItem[]>([]);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
@@ -170,8 +173,6 @@ export default function NewMessageScreen() {
       }
 
       try {
-        const currentUserRole = currentUser?.role;
-
         // Determine filter parameters based on user role
         let apiParams: {
           page: number;
@@ -187,15 +188,15 @@ export default function NewMessageScreen() {
         };
 
         // If teacher, only get parents
-        if (currentUserRole === "teacher") {
+        if (effectiveRole === "teacher") {
           apiParams.role = ["parent"];
         }
         // If parent, only get teachers
-        else if (currentUserRole === "parent") {
+        else if (effectiveRole === "parent") {
           apiParams.role = ["teacher"];
         }
-        // If admin, get all roles (parent, teacher, student)
-        else if (currentUserRole === "admin") {
+        // Management roles: same recipient scope as super admin (API filters by JWT)
+        else if (isManagementRole(effectiveRole)) {
           apiParams.role = ["parent", "teacher"];
         }
 
@@ -208,7 +209,7 @@ export default function NewMessageScreen() {
             // Remove current user
             if (user.id === currentUserId) return false;
             // Remove admins (as an additional security layer)
-            if (user.role === "admin") return false;
+            if (shouldHideFromContactList(user.role)) return false;
             return true;
           })
           .map((user) => ({
@@ -245,7 +246,7 @@ export default function NewMessageScreen() {
         setLoadingMoreContacts(false);
       }
     },
-    [currentUserId, currentUser?.role]
+    [currentUserId, effectiveRole]
   );
 
   const loadMoreContacts = useCallback(() => {

@@ -91,6 +91,9 @@ export default function RootLayout() {
         store.setUser(userData);
         if (response.currentProfile) {
           store.setCurrentProfile(response.currentProfile);
+          store.setRole(response.currentProfile.role);
+        } else if (response.role) {
+          store.setRole(response.role);
         }
 
         store.setUserSettingsFromProfile(response.settings);

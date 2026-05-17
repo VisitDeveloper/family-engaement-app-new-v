@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { StyleProp, TouchableOpacity, View, ViewStyle } from "react-native";
 import RoleGuard from "../check-permisions";
+import { MANAGEMENT_AND_TEACHER_ROLES, MANAGEMENT_TEACHER_PARENT_ROLES } from "@/utils/roles";
 import { ThemedText } from "../themed-text";
 
 interface HeaderTabItemProps {
@@ -84,7 +85,7 @@ export default function HeaderTabItem({ buttonVariant = "default", ...props }: H
       <View style={{ flexDirection: "row", gap: 5, flexShrink: 0 }}>
         {props?.buttonTitle ? (
           <RoleGuard
-            roles={props.buttonRoles || ["admin", "teacher", "parent"]}
+            roles={props.buttonRoles || [...MANAGEMENT_TEACHER_PARENT_ROLES]}
           >
             <TouchableOpacity
               style={[styles.eventButton, {
@@ -117,7 +118,7 @@ export default function HeaderTabItem({ buttonVariant = "default", ...props }: H
           </RoleGuard>
         ) : null}
         {props?.buttonSecondTtitle || props.buttonSecondIcon ? (
-          <RoleGuard roles={props.buttonSecondRoles || ["admin", "teacher"]}>
+          <RoleGuard roles={props.buttonSecondRoles || [...MANAGEMENT_AND_TEACHER_ROLES]}>
             <TouchableOpacity
               style={styles.eventButton}
               onPress={() => router.push(props.buttonSecondLink as any)}
