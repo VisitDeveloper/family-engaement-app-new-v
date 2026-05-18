@@ -2,6 +2,7 @@ import { AnnouncementIcon, FileIcon, MediaIcon, PollIcon } from "@/components/ui
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { BlurView } from "expo-blur";
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 interface AttachingMenuProps {
   visible: boolean;
@@ -146,9 +147,9 @@ export default function AttachingMenu({
         >
           <View style={styles.menuItemIcon}>{item.icon}</View>
           <View style={styles.menuItemContent}>
-            <Text style={styles.menuItemTitle}>{item.title}</Text>
+            <SpeakableText style={styles.menuItemTitle}>{item.title}</SpeakableText>
             {item.subtitle != null && (
-              <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
+              <SpeakableText style={styles.menuItemSubtitle}>{item.subtitle}</SpeakableText>
             )}
           </View>
         </TouchableOpacity>

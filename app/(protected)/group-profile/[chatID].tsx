@@ -22,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import QRCode from "react-native-qrcode-svg";
 
 function getGroupDisplayName(conv: ConversationResponseDto | undefined): string {
@@ -202,7 +203,7 @@ export default function GroupProfileScreen() {
   if (!conversation) {
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 24 }]}>
-        <Text style={{ color: theme.subText, textAlign: "center" }}>Group not found</Text>
+        <SpeakableText style={{ color: theme.subText, textAlign: "center" }}>Group not found</SpeakableText>
       </View>
     );
   }
@@ -237,16 +238,16 @@ export default function GroupProfileScreen() {
               <Ionicons name="people" size={40} color={theme.subText} />
             </View>
           )}
-          <Text style={styles.name}>{groupName}</Text>
-          <Text style={styles.groupType}>Group</Text>
+          <SpeakableText style={styles.name}>{groupName}</SpeakableText>
+          <SpeakableText style={styles.groupType}>Group</SpeakableText>
         </View>
 
         {/* Classrooms Attached */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Classrooms Attached</Text>
+          <SpeakableText style={styles.sectionTitle}>Classrooms Attached</SpeakableText>
           {conversation?.classrooms?.length === 0 ? (
             <View style={styles.item}>
-              <Text style={[styles.itemName, { color: theme.subText }]}>No classrooms</Text>
+              <SpeakableText style={[styles.itemName, { color: theme.subText }]}>No classrooms</SpeakableText>
             </View>
           ) : (
             <View style={{ marginTop: 10 }}>
@@ -275,7 +276,7 @@ export default function GroupProfileScreen() {
 
                         </View>
                         <View style={styles.itemBody}>
-                          <Text style={styles.itemName}>{classroomName}</Text>
+                          <SpeakableText style={styles.itemName}>{classroomName}</SpeakableText>
                         </View>
                       </View>
                     </View>
@@ -288,7 +289,7 @@ export default function GroupProfileScreen() {
         {canShareGroupInvite && (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Group Invite Link</Text>
+              <SpeakableText style={styles.sectionTitle}>Group Invite Link</SpeakableText>
               <TouchableOpacity style={styles.shareIcon} onPress={handleShareInvite}>
                 <ShareIcon size={20} color={theme.tint} />
               </TouchableOpacity>
@@ -301,16 +302,16 @@ export default function GroupProfileScreen() {
                 backgroundColor="#fff"
               />
             </View>
-            <Text style={styles.inviteUrl} numberOfLines={2}>
+            <SpeakableText style={styles.inviteUrl} numberOfLines={2}>
               {inviteLink}
-            </Text>
+            </SpeakableText>
           </View>
         )}
 
         {/* Group Members */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Group Members</Text>
+            <SpeakableText style={styles.sectionTitle}>Group Members</SpeakableText>
 
             <View
               style={[
@@ -359,22 +360,22 @@ export default function GroupProfileScreen() {
                       <Image source={{ uri: avatarUri }} style={styles.itemAvatar} />
                     ) : (
                       <View style={[styles.itemAvatar, { alignItems: "center", justifyContent: "center" }]}>
-                        <Text style={{ fontSize: 16, fontWeight: "600", color: theme.text }}>
+                        <SpeakableText style={{ fontSize: 16, fontWeight: "600", color: theme.text }}>
                           {memberInitials}
-                        </Text>
+                        </SpeakableText>
                       </View>
                     )}
                   </View>
                   <View style={styles.itemBody}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Text style={styles.itemName}>{displayName}</Text>
+                      <SpeakableText style={styles.itemName}>{displayName}</SpeakableText>
                       {isAdmin && (
                         <View style={styles.adminTag}>
-                          <Text style={styles.adminTagText}>Admin</Text>
+                          <SpeakableText style={styles.adminTagText}>Admin</SpeakableText>
                         </View>
                       )}
                     </View>
-                    <Text style={styles.itemMeta}>Last Seen: {p.user.lastOnline ? formatTimeAgoShort(p.user.lastOnline as string, false) : "Never"}</Text>
+                    <SpeakableText style={styles.itemMeta}>Last Seen: {p.user.lastOnline ? formatTimeAgoShort(p.user.lastOnline as string, false) : "Never"}</SpeakableText>
                   </View>
                 </View>
               </View>

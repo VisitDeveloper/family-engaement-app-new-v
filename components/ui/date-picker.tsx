@@ -158,6 +158,7 @@ export default function DatePicker(props: DatePickerProps) {
 // // import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 // // import React, { useState } from "react";
 // // import { Button, Platform, Text, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 // // export default function App() {
 // //     const [date, setDate] = useState(new Date());
@@ -205,9 +206,9 @@ export default function DatePicker(props: DatePickerProps) {
 // //         <View style={{ marginTop: 100, padding: 20 }}>
 // //             <Button title="Pick Date & Time" onPress={showPicker} />
 
-// //             <Text style={{ marginTop: 20, fontSize: 16 }}>
+// //             <SpeakableText style={{ marginTop: 20, fontSize: 16 }}>
 // //                 Selected: {date.toLocaleString()} {/* Display selected date and time */}
-// //             </Text>
+// //             </SpeakableText>
 
 // //             {/* iOS datetime mode */}
 // //             {Platform.OS === "ios" && showDate && (

@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 interface GroupItem {
   id: string;
@@ -304,10 +305,10 @@ export default function NewMessageScreen() {
             <Image source={{ uri: item.image }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarInitials}>
+              <SpeakableText style={styles.avatarInitials}>
                 {item.name[0]}
                 {item.name.split(" ")[1] ? item.name.split(" ")[1][0] : ""}
-              </Text>
+              </SpeakableText>
             </View>
           )}
           <View style={{ position: "absolute", bottom: -4, right: -4, backgroundColor: theme.bg, borderRadius: 50, width: 16, height: 16, alignItems: "center", justifyContent: "center" }}>
@@ -317,7 +318,7 @@ export default function NewMessageScreen() {
           </View>
         </View>
         <View style={styles.itemContent}>
-          <Text style={styles.itemName}>{item.name}</Text>
+          <SpeakableText style={styles.itemName}>{item.name}</SpeakableText>
         </View>
       </TouchableOpacity>
     );
@@ -338,18 +339,18 @@ export default function NewMessageScreen() {
           <Image source={{ uri: item.image }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitials}>{item.initials}</Text>
+            <SpeakableText style={styles.avatarInitials}>{item.initials}</SpeakableText>
           </View>
         )}
         <View style={styles.itemContent}>
           <View style={styles.itemHeader}>
-            <Text style={styles.itemName}>{item.name}</Text>
+            <SpeakableText style={styles.itemName}>{item.name}</SpeakableText>
             {item.role?.toLowerCase() === "teacher" && (
-              <Text style={styles.roleBadge}>{item.role}</Text>
+              <SpeakableText style={styles.roleBadge}>{item.role}</SpeakableText>
             )}
           </View>
           {item.lastSeen && (
-            <Text style={styles.lastSeen}>Last Seen: {item.lastSeen}</Text>
+            <SpeakableText style={styles.lastSeen}>Last Seen: {item.lastSeen}</SpeakableText>
           )}
         </View>
       </TouchableOpacity>
@@ -361,7 +362,7 @@ export default function NewMessageScreen() {
       <HeaderInnerPage title={t("newMessage.title")} />
 
       {/* Groups */}
-      <Text style={[styles.sectionTitle, { marginBottom: 4 }]}>Groups</Text>
+      <SpeakableText style={[styles.sectionTitle, { marginBottom: 4 }]}>Groups</SpeakableText>
       {effectiveRole !== "parent" && (
         <TouchableOpacity
           style={styles.row}
@@ -377,7 +378,7 @@ export default function NewMessageScreen() {
               <View style={{ backgroundColor: "#00C950", width: 10, height: 10, borderRadius: 50 }} />
             </View>
           </View>
-          <Text style={styles.itemName}>Create New Group</Text>
+          <SpeakableText style={styles.itemName}>Create New Group</SpeakableText>
         </TouchableOpacity>
       )}
 
@@ -395,7 +396,7 @@ export default function NewMessageScreen() {
           renderItem={renderGroupItem}
           ListEmptyComponent={
             <View style={{ padding: 20, alignItems: "center" }}>
-              <Text style={{ color: theme.subText }}>No groups found</Text>
+              <SpeakableText style={{ color: theme.subText }}>No groups found</SpeakableText>
             </View>
           }
         />
@@ -405,7 +406,7 @@ export default function NewMessageScreen() {
       <Divider marginVertical={8} />
 
       {/* Contacts */}
-      <Text style={[styles.sectionTitleContacts, { marginBottom: 4 }]}>Contacts</Text>
+      <SpeakableText style={[styles.sectionTitleContacts, { marginBottom: 4 }]}>Contacts</SpeakableText>
       {loadingContacts ? (
         <View style={{ padding: 20, alignItems: "center" }}>
           <ActivityIndicator size="small" color={theme.tint} />
@@ -422,7 +423,7 @@ export default function NewMessageScreen() {
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
             <View style={{ padding: 20, alignItems: "center" }}>
-              <Text style={{ color: theme.subText }}>No contacts found</Text>
+              <SpeakableText style={{ color: theme.subText }}>No contacts found</SpeakableText>
             </View>
           }
           ListFooterComponent={

@@ -16,6 +16,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TimelineScreen = () => {

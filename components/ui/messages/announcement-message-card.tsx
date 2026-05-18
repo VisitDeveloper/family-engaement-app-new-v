@@ -3,7 +3,8 @@ import { MessageResponseDto } from "@/services/messaging.service";
 import type { MessageReactionItemDto } from "@/types";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
-import { Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
+import { TouchableOpacity, View } from "react-native";
 import { CopyIcon, PencilIcon, TrashIcon } from "../icons/messages-icons";
 import ReactionRow from "./reaction-row";
 
@@ -97,11 +98,13 @@ export default function AnnouncementMessageCard({
     <View style={styles.container}>
       {/* Announcement Tag */}
       <View style={styles.announcementTag}>
-        <Text style={styles.announcementTagText}>Announcement</Text>
+        <SpeakableText style={styles.announcementTagText}>Announcement</SpeakableText>
       </View>
 
       {/* Message Content */}
-      <Text style={styles.content}>{contentDisplay}</Text>
+      <SpeakableText style={styles.content} readString={contentDisplay}>
+        {contentDisplay}
+      </SpeakableText>
 
       {reactions && reactions.length > 0 && (
         <ReactionRow reactions={reactions} myReaction={myReaction} />
@@ -109,7 +112,7 @@ export default function AnnouncementMessageCard({
 
       {/* Footer with timestamp and actions */}
       <View style={styles.footer}>
-        <Text style={styles.timestamp}>{messageTime}</Text>
+        <SpeakableText style={styles.timestamp}>{messageTime}</SpeakableText>
         {isMe ? (
           <View style={styles.actions}>
             {onEdit && (

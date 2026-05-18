@@ -2,6 +2,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 interface MessageActionsMenuProps {
   visible: boolean;
@@ -175,9 +176,9 @@ export default function MessageActionsMenu({
         >
           <View style={styles.menuItemIcon}>{item.icon}</View>
           <View style={styles.menuItemContent}>
-            <Text style={item.isDelete ? styles.deleteText : styles.menuItemTitle}>
+            <SpeakableText style={item.isDelete ? styles.deleteText : styles.menuItemTitle}>
               {item.title}
-            </Text>
+            </SpeakableText>
           </View>
         </TouchableOpacity>
       ))}

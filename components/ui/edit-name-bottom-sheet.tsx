@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 interface EditNameBottomSheetProps {
   visible: boolean;
@@ -156,13 +157,13 @@ export default function EditNameBottomSheet({
     >
       <BottomSheetView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Edit Name</Text>
+          <SpeakableText style={styles.title}>Edit Name</SpeakableText>
           <TouchableOpacity onPress={onClose}>
             <Feather name="x" size={24} color="#333" />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.label}>First Name</Text>
+        <SpeakableText style={styles.label}>First Name</SpeakableText>
         <BottomSheetTextInput
           style={styles.input}
           value={firstName}
@@ -172,7 +173,7 @@ export default function EditNameBottomSheet({
           placeholderTextColor="#999"
         />
 
-        <Text style={styles.label}>Last Name</Text>
+        <SpeakableText style={styles.label}>Last Name</SpeakableText>
         <BottomSheetTextInput
           style={styles.input}
           value={lastName}
@@ -193,7 +194,7 @@ export default function EditNameBottomSheet({
           {isSubmitting ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.submitButtonText}>Save</Text>
+            <SpeakableText style={styles.submitButtonText}>Save</SpeakableText>
           )}
         </TouchableOpacity>
       </BottomSheetView>

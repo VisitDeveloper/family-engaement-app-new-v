@@ -10,6 +10,7 @@ import { getDisplayName, getInitials } from "@/utils/user-name";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Image, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 export default function BlocklistScreen() {
     const { t } = useTranslation();
@@ -150,7 +151,7 @@ export default function BlocklistScreen() {
         const initials = getInitials(user.firstName, user.lastName);
         return (
             <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>{initials || '?'}</Text>
+                <SpeakableText style={styles.avatarText}>{initials || '?'}</SpeakableText>
             </View>
         );
     };
@@ -171,10 +172,10 @@ export default function BlocklistScreen() {
                 <View style={styles.contactLeft}>
                     {renderAvatar(user)}
                     <View style={styles.contactInfo}>
-                        <Text style={styles.contactName}>{displayName}</Text>
+                        <SpeakableText style={styles.contactName}>{displayName}</SpeakableText>
                         {type === 'blocked' && (
                             <View style={styles.blockedBadge}>
-                                <Text style={styles.blockedBadgeText}>{t("blocklist.blocked")}</Text>
+                                <SpeakableText style={styles.blockedBadgeText}>{t("blocklist.blocked")}</SpeakableText>
                             </View>
                         )}
                     </View>
@@ -222,12 +223,12 @@ export default function BlocklistScreen() {
                     addstyles={{ marginBottom: 20 }}
                 />
                 <View style={styles.centerContainer}>
-                    <Text style={styles.errorText}>{error}</Text>
+                    <SpeakableText style={styles.errorText}>{error}</SpeakableText>
                     <TouchableOpacity
                         onPress={refreshLists}
                         style={{ marginTop: 16, padding: 12, backgroundColor: theme.text, borderRadius: 8 }}
                     >
-                        <Text style={{ color: theme.bg }}>{t("buttons.retry")}</Text>
+                        <SpeakableText style={{ color: theme.bg }}>{t("buttons.retry")}</SpeakableText>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -284,7 +285,7 @@ export default function BlocklistScreen() {
                         </TouchableOpacity>
                     </View>
                     {blockedUsers.length === 0 ? (
-                        <Text style={styles.emptyText}>{t("blocklist.noBlockedContacts")}</Text>
+                        <SpeakableText style={styles.emptyText}>{t("blocklist.noBlockedContacts")}</SpeakableText>
                     ) : (
                         blockedUsers.map((user) =>
                             renderContactItem(user, 'blocked', () => unblockUser(user.id))
@@ -308,7 +309,7 @@ export default function BlocklistScreen() {
                         </TouchableOpacity>
                     </View>
                     {allowedUsers.length === 0 ? (
-                        <Text style={styles.emptyText}>{t("blocklist.noAllowedContacts")}</Text>
+                        <SpeakableText style={styles.emptyText}>{t("blocklist.noAllowedContacts")}</SpeakableText>
                     ) : (
                         allowedUsers.map((user) =>
                             renderContactItem(user, 'allowed', () => removeFromAllowList(user.id))

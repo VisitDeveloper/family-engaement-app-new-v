@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Animated, Clipboard, FlatList, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SYSTEM_GREETING = {
@@ -396,7 +397,7 @@ const TeachingAssistantScreen = () => {
                 <ThemedView lightColor={Colors.light.backgroundElementSecondary} darkColor={Colors.dark.backgroundElementSecondary} style={styles.greeting}>
                     <ThemedText type='subText' lightColor={Colors.light.text} darkColor={Colors.dark.text}>{greetingDisplayText}</ThemedText>
                     <View style={styles.timeContainer}>
-                        <Text style={styles.time}>{t(SYSTEM_GREETING.timeKey)}</Text>
+                        <SpeakableText style={styles.time}>{t(SYSTEM_GREETING.timeKey)}</SpeakableText>
                         <ThemedView style={[styles.icongreeting, { backgroundColor: 'transparent' }]}>
                             <TouchableOpacity style={{ paddingRight: 6 }} onPress={() => copyToClipboard(greetingDisplayText)}>
                                 <CopyIcon size={14} color={theme.subText} />
@@ -423,10 +424,10 @@ const TeachingAssistantScreen = () => {
                         <TypingDots color={theme.text} />
                     ) : (
                         <>
-                            <Text style={isUser ? chatMessageStyles.messageText : chatMessageStyles.messageOtherText}>
+                            <SpeakableText style={isUser ? chatMessageStyles.messageText : chatMessageStyles.messageOtherText}>
                                 {parseContentWithLinks(item.content).map((seg, i) =>
                                     seg.type === 'link' ? (
-                                        <Text
+                                        <SpeakableText
                                             key={i}
                                             style={[
                                                 isUser ? styles.linkInMyMessage : styles.linkInOtherMessage,
@@ -435,39 +436,39 @@ const TeachingAssistantScreen = () => {
                                             onPress={() => Linking.openURL(seg.value)}
                                         >
                                             {seg.value}
-                                        </Text>
+                                        </SpeakableText>
                                     ) : (
-                                        <Text key={i}>{seg.value}</Text>
+                                        <SpeakableText key={i}>{seg.value}</SpeakableText>
                                     )
                                 )}
-                            </Text>
+                            </SpeakableText>
                             {hasData && (
                                 <View style={[styles.dataTableWrap, { borderColor: theme.border ?? theme.subText + '40' }]}>
                                     {chartSuggestion && (
-                                        <Text style={[styles.dataTableChartHint, { color: theme.subText }]}>
+                                        <SpeakableText style={[styles.dataTableChartHint, { color: theme.subText }]}>
                                             {t('ai.chartSuggestion') || 'Chart'}: {chartSuggestion}
-                                        </Text>
+                                        </SpeakableText>
                                     )}
                                     <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.dataTableScroll}>
                                         <View>
                                             <View style={[styles.dataTableRow, styles.dataTableHeader, { borderBottomColor: theme.border ?? theme.subText + '40' }]}>
                                                 {columns.map((col) => (
-                                                    <Text key={col} style={[styles.dataTableCell, styles.dataTableHeaderCell, { color: theme.subText }]} numberOfLines={1}>
+                                                    <SpeakableText key={col} style={[styles.dataTableCell, styles.dataTableHeaderCell, { color: theme.subText }]} numberOfLines={1}>
                                                         {col}
-                                                    </Text>
+                                                    </SpeakableText>
                                                 ))}
                                             </View>
                                             {dataRows.slice(0, 50).map((row, ri) => (
                                                 <View key={ri} style={[styles.dataTableRow, { borderBottomColor: theme.border ?? theme.subText + '20' }]}>
                                                     {columns.map((col) => (
-                                                        <Text key={col} style={[styles.dataTableCell, { color: theme.text }]} numberOfLines={1}>
+                                                        <SpeakableText key={col} style={[styles.dataTableCell, { color: theme.text }]} numberOfLines={1}>
                                                             {row[col] != null ? String(row[col]) : '—'}
-                                                        </Text>
+                                                        </SpeakableText>
                                                     ))}
                                                 </View>
                                             ))}
                                             {dataRows.length > 50 && (
-                                                <Text style={[styles.dataTableMore, { color: theme.subText }]}>{t('ai.showingFirst50') || `Showing first 50 of ${dataRows.length}`}</Text>
+                                                <SpeakableText style={[styles.dataTableMore, { color: theme.subText }]}>{t('ai.showingFirst50') || `Showing first 50 of ${dataRows.length}`}</SpeakableText>
                                             )}
                                         </View>
                                     </ScrollView>
@@ -477,9 +478,9 @@ const TeachingAssistantScreen = () => {
                     )}
                     {!isTyping && (
                         <View style={styles.messageTimeRow}>
-                            <Text style={[styles.messageTime, { color: isUser ? 'rgba(255,255,255,0.8)' : theme.subText }]}>
+                            <SpeakableText style={[styles.messageTime, { color: isUser ? 'rgba(255,255,255,0.8)' : theme.subText }]}>
                                 {createdAt != null && createdAt > 0 ? formatMessageTime(createdAt) : ''}
-                            </Text>
+                            </SpeakableText>
                             {!isUser && (
                                 <View style={styles.messageActions}>
                                     <TouchableOpacity style={styles.messageActionBtn} onPress={() => copyToClipboard(item.content)}>
@@ -549,7 +550,7 @@ const TeachingAssistantScreen = () => {
                 {showInitialSections && (
                     <View style={{ paddingHorizontal: 15, paddingVertical: 12, paddingBottom: 8 }}>
                         <View style={styles.quickActionsBlock}>
-                            <Text style={[styles.quickActionsTitle, { color: theme.subText }]}>{t('ai.quickActionsTitle')}</Text>
+                            <SpeakableText style={[styles.quickActionsTitle, { color: theme.subText }]}>{t('ai.quickActionsTitle')}</SpeakableText>
                             {QUICK_ACTION_KEYS.map((q) => (
                                 <TouchableOpacity
                                     key={q.id}
@@ -557,7 +558,7 @@ const TeachingAssistantScreen = () => {
                                     onPress={() => sendQuery(t(q.textKey))}
                                     disabled={sending}
                                 >
-                                    <Text style={styles.actionText}>{t(q.textKey)}</Text>
+                                    <SpeakableText style={styles.actionText}>{t(q.textKey)}</SpeakableText>
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -567,7 +568,7 @@ const TeachingAssistantScreen = () => {
                             disabled={sending}
                         >
                             <ShareIcon size={16} color={Colors.light.tint} />
-                            <Text style={styles.uploadText}>{t('ai.uploadReport')}</Text>
+                            <SpeakableText style={styles.uploadText}>{t('ai.uploadReport')}</SpeakableText>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.uploadButton, { marginBottom: 8, borderStyle: 'dashed' }]}
@@ -575,7 +576,7 @@ const TeachingAssistantScreen = () => {
                             disabled={sending}
                         >
                             <Ionicons name="document-text-outline" size={18} color={Colors.light.tint} />
-                            <Text style={styles.uploadText}>{t('ai.manageData')}</Text>
+                            <SpeakableText style={styles.uploadText}>{t('ai.manageData')}</SpeakableText>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -587,14 +588,14 @@ const TeachingAssistantScreen = () => {
                         onPress={() => setUseDataQuery(false)}
                         disabled={sending}
                     >
-                        <Text style={[styles.queryModeBtnText, { color: useDataQuery ? theme.subText : '#fff' }]}>{t('ai.modeDocuments') || 'پرسش از اسناد'}</Text>
+                        <SpeakableText style={[styles.queryModeBtnText, { color: useDataQuery ? theme.subText : '#fff' }]}>{t('ai.modeDocuments') || 'پرسش از اسناد'}</SpeakableText>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.queryModeBtn, useDataQuery && { backgroundColor: theme.tint, opacity: 1 }]}
                         onPress={() => setUseDataQuery(true)}
                         disabled={sending}
                     >
-                        <Text style={[styles.queryModeBtnText, { color: useDataQuery ? '#fff' : theme.subText }]}>{t('ai.modeDataReport') || 'گزارش از دیتا'}</Text>
+                        <SpeakableText style={[styles.queryModeBtnText, { color: useDataQuery ? '#fff' : theme.subText }]}>{t('ai.modeDataReport') || 'گزارش از دیتا'}</SpeakableText>
                     </TouchableOpacity>
                 </View>
 
@@ -680,7 +681,7 @@ const TeachingAssistantScreen = () => {
                                     <ActivityIndicator size="large" color={theme.tint} />
                                 </View>
                             ) : indexedDocuments.length === 0 ? (
-                                <Text style={[styles.documentsModalEmpty, { color: theme.subText }]}>{t('ai.noDocuments')}</Text>
+                                <SpeakableText style={[styles.documentsModalEmpty, { color: theme.subText }]}>{t('ai.noDocuments')}</SpeakableText>
                             ) : (
                                 <FlatList
                                     data={indexedDocuments}
@@ -692,8 +693,8 @@ const TeachingAssistantScreen = () => {
                                         return (
                                             <View style={[styles.documentRow, { borderBottomColor: theme.border }]}>
                                                 <View style={{ flex: 1, minWidth: 0 }}>
-                                                    <Text style={[styles.documentRowName, { color: theme.text }]} numberOfLines={2}>{displayName}</Text>
-                                                    <Text style={[styles.documentRowMeta, { color: theme.subText }]}>{item.chunk_count} {item.chunk_count === 1 ? 'chunk' : 'chunks'}</Text>
+                                                    <SpeakableText style={[styles.documentRowName, { color: theme.text }]} numberOfLines={2}>{displayName}</SpeakableText>
+                                                    <SpeakableText style={[styles.documentRowMeta, { color: theme.subText }]}>{item.chunk_count} {item.chunk_count === 1 ? 'chunk' : 'chunks'}</SpeakableText>
                                                 </View>
                                                 <TouchableOpacity
                                                     style={[styles.documentRowDelete, isDeleting && { opacity: 0.6 }]}
@@ -732,14 +733,14 @@ const TeachingAssistantScreen = () => {
                             onPress={(e) => e.stopPropagation()}
                             style={[styles.translateModalBox, { backgroundColor: theme.panel || theme.bg }]}
                         >
-                            <Text style={[styles.translateModalTitle, { color: theme.text }]}>{t('translate.modalTitle')}</Text>
-                            <Text style={[styles.translateModalLabel, { color: theme.subText }]}>{t('translate.fromSource')}</Text>
+                            <SpeakableText style={[styles.translateModalTitle, { color: theme.text }]}>{t('translate.modalTitle')}</SpeakableText>
+                            <SpeakableText style={[styles.translateModalLabel, { color: theme.subText }]}>{t('translate.fromSource')}</SpeakableText>
                             <ScrollView style={styles.translateModalList} showsVerticalScrollIndicator={false}>
                                 <TouchableOpacity
                                     style={[styles.translateModalRow, translateSource === 'auto' && { backgroundColor: theme.tint + '30' }]}
                                     onPress={() => setTranslateSource('auto')}
                                 >
-                                    <Text style={{ color: theme.text, fontSize: 16 }}>{t('translate.autoDetect')}</Text>
+                                    <SpeakableText style={{ color: theme.text, fontSize: 16 }}>{t('translate.autoDetect')}</SpeakableText>
                                     {translateSource === 'auto' && <Ionicons name="checkmark-circle" size={22} color={theme.tint} />}
                                 </TouchableOpacity>
                                 {SUPPORTED_LANGUAGES.map((lang) => (
@@ -748,12 +749,12 @@ const TeachingAssistantScreen = () => {
                                         style={[styles.translateModalRow, translateSource === lang.code && { backgroundColor: theme.tint + '30' }]}
                                         onPress={() => setTranslateSource(lang.code)}
                                     >
-                                        <Text style={{ color: theme.text, fontSize: 16 }}>{lang.label}</Text>
+                                        <SpeakableText style={{ color: theme.text, fontSize: 16 }}>{lang.label}</SpeakableText>
                                         {translateSource === lang.code && <Ionicons name="checkmark-circle" size={22} color={theme.tint} />}
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-                            <Text style={[styles.translateModalLabel, { color: theme.subText, marginTop: 12 }]}>{t('translate.toTarget')}</Text>
+                            <SpeakableText style={[styles.translateModalLabel, { color: theme.subText, marginTop: 12 }]}>{t('translate.toTarget')}</SpeakableText>
                             <ScrollView style={styles.translateModalList} showsVerticalScrollIndicator={false}>
                                 {SUPPORTED_LANGUAGES.map((lang) => (
                                     <TouchableOpacity
@@ -761,7 +762,7 @@ const TeachingAssistantScreen = () => {
                                         style={[styles.translateModalRow, translateTarget === lang.code && { backgroundColor: theme.tint + '30' }]}
                                         onPress={() => setTranslateTarget(lang.code)}
                                     >
-                                        <Text style={{ color: theme.text, fontSize: 16 }}>{lang.label}</Text>
+                                        <SpeakableText style={{ color: theme.text, fontSize: 16 }}>{lang.label}</SpeakableText>
                                         {translateTarget === lang.code && <Ionicons name="checkmark-circle" size={22} color={theme.tint} />}
                                     </TouchableOpacity>
                                 ))}
@@ -775,7 +776,7 @@ const TeachingAssistantScreen = () => {
                                             setShowTranslateLangModal(false);
                                         }}
                                     >
-                                        <Text style={{ color: theme.subText, fontSize: 14 }}>{t('translate.turnOff')}</Text>
+                                        <SpeakableText style={{ color: theme.subText, fontSize: 14 }}>{t('translate.turnOff')}</SpeakableText>
                                     </TouchableOpacity>
                                 )}
                                 <TouchableOpacity
@@ -789,7 +790,7 @@ const TeachingAssistantScreen = () => {
                                         setShowTranslateLangModal(false);
                                     }}
                                 >
-                                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>{t('buttons.apply')}</Text>
+                                    <SpeakableText style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>{t('buttons.apply')}</SpeakableText>
                                 </TouchableOpacity>
                             </View>
                         </TouchableOpacity>

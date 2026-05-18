@@ -1,6 +1,7 @@
 import type { MessageReactionItemDto } from "@/types";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { Text, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 interface ReactionRowProps {
   reactions: MessageReactionItemDto[];
@@ -44,8 +45,8 @@ export default function ReactionRow({ reactions, myReaction }: ReactionRowProps)
             myReaction === r.emoji && styles.bubbleHighlight,
           ]}
         >
-          <Text style={styles.emoji}>{r.emoji}</Text>
-          {r.count > 1 && <Text style={styles.count}>{r.count}</Text>}
+          <SpeakableText style={styles.emoji}>{r.emoji}</SpeakableText>
+          {r.count > 1 && <SpeakableText style={styles.count}>{r.count}</SpeakableText>}
         </View>
       ))}
     </View>

@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, FlatList, Image, Platform, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Contact {
@@ -118,17 +119,17 @@ const MessageItem = ({
           <Image source={{ uri: item.avatar }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarPlaceholder}>
-            <Text style={{ color: theme.text }}>
+            <SpeakableText style={{ color: theme.text }}>
               {item.name[0]}
               {item.name.split(" ")[1] ? item.name.split(" ")[1][0] : ""}
-            </Text>
+            </SpeakableText>
           </View>
         )}
 
         <View style={{ flex: 1, marginLeft: 10 }}>
           <View style={styles.messageHeader}>
-            <Text style={styles.messageName}>{item.name}</Text>
-            <Text style={styles.messageTime}>{item.time}</Text>
+            <SpeakableText style={styles.messageName}>{item.name}</SpeakableText>
+            <SpeakableText style={styles.messageTime}>{item.time}</SpeakableText>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 0, marginTop: 4 }}>
             {showThumbnail && (
@@ -146,19 +147,19 @@ const MessageItem = ({
                 />
               </View>
             )}
-            <Text numberOfLines={1} style={styles.messageText}>
+            <SpeakableText numberOfLines={1} style={styles.messageText}>
               {showFileRow
                 ? item.lastMessageType === "poll"
                   ? (item.message || "Poll")
                   : displayFileName
                 : item.message}
-            </Text>
+            </SpeakableText>
           </View>
         </View>
 
         {item.unread > 0 && (
           <View style={styles.unreadBadge}>
-            <Text style={{ color: "#fff", fontSize: 12 }}>{item.unread}</Text>
+            <SpeakableText style={{ color: "#fff", fontSize: 12 }}>{item.unread}</SpeakableText>
           </View>
         )}
       </View>
@@ -491,7 +492,7 @@ export default function MessagesScreen() {
             disabled={true}
           >
             <AiAssistantIcon size={16} color={theme.tint} />
-            <Text>{t("ai.buttonLabel")}</Text>
+            <SpeakableText>{t("ai.buttonLabel")}</SpeakableText>
           </TouchableOpacity> */}
 
           <TouchableOpacity
@@ -499,7 +500,7 @@ export default function MessagesScreen() {
             style={styles.filterBtn}
           >
             <EmergencyIcon size={16} color={theme.emergencyColor} />
-            <Text style={{ color: theme.text }}>{t("buttons.emergency")}</Text>
+            <SpeakableText style={{ color: theme.text }}>{t("buttons.emergency")}</SpeakableText>
           </TouchableOpacity>
 
         </View>
@@ -545,9 +546,9 @@ export default function MessagesScreen() {
           )}
           ListEmptyComponent={
             <View style={{ padding: 20, alignItems: "center" }}>
-              <Text style={{ color: theme.subText }}>
+              <SpeakableText style={{ color: theme.subText }}>
                 No conversations found
-              </Text>
+              </SpeakableText>
             </View>
           }
         />

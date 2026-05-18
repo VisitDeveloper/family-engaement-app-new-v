@@ -19,7 +19,7 @@ function formatWhen(iso: string, locale: string): string {
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleString(locale === "fa" ? "fa-IR" : locale || undefined);
+    return d.toLocaleString(locale || undefined);
   } catch {
     return iso;
   }

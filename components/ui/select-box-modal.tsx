@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import { ThemedText } from "../themed-text";
 
 
@@ -106,7 +107,7 @@ export default function SelectBox({ options, value, onChange, title = '', disabl
                 style={[styles.selectBox, { backgroundColor: theme.panel, borderColor: "transparent" }]}
                 onPress={() => setVisible(true)}
             >
-                <Text style={{ color: disabled ? theme.subText : theme.text }}>{displayLabel}</Text>
+                <SpeakableText style={{ color: disabled ? theme.subText : theme.text }}>{displayLabel}</SpeakableText>
                 <Feather name="chevron-down" size={16} color={theme.subText} />
             </TouchableOpacity>
 
@@ -134,7 +135,7 @@ export default function SelectBox({ options, value, onChange, title = '', disabl
                                         onPress={() => setPendingValue(item.value)}
                                         activeOpacity={0.7}
                                     >
-                                        <Text style={{ color: theme.text, fontSize: 16 }}>{item.label}</Text>
+                                        <SpeakableText style={{ color: theme.text, fontSize: 16 }}>{item.label}</SpeakableText>
                                         {isSelected && (
                                             <Ionicons name="checkmark-circle" size={22} color={theme.tint} />
                                         )}
@@ -144,7 +145,7 @@ export default function SelectBox({ options, value, onChange, title = '', disabl
                         />
 
                         <TouchableOpacity style={styles.applyButton} onPress={handleApply} activeOpacity={0.8}>
-                            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{t("common.apply")}</Text>
+                            <SpeakableText style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{t("common.apply")}</SpeakableText>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>

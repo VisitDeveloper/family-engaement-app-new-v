@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -30,9 +31,9 @@ export default function ProfileScreen() {
             style={{ paddingBottom: 15 }}
           />
         </TouchableOpacity>
-        <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 16 }}>
+        <SpeakableText style={{ fontSize: 24, fontWeight: "bold", marginBottom: 16 }}>
           Profile
-        </Text>
+        </SpeakableText>
       </View>
       {/* User Info Card */}
       <View style={styles.card}>
@@ -42,39 +43,39 @@ export default function ProfileScreen() {
           }
           style={styles.avatar}
         />
-        <Text style={styles.name}>
+        <SpeakableText style={styles.name}>
           {getDisplayName(user?.firstName, user?.lastName, user?.name || "")}
-        </Text>
-        <Text style={styles.relation}>
+        </SpeakableText>
+        <SpeakableText style={styles.relation}>
           {user?.childName ? user.childName : ""}
-        </Text>
+        </SpeakableText>
       </View>
 
       {/* Classrooms Attached */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Classrooms Attached</Text>
+        <SpeakableText style={styles.sectionTitle}>Classrooms Attached</SpeakableText>
         <View style={styles.item}>
           <Image
             source={{ uri: "https://picsum.photos/50" }}
             style={styles.itemAvatar}
           />
-          <Text style={styles.itemText}>Room 4A Class</Text>
+          <SpeakableText style={styles.itemText}>Room 4A Class</SpeakableText>
         </View>
       </View>
 
       {/* Common Groups */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Common Groups</Text>
+        <SpeakableText style={styles.sectionTitle}>Common Groups</SpeakableText>
         <View style={styles.item}>
           <Image
             source={{ uri: "https://picsum.photos/50" }}
             style={styles.itemAvatar}
           />
           <View style={{ flex: 1 }}>
-            <Text style={styles.itemText}>Room 4A Class Updates</Text>
+            <SpeakableText style={styles.itemText}>Room 4A Class Updates</SpeakableText>
           </View>
           <View style={styles.groupTag}>
-            <Text style={styles.groupTagText}>Group</Text>
+            <SpeakableText style={styles.groupTagText}>Group</SpeakableText>
           </View>
         </View>
       </View>
@@ -87,7 +88,7 @@ export default function ProfileScreen() {
           color="#fff"
           style={{ marginRight: 8 }}
         />
-        <Text style={styles.buttonText}>Send Message</Text>
+        <SpeakableText style={styles.buttonText}>Send Message</SpeakableText>
       </TouchableOpacity>
     </ScrollView>
   );

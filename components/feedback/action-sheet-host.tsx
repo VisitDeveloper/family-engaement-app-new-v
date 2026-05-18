@@ -10,6 +10,7 @@ import i18n from "@/i18n";
 import type { ComponentProps } from "react";
 import { useCallback, useEffect, useRef } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 export function ActionSheetHost() {
   const theme = useStore((s) => s.theme);
@@ -76,10 +77,10 @@ export function ActionSheetHost() {
         {/* <View style={[styles.accentLine, { backgroundColor: theme.tint }]} /> */}
 
         {sheetTitle ? (
-          <Text style={[styles.title, { color: theme.text }]}>{sheetTitle}</Text>
+          <SpeakableText style={[styles.title, { color: theme.text }]}>{sheetTitle}</SpeakableText>
         ) : null}
         {sheetMessage ? (
-          <Text style={[styles.message, { color: theme.subText }]}>{sheetMessage}</Text>
+          <SpeakableText style={[styles.message, { color: theme.subText }]}>{sheetMessage}</SpeakableText>
         ) : null}
 
         <View
@@ -120,14 +121,14 @@ export function ActionSheetHost() {
                   style={styles.rowDot}
                 />
               )}
-              <Text
+              <SpeakableText
                 style={[
                   styles.rowLabel,
                   { color: opt.destructive ? theme.emergencyColor : theme.text },
                 ]}
               >
                 {opt.label}
-              </Text>
+              </SpeakableText>
               <Ionicons name="chevron-forward" size={18} color={theme.subText} style={styles.chevron} />
             </TouchableOpacity>
           ))}
@@ -145,7 +146,7 @@ export function ActionSheetHost() {
           onPress={() => finishActionSheet(null)}
           activeOpacity={0.72}
         >
-          <Text style={[styles.cancelLabel, { color: theme.tint }]}>{i18n.t("common.cancel")}</Text>
+          <SpeakableText style={[styles.cancelLabel, { color: theme.tint }]}>{i18n.t("common.cancel")}</SpeakableText>
         </TouchableOpacity>
       </BottomSheetView>
     </BottomSheetModal>

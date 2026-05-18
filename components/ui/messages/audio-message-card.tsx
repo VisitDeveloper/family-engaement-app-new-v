@@ -3,7 +3,8 @@ import { MessageResponseDto } from "@/services/messaging.service";
 import type { MessageReactionItemDto } from "@/types";
 import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
-import { Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
+import { TouchableOpacity, View } from "react-native";
 import { EmojiIcon, TrashIcon } from "../icons/messages-icons";
 import ReactionRow from "./reaction-row";
 
@@ -151,14 +152,14 @@ export default function AudioMessageCard({
               ]}
             />
           </View>
-          <Text style={styles.audioDuration}>{displayDuration}</Text>
+          <SpeakableText style={styles.audioDuration}>{displayDuration}</SpeakableText>
         </View>
       </View>
       {reactions && reactions.length > 0 && (
         <ReactionRow reactions={reactions} myReaction={myReaction} />
       )}
       <View style={styles.footer}>
-        <Text style={styles.timestamp}>{messageTime}</Text>
+        <SpeakableText style={styles.timestamp}>{messageTime}</SpeakableText>
         {isMe ? (
           <View style={styles.footerRight}>
             <View style={styles.actions}>

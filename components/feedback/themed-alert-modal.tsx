@@ -13,6 +13,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import type { FeedbackAlertButton, FeedbackAlertButtonStyle } from "@/store/feedback-ui";
 
 const PRIMARY_TEXT = "#ffffff";
@@ -118,9 +119,9 @@ export function ThemedAlertModal() {
                 <Ionicons name={headerIcon.name} size={32} color={headerIcon.color} />
               </View>
 
-              <Text style={[textStyles.title, { color: theme.text }]}>{title}</Text>
+              <SpeakableText style={[textStyles.title, { color: theme.text }]}>{title}</SpeakableText>
               {message ? (
-                <Text style={[textStyles.message, { color: theme.subText }]}>{message}</Text>
+                <SpeakableText style={[textStyles.message, { color: theme.subText }]}>{message}</SpeakableText>
               ) : null}
 
               <View style={[viewStyles.actions, isRow && viewStyles.actionsRow]}>
@@ -140,7 +141,7 @@ export function ThemedAlertModal() {
                       ]}
                       activeOpacity={0.85}
                     >
-                      <Text
+                      <SpeakableText
                         style={[
                           textStyles.buttonLabel,
                           { color: buttonLabelColor(btn.style, theme) },
@@ -148,7 +149,7 @@ export function ThemedAlertModal() {
                         ]}
                       >
                         {btn.text}
-                      </Text>
+                      </SpeakableText>
                     </TouchableOpacity>
                   );
                 })}

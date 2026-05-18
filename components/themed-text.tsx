@@ -1,3 +1,4 @@
+import { useVoiceText } from '@/hooks/use-voice-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useStore } from '@/store';
 import { Text, TouchableOpacity, type TextProps, type TextStyle } from 'react-native';
@@ -6,7 +7,10 @@ export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
   type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'subText' | 'middleTitle' | 'subLittleText' | 'text' | 'error';
+  /** Spoken text when it differs from visible children. */
   readString?: string;
+  /** Skip tap-to-speak when a parent control handles narration. */
+  narrationDisabled?: boolean;
 };
 
 const defaultType: ThemedTextProps['type'] = 'default';
@@ -15,12 +19,15 @@ export function ThemedText({
   style,
   lightColor,
   darkColor,
-  readString = 'default',
+  readString,
+  narrationDisabled = false,
   type = defaultType,
+  children,
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
   const isLargeFont = useStore((state) => state.isLargeFont);
+  const { voiceEnabled, speechText, onSpeak } = useVoiceText(children, readString);
 
   const adjustFontSize = (fontSize: number) => fontSize + (isLargeFont ? 2 : 0);
 
@@ -37,18 +44,21 @@ export function ThemedText({
     error: { fontSize: adjustFontSize(12), lineHeight: 20, color: '#f87171' },
   };
 
-
   const typeKey = type ?? defaultType;
-  const speak = useStore((state) => state.speak);
-  const voiceEnabled = useStore((state) => state.voiceNarrationEnabled);
+  const textStyle = [{ color }, typeStyles[typeKey || 'default'], style];
 
-  if (voiceEnabled) {
+  if (voiceEnabled && !narrationDisabled && speechText) {
     return (
-      <TouchableOpacity onPress={() => speak(`${readString}`)}>
-        <Text style={[{ color }, typeStyles[typeKey || 'default'], style]} {...rest} />
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={onSpeak}
+        accessibilityRole="button"
+        accessibilityLabel={speechText}
+      >
+        <Text style={textStyle} {...rest}>{children}</Text>
       </TouchableOpacity>
-    )
-  } else {
-    return <Text style={[{ color }, typeStyles[typeKey || 'default'], style]} {...rest} />;
+    );
   }
+
+  return <Text style={textStyle} {...rest}>{children}</Text>;
 }

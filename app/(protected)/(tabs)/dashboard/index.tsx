@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import type { DimensionValue } from "react-native";
 import { ActivityIndicator, Platform, RefreshControl, ScrollView, Share, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import type { SummaryMetric } from "@/types/dashboard.types";
 
 function findSummaryMetric(
@@ -270,9 +271,9 @@ export default function Dashboard() {
               ]}
             >
               <View style={styles.cardHeader}>
-                <Text style={[styles.cardTitle, { color: theme.text }]}>
+                <SpeakableText style={[styles.cardTitle, { color: theme.text }]}>
                   {t("dashboard.teacherEngagement")}
-                </Text>
+                </SpeakableText>
                 <TouchableOpacity
                   onPress={onExport}
                   disabled={exporting}
@@ -288,9 +289,9 @@ export default function Dashboard() {
                   }}
                 >
                   <DownloadIcon size={15} color={theme.tint} />
-                  <Text style={{ color: theme.tint }}>
+                  <SpeakableText style={{ color: theme.tint }}>
                     {exporting ? "…" : t("buttons.export")}
-                  </Text>
+                  </SpeakableText>
                 </TouchableOpacity>
               </View>
 
@@ -308,9 +309,9 @@ export default function Dashboard() {
                           alignItems: "flex-end",
                         }}
                       >
-                        <Text style={[styles.teacherName, { color: theme.text }]}>
+                        <SpeakableText style={[styles.teacherName, { color: theme.text }]}>
                           {teacher.displayName}
-                        </Text>
+                        </SpeakableText>
                         <View
                           style={{
                             backgroundColor: theme.passDesc,
@@ -332,12 +333,12 @@ export default function Dashboard() {
                           paddingTop: 5,
                         }}
                       >
-                        <Text style={[styles.teacherStats, { color: theme.subText }]}>
+                        <SpeakableText style={[styles.teacherStats, { color: theme.subText }]}>
                           {teacher.postsCount} {t("dashboard.posts")}
-                        </Text>
-                        <Text style={[styles.teacherStats, { color: theme.subText }]}>
+                        </SpeakableText>
+                        <SpeakableText style={[styles.teacherStats, { color: theme.subText }]}>
                           {teacher.responsesCount} {t("dashboard.responses")}
-                        </Text>
+                        </SpeakableText>
                       </View>
                       <View
                         style={[
@@ -371,10 +372,10 @@ export default function Dashboard() {
                 },
               ]}
             >
-              <Text style={[styles.cardTitle, { color: theme.text }]}>
+              <SpeakableText style={[styles.cardTitle, { color: theme.text }]}>
                 {t("dashboard.averageResponseTime")}
-              </Text>
-              <Text
+              </SpeakableText>
+              <SpeakableText
                 style={{
                   fontSize: 20,
                   fontWeight: "600",
@@ -383,10 +384,10 @@ export default function Dashboard() {
                 }}
               >
                 2.3 hours
-              </Text>
-              <Text style={{ color: theme.passDesc, marginTop: 5 }}>
+              </SpeakableText>
+              <SpeakableText style={{ color: theme.passDesc, marginTop: 5 }}>
                 {t("dashboard.fasterThanLastMonth", { percent: 15 })}
-              </Text>
+              </SpeakableText>
             </View> */}
           </View>
         </ScrollView>

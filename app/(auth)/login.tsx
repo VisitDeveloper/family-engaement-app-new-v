@@ -11,6 +11,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 export default function LoginScreen() {
@@ -359,7 +360,7 @@ export default function LoginScreen() {
               accessibilityLabel={t("auth.login.forgotPassword")}
               accessibilityHint={t("auth.login.openForgotPasswordHint")}
             >
-              <Text style={styles.forgotText}>{t("auth.login.forgotPassword")}</Text>
+              <SpeakableText style={styles.forgotText}>{t("auth.login.forgotPassword")}</SpeakableText>
             </TouchableOpacity>
           </View>
         </View>
@@ -389,11 +390,11 @@ export default function LoginScreen() {
           ]}
         >
           {loading && <ActivityIndicator size="small" color="#fff" />}
-          <Text style={styles.submitText}>
+          <SpeakableText style={styles.submitText}>
             {loading
               ? t("auth.login.loggingIn")
               : t("auth.login.submit")}
-          </Text>
+          </SpeakableText>
         </TouchableOpacity>
 
         <ThemedText type="subText" style={styles.helperText}>

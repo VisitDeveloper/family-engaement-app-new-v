@@ -23,6 +23,14 @@ interface Region {
   longitudeDelta: number;
 }
 
+/** Lansing, MI — fallback when location permission is unavailable */
+const DEFAULT_MAP_REGION: Region = {
+  latitude: 42.7325,
+  longitude: -84.5555,
+  latitudeDelta: 0.01,
+  longitudeDelta: 0.01,
+};
+
 interface MapPickerProps {
   visible: boolean;
   onClose: () => void;
@@ -46,12 +54,12 @@ export default function MapPicker({
   const [selectedLongitude, setSelectedLongitude] = useState<number | null>(
     initialLongitude || null
   );
-  const [region, setRegion] = useState<Region>({
-    latitude: initialLatitude || 37.7749,
-    longitude: initialLongitude || -122.4194,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  });
+  const [region, setRegion] = useState<Region>(() => ({
+    latitude: initialLatitude ?? DEFAULT_MAP_REGION.latitude,
+    longitude: initialLongitude ?? DEFAULT_MAP_REGION.longitude,
+    latitudeDelta: DEFAULT_MAP_REGION.latitudeDelta,
+    longitudeDelta: DEFAULT_MAP_REGION.longitudeDelta,
+  }));
   const [loading, setLoading] = useState(false);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
   const [mapsBootstrapLoading, setMapsBootstrapLoading] = useState(false);
@@ -117,17 +125,61 @@ export default function MapPicker({
   }, [visible]);
 
   useEffect(() => {
-    if (initialLatitude && initialLongitude) {
+    if (initialLatitude != null && initialLongitude != null) {
       setSelectedLatitude(initialLatitude);
       setSelectedLongitude(initialLongitude);
       setRegion({
         latitude: initialLatitude,
         longitude: initialLongitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
+        latitudeDelta: DEFAULT_MAP_REGION.latitudeDelta,
+        longitudeDelta: DEFAULT_MAP_REGION.longitudeDelta,
       });
     }
   }, [initialLatitude, initialLongitude]);
+
+  const applyCoordinates = (latitude: number, longitude: number) => {
+    setSelectedLatitude(latitude);
+    setSelectedLongitude(longitude);
+    setRegion({
+      latitude,
+      longitude,
+      latitudeDelta: DEFAULT_MAP_REGION.latitudeDelta,
+      longitudeDelta: DEFAULT_MAP_REGION.longitudeDelta,
+    });
+  };
+
+  useEffect(() => {
+    if (!visible || (initialLatitude != null && initialLongitude != null)) {
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (cancelled) {
+          return;
+        }
+        setHasLocationPermission(status === "granted");
+        if (status !== "granted") {
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({});
+        if (cancelled) {
+          return;
+        }
+        applyCoordinates(location.coords.latitude, location.coords.longitude);
+      } catch (error) {
+        console.error("Error getting default location:", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, initialLatitude, initialLongitude]);
 
   const getCurrentLocation = async () => {
     try {
@@ -142,16 +194,7 @@ export default function MapPicker({
       setHasLocationPermission(true);
 
       const location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-
-      setSelectedLatitude(latitude);
-      setSelectedLongitude(longitude);
-      setRegion({
-        latitude,
-        longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
+      applyCoordinates(location.coords.latitude, location.coords.longitude);
     } catch (error) {
       console.error("Error getting location:", error);
       feedback.toast.error(t("mapPicker.locationErrorTitle"), t("mapPicker.locationErrorMessage"));

@@ -11,6 +11,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 export default function ForgotPasswordScreen() {
   const { t } = useTranslation();
@@ -203,14 +204,14 @@ export default function ForgotPasswordScreen() {
           {loading ? (
             <>
               <ActivityIndicator size="small" color="#fff" />
-              <Text style={{ color: "#fff", fontWeight: "700" }}>{t("auth.forgot.sending")}</Text>
+              <SpeakableText style={{ color: "#fff", fontWeight: "700" }}>{t("auth.forgot.sending")}</SpeakableText>
             </>
           ) : (
-            <Text style={{ color: "#fff", fontWeight: "700" }}>
+            <SpeakableText style={{ color: "#fff", fontWeight: "700" }}>
               {cooldown > 0
                 ? t("auth.forgot.cooldown", { seconds: cooldown })
                 : t("auth.forgot.sendButton")}
-            </Text>
+            </SpeakableText>
           )}
         </TouchableOpacity>
 
@@ -220,7 +221,7 @@ export default function ForgotPasswordScreen() {
           accessibilityRole="button"
           accessibilityLabel={t("auth.forgot.haveToken")}
         >
-          <Text style={{ color: theme.text, fontWeight: "700" }}>{t("auth.forgot.haveToken")}</Text>
+          <SpeakableText style={{ color: theme.text, fontWeight: "700" }}>{t("auth.forgot.haveToken")}</SpeakableText>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -229,7 +230,7 @@ export default function ForgotPasswordScreen() {
           accessibilityRole="button"
           accessibilityLabel={t("auth.common.backToLogin")}
         >
-          <Text style={{ color: theme.text, fontWeight: "700" }}>{t("auth.common.backToLogin")}</Text>
+          <SpeakableText style={{ color: theme.text, fontWeight: "700" }}>{t("auth.common.backToLogin")}</SpeakableText>
         </TouchableOpacity>
       </View>
       <View>

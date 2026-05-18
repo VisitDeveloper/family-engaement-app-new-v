@@ -2,6 +2,7 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { useStore } from "@/store";
 import { useTranslation } from "react-i18next";
 import { Text, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import { ThemedText } from "../themed-text";
 import Card from "./card";
 
@@ -53,9 +54,9 @@ function RecentActivityCard({ activities }: RecentActivityCardProps) {
 
     return (
         <Card >
-            <Text style={[styles.title, { color: theme.text }]}>
+            <SpeakableText style={[styles.title, { color: theme.text }]}>
                 {t("dashboard.recentActivity")}
-            </Text>
+            </SpeakableText>
 
             {activities.length > 0 ? (
                 <>

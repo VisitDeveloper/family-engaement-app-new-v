@@ -3,6 +3,7 @@ import { useStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Modal, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import { GlobeIcon } from "./icons/settings-icons";
 
 const LANGUAGES = ["en", "fr", "es"] as const;
@@ -58,9 +59,9 @@ export default function AuthLanguageSwitcher() {
         }}
       >
         <GlobeIcon size={12} />
-        <Text style={{ color: theme.text, fontWeight: "700", fontSize: 12 }}>
+        <SpeakableText style={{ color: theme.text, fontWeight: "700", fontSize: 12 }}>
           {currentLanguage.toUpperCase()}
-        </Text>
+        </SpeakableText>
       </TouchableOpacity>
 
       <Modal
@@ -108,9 +109,9 @@ export default function AuthLanguageSwitcher() {
               shadowOffset: { width: 0, height: 4 },
             }}
           >
-            <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, marginBottom: 10 }}>
+            <SpeakableText style={{ color: theme.text, fontWeight: "700", fontSize: 16, marginBottom: 10 }}>
               Select language
-            </Text>
+            </SpeakableText>
             {LANGUAGES.map((lang) => (
               <TouchableOpacity
                 key={lang}
@@ -128,9 +129,9 @@ export default function AuthLanguageSwitcher() {
                 accessibilityRole="button"
                 accessibilityLabel={`Set language ${LANGUAGE_LABELS[lang]}`}
               >
-                <Text style={{ color: theme.text, fontSize: 15 }}>
+                <SpeakableText style={{ color: theme.text, fontSize: 15 }}>
                   {LANGUAGE_LABELS[lang]}
-                </Text>
+                </SpeakableText>
                 {currentLanguage === lang ? (
                   <Ionicons name="checkmark-circle" size={20} color={theme.tint} />
                 ) : null}

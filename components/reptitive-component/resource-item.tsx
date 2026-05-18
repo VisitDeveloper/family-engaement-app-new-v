@@ -3,6 +3,7 @@ import { resolveCoreAssetUrl } from "@/utils/core-asset-url";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { Image, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import { ThemedText } from "./../themed-text";
 
 export interface ResourceItemProps {
@@ -87,7 +88,7 @@ const ResourceItem = (props: ResourceItemProps) => {
           <View style={props.styles.typeContainer}>
             <View style={props.styles.typeItem}>
               {props.icon!}
-              <Text style={props.styles.type}>{displayType}</Text>
+              <SpeakableText style={props.styles.type}>{displayType}</SpeakableText>
             </View>
 
             <View
@@ -105,8 +106,8 @@ const ResourceItem = (props: ResourceItemProps) => {
               <ThemedText type="subText">{rating.toFixed(1)}</ThemedText>
             </View>
           </View>
-          <Text style={props.styles.title}>{props.title}</Text>
-          {age && <Text style={props.styles.age}>{age}</Text>}
+          <SpeakableText style={props.styles.title}>{props.title}</SpeakableText>
+          {age && <SpeakableText style={props.styles.age}>{age}</SpeakableText>}
         </View>
       </TouchableOpacity>
 

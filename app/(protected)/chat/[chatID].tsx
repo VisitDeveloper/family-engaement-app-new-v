@@ -37,6 +37,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Clipboard, DeviceEventEmitter, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, PanResponder, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import InCallManager from "react-native-incall-manager";
@@ -1537,9 +1538,9 @@ export default function ChatScreen() {
                             <ReactionRow reactions={item.reactions} myReaction={item.myReaction} />
                         )}
                         <View style={styles.messageFooter}>
-                            <Text style={[styles.timeText, { color: theme.subText ?? '#666' }]}>
+                            <SpeakableText style={[styles.timeText, { color: theme.subText ?? '#666' }]}>
                                 {messageTime}
-                            </Text>
+                            </SpeakableText>
                             {!isPoll && (
                                 <>
                                     {isMe ? (
@@ -1580,9 +1581,9 @@ export default function ChatScreen() {
                     </>
                 )}
                 {isMe && isLastReadMessage && (item.userStatus === 'read' || (item as any).isRead) && (
-                    <Text style={[styles.timeText, { fontSize: 9, marginTop: 2, fontStyle: 'italic' }, isPoll ? { color: theme.subText ?? '#666' } : { color: '#fff' }]}>
+                    <SpeakableText style={[styles.timeText, { fontSize: 9, marginTop: 2, fontStyle: 'italic' }, isPoll ? { color: theme.subText ?? '#666' } : { color: '#fff' }]}>
                         Read
-                    </Text>
+                    </SpeakableText>
                 )}
             </View>
         );
@@ -1592,9 +1593,9 @@ export default function ChatScreen() {
             <>
                 {showDateHeader && (
                     <View style={styles.dateHeader}>
-                        <Text style={styles.dateHeaderText}>
+                        <SpeakableText style={styles.dateHeaderText}>
                             {formatDateHeader(item.createdAt)}
-                        </Text>
+                        </SpeakableText>
                     </View>
                 )}
                 {messageContent}
@@ -1638,7 +1639,7 @@ export default function ChatScreen() {
             <Image source={{ uri: avatarUri }} style={styles.avatar} />
         ) : (
             <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarPlaceholderText}>{initials}</Text>
+                <SpeakableText style={styles.avatarPlaceholderText}>{initials}</SpeakableText>
             </View>
         )
     }
@@ -1688,9 +1689,9 @@ export default function ChatScreen() {
         if (isParentInGroup) {
             return (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
-                    <Text style={{ fontSize: 13, color: theme.subText || theme.text + "99", textAlign: "center" }}>
+                    <SpeakableText style={{ fontSize: 13, color: theme.subText || theme.text + "99", textAlign: "center" }}>
                         Only teachers and admins can send messages in this group.
-                    </Text>
+                    </SpeakableText>
                 </View>
             );
         }
@@ -1707,7 +1708,7 @@ export default function ChatScreen() {
                     <View style={styles.recordingContainer}>
                         <View style={styles.recordingHeader}>
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 54 }}>
-                                <Text style={styles.recordingTimer}>{formatAudioDuration(Math.max(0, Math.round(previewPositionMs / 1000)))}</Text>
+                                <SpeakableText style={styles.recordingTimer}>{formatAudioDuration(Math.max(0, Math.round(previewPositionMs / 1000)))}</SpeakableText>
                             </View>
                             <View style={styles.waveformRow}>
                                 {waveformPoints.map((point, index) => (
@@ -1756,7 +1757,7 @@ export default function ChatScreen() {
                             <View style={styles.recordingHeader}>
                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 54 }}>
                                     <View style={styles.recordingDot} />
-                                    <Text style={styles.recordingTimer}>{recordingDurationLabel}</Text>
+                                    <SpeakableText style={styles.recordingTimer}>{recordingDurationLabel}</SpeakableText>
                                 </View>
                                 <View style={styles.waveformRow}>
                                     {waveformPoints.map((point, index) => (
@@ -1910,14 +1911,14 @@ export default function ChatScreen() {
                             style={styles.editBarCancelButton}
                             onPress={handleCancelEdit}
                         >
-                            <Text style={{ color: theme.text, fontSize: 14 }}>{t("common.cancel")}</Text>
+                            <SpeakableText style={{ color: theme.text, fontSize: 14 }}>{t("common.cancel")}</SpeakableText>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.editBarSaveButton}
                             onPress={handleSaveEdit}
                             disabled={!editDraft.trim()}
                         >
-                            <Text style={{ color: "#fff", fontSize: 14 }}>{t("common.save")}</Text>
+                            <SpeakableText style={{ color: "#fff", fontSize: 14 }}>{t("common.save")}</SpeakableText>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -1947,11 +1948,11 @@ export default function ChatScreen() {
                                 ]}
                             />
                         </View>
-                        <Text style={styles.uploadProgressText} numberOfLines={1}>
+                        <SpeakableText style={styles.uploadProgressText} numberOfLines={1}>
                             {uploadingFileName.length > 15
                                 ? `${uploadingFileName.substring(0, 15)}...`
                                 : uploadingFileName}
-                        </Text>
+                        </SpeakableText>
                     </View>
                 )}
 
@@ -1976,9 +1977,9 @@ export default function ChatScreen() {
                                 minWidth: 280,
                                 maxWidth: 320,
                             }}>
-                                <Text style={{ fontSize: 18, fontWeight: "600", color: theme.text, marginBottom: 16, textAlign: "center" }}>
+                                <SpeakableText style={{ fontSize: 18, fontWeight: "600", color: theme.text, marginBottom: 16, textAlign: "center" }}>
                                     Add Reaction
-                                </Text>
+                                </SpeakableText>
                                 <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 12 }}>
                                     {["👍", "❤️", "😂", "😮", "😢", "🙏", "👏", "🔥"].map((emoji) => (
                                         <TouchableOpacity
@@ -1993,7 +1994,7 @@ export default function ChatScreen() {
                                                 backgroundColor: theme.border + "40",
                                             }}
                                         >
-                                            <Text style={{ fontSize: 28 }}>{emoji}</Text>
+                                            <SpeakableText style={{ fontSize: 28 }}>{emoji}</SpeakableText>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
@@ -2008,9 +2009,9 @@ export default function ChatScreen() {
                                             alignItems: "center",
                                         }}
                                     >
-                                        <Text style={{ color: theme.text, fontSize: 16 }}>
+                                        <SpeakableText style={{ color: theme.text, fontSize: 16 }}>
                                             {t("Remove reaction", "Remove reaction")}
-                                        </Text>
+                                        </SpeakableText>
                                     </TouchableOpacity>
                                 )}
                                 <TouchableOpacity
@@ -2023,7 +2024,7 @@ export default function ChatScreen() {
                                         alignItems: "center",
                                     }}
                                 >
-                                    <Text style={{ color: theme.text, fontSize: 16 }}>Cancel</Text>
+                                    <SpeakableText style={{ color: theme.text, fontSize: 16 }}>Cancel</SpeakableText>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -2105,14 +2106,14 @@ export default function ChatScreen() {
                         onPress={() => setShowTranslateLangModal(false)}
                     >
                         <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()} style={[styles.translateModalBox, { backgroundColor: theme.panel || theme.bg }]}>
-                            <Text style={[styles.translateModalTitle, { color: theme.text }]}>{t("translate.modalTitle")}</Text>
-                            <Text style={[styles.translateModalLabel, { color: theme.subText }]}>{t("translate.fromSource")}</Text>
+                            <SpeakableText style={[styles.translateModalTitle, { color: theme.text }]}>{t("translate.modalTitle")}</SpeakableText>
+                            <SpeakableText style={[styles.translateModalLabel, { color: theme.subText }]}>{t("translate.fromSource")}</SpeakableText>
                             <ScrollView style={styles.translateModalList} showsVerticalScrollIndicator={false}>
                                 <TouchableOpacity
                                     style={[styles.translateModalRow, translateSource === "auto" && { backgroundColor: theme.tint + "30" }]}
                                     onPress={() => setTranslateSource("auto")}
                                 >
-                                    <Text style={{ color: theme.text, fontSize: 16 }}>{t("translate.autoDetect")}</Text>
+                                    <SpeakableText style={{ color: theme.text, fontSize: 16 }}>{t("translate.autoDetect")}</SpeakableText>
                                     {translateSource === "auto" && <Ionicons name="checkmark-circle" size={22} color={theme.tint} />}
                                 </TouchableOpacity>
                                 {SUPPORTED_LANGUAGES.map((lang) => (
@@ -2121,12 +2122,12 @@ export default function ChatScreen() {
                                         style={[styles.translateModalRow, translateSource === lang.code && { backgroundColor: theme.tint + "30" }]}
                                         onPress={() => setTranslateSource(lang.code)}
                                     >
-                                        <Text style={{ color: theme.text, fontSize: 16 }}>{lang.label}</Text>
+                                        <SpeakableText style={{ color: theme.text, fontSize: 16 }}>{lang.label}</SpeakableText>
                                         {translateSource === lang.code && <Ionicons name="checkmark-circle" size={22} color={theme.tint} />}
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-                            <Text style={[styles.translateModalLabel, { color: theme.subText, marginTop: 12 }]}>{t("translate.toTarget")}</Text>
+                            <SpeakableText style={[styles.translateModalLabel, { color: theme.subText, marginTop: 12 }]}>{t("translate.toTarget")}</SpeakableText>
                             <ScrollView style={styles.translateModalList} showsVerticalScrollIndicator={false}>
                                 {SUPPORTED_LANGUAGES.map((lang) => (
                                     <TouchableOpacity
@@ -2134,7 +2135,7 @@ export default function ChatScreen() {
                                         style={[styles.translateModalRow, translateTarget === lang.code && { backgroundColor: theme.tint + "30" }]}
                                         onPress={() => setTranslateTarget(lang.code)}
                                     >
-                                        <Text style={{ color: theme.text, fontSize: 16 }}>{lang.label}</Text>
+                                        <SpeakableText style={{ color: theme.text, fontSize: 16 }}>{lang.label}</SpeakableText>
                                         {translateTarget === lang.code && <Ionicons name="checkmark-circle" size={22} color={theme.tint} />}
                                     </TouchableOpacity>
                                 ))}
@@ -2148,7 +2149,7 @@ export default function ChatScreen() {
                                             setShowTranslateLangModal(false);
                                         }}
                                     >
-                                        <Text style={{ color: theme.subText, fontSize: 14 }}>{t("translate.turnOff")}</Text>
+                                        <SpeakableText style={{ color: theme.subText, fontSize: 14 }}>{t("translate.turnOff")}</SpeakableText>
                                     </TouchableOpacity>
                                 )}
                                 <TouchableOpacity
@@ -2165,7 +2166,7 @@ export default function ChatScreen() {
                                         setShowTranslateLangModal(false);
                                     }}
                                 >
-                                    <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{t("buttons.apply")}</Text>
+                                    <SpeakableText style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{t("buttons.apply")}</SpeakableText>
                                 </TouchableOpacity>
                             </View>
                         </TouchableOpacity>

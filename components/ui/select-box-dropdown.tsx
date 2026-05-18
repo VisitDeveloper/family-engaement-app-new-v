@@ -2,6 +2,7 @@ import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 const Dropdown = ({ options, value, onChange }: any) => {
     const [open, setOpen] = useState(false);
@@ -13,7 +14,7 @@ const Dropdown = ({ options, value, onChange }: any) => {
                 style={[styles.selectBox, { backgroundColor: theme.panel, borderColor: "transparent" }]}
                 onPress={() => setOpen(!open)}
             >
-                <Text style={{ color: theme.text }}>{value}</Text>
+                <SpeakableText style={{ color: theme.text }}>{value}</SpeakableText>
                 <Feather
                     name={open ? "chevron-up" : "chevron-down"}
                     size={16}
@@ -33,7 +34,7 @@ const Dropdown = ({ options, value, onChange }: any) => {
                                 setOpen(false);
                             }}
                         >
-                            <Text style={{ color: theme.text }}>{item}</Text>
+                            <SpeakableText style={{ color: theme.text }}>{item}</SpeakableText>
                         </TouchableOpacity>
                     ))}
                 </View>

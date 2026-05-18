@@ -460,14 +460,12 @@ export default function SettingsScreen() {
               <ThemedText
                 type="middleTitle"
                 style={{ color: theme.text }}
-                readString="Change Font Size"
               >
                 {t("settings.largeFont")}
               </ThemedText>
               <ThemedText
                 type="subText"
                 style={[styles.rowSubtitle, { color: theme.subText }]}
-                readString="Increase text size for better readability"
               >
                 {t("settings.largeFontDesc")}
               </ThemedText>
@@ -667,6 +665,7 @@ export default function SettingsScreen() {
             >
               {/* <ThemedText type="subText" style={{ color: theme.text, fontWeight: 'bold', paddingHorizontal: 10, }}>Data is stored securely and encrypted</ThemedText> */}
               <ThemedText
+                narrationDisabled
                 type="subText"
                 style={{
                   color: theme.text,

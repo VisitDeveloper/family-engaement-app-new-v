@@ -11,6 +11,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Keyboard, Platform, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 interface CreatePollBottomSheetProps {
   visible: boolean;
@@ -279,7 +280,7 @@ export default function CreatePollBottomSheet({
         <View style={styles.header}>
           <View style={{ flex: 1, display: "flex", justifyContent: "center" }}>
             <View style={styles.newPollBadge}>
-              <Text style={styles.newPollBadgeText}>New Poll</Text>
+              <SpeakableText style={styles.newPollBadgeText}>New Poll</SpeakableText>
             </View>
           </View>
           <TouchableOpacity onPress={onClose}>
@@ -291,7 +292,7 @@ export default function CreatePollBottomSheet({
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={[styles.sectionLabel, styles.sectionLabelFirst]}>Poll Description</Text>
+          <SpeakableText style={[styles.sectionLabel, styles.sectionLabelFirst]}>Poll Description</SpeakableText>
           <BottomSheetTextInput
             style={styles.input}
             placeholder="What are your thoughts on DAP??"
@@ -302,7 +303,7 @@ export default function CreatePollBottomSheet({
             maxLength={500}
           />
 
-          <Text style={styles.sectionLabel}>Options</Text>
+          <SpeakableText style={styles.sectionLabel}>Options</SpeakableText>
           {options.map((option, index) => (
             <View key={index} style={styles.optionContainer}>
               <BottomSheetTextInput
@@ -344,7 +345,7 @@ export default function CreatePollBottomSheet({
             {isSubmitting ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.submitButtonText}>Create Poll</Text>
+              <SpeakableText style={styles.submitButtonText}>Create Poll</SpeakableText>
             )}
           </TouchableOpacity>
         </BottomSheetScrollView>

@@ -11,6 +11,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 export default function ContactProfileScreen() {
   const router = useRouter();
@@ -305,7 +306,7 @@ export default function ContactProfileScreen() {
               <Image source={{ uri: avatarUri }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarInitials}>{initials}</Text>
+                <SpeakableText style={styles.avatarInitials}>{initials}</SpeakableText>
               </View>
             )}
             {loadingProfile ? (
@@ -314,9 +315,9 @@ export default function ContactProfileScreen() {
               </View>
             ) : (
               <>
-                <Text style={styles.name}>{displayName}</Text>
+                <SpeakableText style={styles.name}>{displayName}</SpeakableText>
                 {displayRole ? (
-                  <Text style={styles.role}>{displayRole}</Text>
+                  <SpeakableText style={styles.role}>{displayRole}</SpeakableText>
                 ) : null}
               </>
             )}
@@ -324,16 +325,16 @@ export default function ContactProfileScreen() {
 
           {/* Classrooms Attached */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Classrooms Attached</Text>
+            <SpeakableText style={styles.sectionTitle}>Classrooms Attached</SpeakableText>
             {loadingProfile ? (
               <View style={{ paddingVertical: 16, alignItems: "center" }}>
                 <ActivityIndicator size="small" color={theme.tint} />
               </View>
             ) : !userProfile?.classrooms || userProfile.classrooms.length === 0 ? (
               <View style={styles.item}>
-                <Text style={[styles.itemText, { color: theme.subText }]}>
+                <SpeakableText style={[styles.itemText, { color: theme.subText }]}>
                   No classrooms
-                </Text>
+                </SpeakableText>
               </View>
             ) : (
               <View style={{ marginTop: 10 }}>
@@ -360,7 +361,7 @@ export default function ContactProfileScreen() {
                               </View>
                             </View>
                           </View>
-                          <Text style={styles.itemText}>{classroomName}</Text>
+                          <SpeakableText style={styles.itemText}>{classroomName}</SpeakableText>
                         </View>
                       </View>
                     );
@@ -372,16 +373,16 @@ export default function ContactProfileScreen() {
 
           {/* Common Groups */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Common Groups</Text>
+            <SpeakableText style={styles.sectionTitle}>Common Groups</SpeakableText>
             {loadingGroups ? (
               <View style={{ paddingVertical: 16, alignItems: "center" }}>
                 <ActivityIndicator size="small" color={theme.tint} />
               </View>
             ) : commonGroups.length === 0 ? (
               <View style={styles.item}>
-                <Text style={[styles.itemText, { color: theme.subText }]}>
+                <SpeakableText style={[styles.itemText, { color: theme.subText }]}>
                   No common groups
-                </Text>
+                </SpeakableText>
               </View>
             ) : (
               commonGroups.map((group, index) => (
@@ -398,9 +399,9 @@ export default function ContactProfileScreen() {
                         <Ionicons name="people-outline" size={20} color={theme.subText} />
                       </View>
                     )}
-                    <Text style={styles.itemText}>{group.name}</Text>
+                    <SpeakableText style={styles.itemText}>{group.name}</SpeakableText>
                     <View style={styles.groupTag}>
-                      <Text style={styles.groupTagText}>Group</Text>
+                      <SpeakableText style={styles.groupTagText}>Group</SpeakableText>
                     </View>
                   </View>
                 </View>
@@ -420,7 +421,7 @@ export default function ContactProfileScreen() {
               ) : (
                 <Feather name="send" size={20} color="#fff" />
               )}
-              <Text style={styles.buttonText}>Send Message</Text>
+              <SpeakableText style={styles.buttonText}>Send Message</SpeakableText>
             </TouchableOpacity>
           )}
         </View>
@@ -439,7 +440,7 @@ export default function ContactProfileScreen() {
             ) : (
               <Feather name="send" size={20} color="#fff" />
             )}
-            <Text style={styles.buttonText}>Send Message</Text>
+            <SpeakableText style={styles.buttonText}>Send Message</SpeakableText>
           </TouchableOpacity>
         </View>
       )}

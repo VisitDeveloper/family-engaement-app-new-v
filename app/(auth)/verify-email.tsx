@@ -11,6 +11,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Linking, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 export default function VerifyEmailScreen() {
   const { t } = useTranslation();
@@ -142,12 +143,12 @@ export default function VerifyEmailScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={{ color: "#fff", fontWeight: "600" }}>{t("auth.verify.submit")}</Text>
+            <SpeakableText style={{ color: "#fff", fontWeight: "600" }}>{t("auth.verify.submit")}</SpeakableText>
           )}
         </TouchableOpacity>
         {typeof params.fallback === "string" && params.fallback ? (
           <TouchableOpacity style={styles.secondary} onPress={() => void openFallback()}>
-            <Text style={{ color: theme.text, fontWeight: "600" }}>{t("auth.verify.openWebVerification")}</Text>
+            <SpeakableText style={{ color: theme.text, fontWeight: "600" }}>{t("auth.verify.openWebVerification")}</SpeakableText>
           </TouchableOpacity>
         ) : null}
       </View>

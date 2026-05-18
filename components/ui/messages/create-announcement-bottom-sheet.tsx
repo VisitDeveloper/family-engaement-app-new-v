@@ -11,6 +11,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Keyboard, Platform, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
 
 interface CreateAnnouncementBottomSheetProps {
   visible: boolean;
@@ -206,7 +207,7 @@ export default function CreateAnnouncementBottomSheet({
         <View style={styles.header}>
           <View style={{ flex: 1, display: "flex", justifyContent: "center" }}>
             <View style={styles.announcementBadge}>
-              <Text style={styles.announcementBadgeText}>New Announcement</Text>
+              <SpeakableText style={styles.announcementBadgeText}>New Announcement</SpeakableText>
             </View>
           </View>
           <TouchableOpacity onPress={onClose}>
@@ -218,7 +219,7 @@ export default function CreateAnnouncementBottomSheet({
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={[styles.sectionLabel, styles.sectionLabelFirst]}>Announcement Content</Text>
+          <SpeakableText style={[styles.sectionLabel, styles.sectionLabelFirst]}>Announcement Content</SpeakableText>
           <BottomSheetTextInput
             style={styles.input}
             placeholder="We are excited to invite you all for an informative session on parenting tips and resources. See the video below for more details!"
@@ -237,7 +238,7 @@ export default function CreateAnnouncementBottomSheet({
             {isSubmitting ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.submitButtonText}>Send Announcement</Text>
+              <SpeakableText style={styles.submitButtonText}>Send Announcement</SpeakableText>
             )}
           </TouchableOpacity>
         </BottomSheetScrollView>

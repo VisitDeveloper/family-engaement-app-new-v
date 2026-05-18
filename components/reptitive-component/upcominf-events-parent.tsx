@@ -1,7 +1,8 @@
 import { useThemedStyles } from '@/hooks/use-theme-style';
 import { useStore } from '@/store';
 import { useTranslation } from 'react-i18next';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
+import { SpeakableText } from '@/components/speakable-text';
 import { ThemedText } from '../themed-text';
 import { ArrowUpRightSquareIcon } from '../ui/icons/dashboard.icons';
 import { EventIcon } from '../ui/icons/event-icons';
@@ -66,7 +67,7 @@ export default function UpcomingEventsCard({ events, onPressAllEvents }: Upcomin
         <Card>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.title}>{t("dashboard.upcomingEvents")}</Text>
+                <SpeakableText style={styles.title}>{t("dashboard.upcomingEvents")}</SpeakableText>
                 <EventIcon size={16} color={theme.iconDash} />
             </View>
 
@@ -82,7 +83,7 @@ export default function UpcomingEventsCard({ events, onPressAllEvents }: Upcomin
                             </View>
 
                             <View style={styles.dateBadge}>
-                                <Text style={styles.dateText}>{e.date ?? ''}</Text>
+                                <SpeakableText style={styles.dateText}>{e.date ?? ''}</SpeakableText>
                             </View>
                         </View>
                     ))}
@@ -95,7 +96,7 @@ export default function UpcomingEventsCard({ events, onPressAllEvents }: Upcomin
 
             {/* Footer */}
             <TouchableOpacity style={styles.footer} onPress={onPressAllEvents}>
-                <Text style={styles.footerText}>{t("dashboard.allEvents")}</Text>
+                <SpeakableText style={styles.footerText}>{t("dashboard.allEvents")}</SpeakableText>
                 <ArrowUpRightSquareIcon size={12} color={theme.iconDash} style={{ marginTop: 2 }} />
             </TouchableOpacity>
         </Card>

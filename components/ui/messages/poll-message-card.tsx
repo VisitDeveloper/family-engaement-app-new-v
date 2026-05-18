@@ -7,7 +7,8 @@ import { isManagementRole } from "@/utils/roles";
 import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
+import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 
 const POLL_ACCENT = {
   buttonBg: "#A846C3",
@@ -42,6 +43,16 @@ export default function PollMessageCard({
   const currentUser = useStore((state: any) => state.user);
   const effectiveRole = useEffectiveRole();
   const theme = useStore((state: any) => state.theme);
+  const voiceEnabled = useStore((state) => state.voiceNarrationEnabled);
+  const speak = useStore((state) => state.speak);
+
+  const speakIfEnabled = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (voiceEnabled && trimmed) speak(trimmed);
+    },
+    [voiceEnabled, speak]
+  );
   const [poll, setPoll] = useState<PollResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
@@ -314,7 +325,7 @@ export default function PollMessageCard({
   if (!poll) {
     return (
       <View style={styles.card}>
-        <Text style={styles.cardText}>Poll unavailable</Text>
+        <SpeakableText style={styles.cardText}>Poll unavailable</SpeakableText>
       </View>
     );
   }
@@ -333,44 +344,47 @@ export default function PollMessageCard({
         {!showAdminResults ? (
           <>
             <View style={styles.newPollBadge}>
-              <Text style={styles.newPollBadgeText}>New Poll</Text>
+              <SpeakableText style={styles.newPollBadgeText}>New Poll</SpeakableText>
             </View>
-            <Text style={styles.question}>{questionDisplay}</Text>
+            <SpeakableText style={styles.question}>{questionDisplay}</SpeakableText>
 
             {poll.options.map((option) => (
               <View key={option.id} style={styles.optionRow}>
                 <View style={[styles.radioOuter, styles.radioOuterUnselected]} />
-                <Text style={styles.optionText} numberOfLines={2}>
+                <SpeakableText style={styles.optionText} numberOfLines={2}>
                   {getOptionDisplay(option.id, option.text)}
-                </Text>
+                </SpeakableText>
               </View>
             ))}
 
             <View>
               <TouchableOpacity
                 style={styles.viewResultsButton}
-                onPress={() => setShowAdminResults(true)}
+                onPress={() => {
+                  speakIfEnabled("View Poll Results");
+                  setShowAdminResults(true);
+                }}
                 activeOpacity={0.9}
               >
-                <Text style={styles.adminButtonText}>View Poll Results</Text>
+                <SpeakableText narrationDisabled style={styles.adminButtonText}>View Poll Results</SpeakableText>
               </TouchableOpacity>
             </View>
           </>
         ) : (
           <>
             <View style={styles.newPollBadge}>
-              <Text style={styles.newPollBadgeText}>Poll Results</Text>
+              <SpeakableText style={styles.newPollBadgeText}>Poll Results</SpeakableText>
             </View>
-            <Text style={styles.question}>{questionDisplay}</Text>
+            <SpeakableText style={styles.question}>{questionDisplay}</SpeakableText>
 
             {poll.options.map((option) => {
               const pct = totalVotes > 0 ? (option.voteCount / totalVotes) * 100 : 0;
               return (
                 <View key={option.id} style={styles.resultOptionRow}>
                   <View>
-                    <Text style={styles.resultOptionText} numberOfLines={1} ellipsizeMode="tail">
+                    <SpeakableText style={styles.resultOptionText} numberOfLines={1} ellipsizeMode="tail">
                       {getOptionDisplay(option.id, option.text)}
-                    </Text>
+                    </SpeakableText>
                   </View>
                   <View style={styles.barRow}>
                     <View style={styles.barBg}>
@@ -378,7 +392,7 @@ export default function PollMessageCard({
                         style={[styles.barFill, { width: `${Math.round(pct)}%` }]}
                       />
                     </View>
-                    <Text style={styles.pctText}>{Math.round(pct)}%</Text>
+                    <SpeakableText style={styles.pctText}>{Math.round(pct)}%</SpeakableText>
                   </View>
                 </View>
               );
@@ -387,11 +401,14 @@ export default function PollMessageCard({
             <View>
               <TouchableOpacity
                 style={styles.viewResultsButton}
-                onPress={() => setShowAdminResults(false)}
+                onPress={() => {
+                  speakIfEnabled(t("buttons.back"));
+                  setShowAdminResults(false);
+                }}
                 activeOpacity={0.9}
               >
                 <Feather name="chevron-left" size={16} color={theme.tint} />
-                <Text style={styles.adminButtonText}>{t("buttons.back")}</Text>
+                <SpeakableText narrationDisabled style={styles.adminButtonText}>{t("buttons.back")}</SpeakableText>
               </TouchableOpacity>
             </View>
           </>
@@ -400,20 +417,27 @@ export default function PollMessageCard({
         <View style={styles.adminActionsRow}>
           <TouchableOpacity
             style={styles.adminButton}
-            onPress={onEditPoll}
+            onPress={() => {
+              speakIfEnabled("Edit Poll");
+              onEditPoll?.();
+            }}
             activeOpacity={0.9}
           >
-            <Text style={styles.adminButtonText}>Edit Poll</Text>
+            <SpeakableText narrationDisabled style={styles.adminButtonText}>Edit Poll</SpeakableText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.adminButton, (poll.isClosed || closingPoll) && styles.adminButtonDisabled]}
-            onPress={handleClosePoll}
+            onPress={() => {
+              const label = closingPoll ? "Closing…" : "Close poll";
+              speakIfEnabled(label);
+              handleClosePoll();
+            }}
             disabled={poll.isClosed || closingPoll}
             activeOpacity={0.9}
           >
-            <Text style={styles.adminButtonText}>
+            <SpeakableText narrationDisabled style={styles.adminButtonText}>
               {closingPoll ? "Closing…" : "Close poll"}
-            </Text>
+            </SpeakableText>
           </TouchableOpacity>
         </View>
       </View>
@@ -423,9 +447,9 @@ export default function PollMessageCard({
   return (
     <View style={[styles.card, isMe ? styles.cardRight : styles.cardLeft]}>
       <View style={styles.newPollBadge}>
-        <Text style={styles.newPollBadgeText}>New Poll</Text>
+        <SpeakableText style={styles.newPollBadgeText}>New Poll</SpeakableText>
       </View>
-      <Text style={styles.question}>{questionDisplay}</Text>
+      <SpeakableText style={styles.question}>{questionDisplay}</SpeakableText>
 
       {poll.options.map((option) => {
         const isSelected = selectedOptionId === option.id;
@@ -437,6 +461,7 @@ export default function PollMessageCard({
             style={styles.optionRow}
             onPress={() => {
               if (optionDisabled) return;
+              speakIfEnabled(getOptionDisplay(option.id, option.text));
               setSelectedOptionId(option.id);
             }}
             disabled={optionDisabled}
@@ -450,9 +475,9 @@ export default function PollMessageCard({
             >
               {isSelected && <View style={styles.radioInner} />}
             </View>
-            <Text style={styles.optionText} numberOfLines={2}>
+            <SpeakableText narrationDisabled style={styles.optionText} numberOfLines={2}>
               {getOptionDisplay(option.id, option.text)}
-            </Text>
+            </SpeakableText>
           </TouchableOpacity>
         );
       })}
@@ -461,14 +486,17 @@ export default function PollMessageCard({
         <View>
           <TouchableOpacity
             style={[styles.finalizeButton, voting && styles.finalizeButtonDisabled]}
-            onPress={handleVote}
+            onPress={() => {
+              speakIfEnabled("Finalize Vote");
+              handleVote();
+            }}
             disabled={!selectedOptionId || voting}
             activeOpacity={0.9}
           >
             {voting ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
-              <Text style={styles.finalizeButtonText}>Finalize Vote</Text>
+              <SpeakableText narrationDisabled style={styles.finalizeButtonText}>Finalize Vote</SpeakableText>
             )}
           </TouchableOpacity>
         </View>
@@ -481,7 +509,7 @@ export default function PollMessageCard({
             disabled={true}
             activeOpacity={0.9}
           >
-            <Text style={styles.finalizeButtonText}>You voted</Text>
+            <SpeakableText style={styles.finalizeButtonText}>You voted</SpeakableText>
           </TouchableOpacity>
         </View>
       )}
@@ -492,7 +520,7 @@ export default function PollMessageCard({
             disabled={true}
             activeOpacity={0.9}
           >
-            <Text style={styles.finalizeButtonText}>Poll closed</Text>
+            <SpeakableText style={styles.finalizeButtonText}>Poll closed</SpeakableText>
           </TouchableOpacity>
         </View>
       )}

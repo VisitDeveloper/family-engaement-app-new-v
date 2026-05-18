@@ -2,7 +2,8 @@ import { useThemedStyles } from "@/hooks/use-theme-style";
 import { MessageResponseDto } from "@/services/messaging.service";
 import type { MessageReactionItemDto } from "@/types";
 import { useStore } from "@/store";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { SpeakableText } from "@/components/speakable-text";
+import { Image, TouchableOpacity, View } from "react-native";
 import { EmojiIcon, TrashIcon } from "../icons/messages-icons";
 import ReactionRow from "./reaction-row";
 
@@ -89,7 +90,7 @@ export default function ImageMessageCard({
         <ReactionRow reactions={reactions} myReaction={myReaction} />
       )}
       <View style={styles.footer}>
-        <Text style={styles.timestamp}>{messageTime}</Text>
+        <SpeakableText style={styles.timestamp}>{messageTime}</SpeakableText>
         {isMe ? (
           <View style={styles.footerRight}>
             <View style={styles.actions}>
