@@ -66,6 +66,11 @@ export default function ChatScreen() {
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
     const [showPollSheet, setShowPollSheet] = useState(false);
+    const [editingPoll, setEditingPoll] = useState<{
+        pollId: string;
+        question: string;
+        options: string[];
+    } | null>(null);
     const [showAnnouncementSheet, setShowAnnouncementSheet] = useState(false);
     const [uploadingFile, setUploadingFile] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -173,6 +178,11 @@ export default function ChatScreen() {
 
     // Parent cannot send messages in group chats (only view)
     const isParentInGroup = currentUser?.role === "parent" && conversation?.type === "group";
+    const isMessagingFeatureEnabled = currentUser?.canSendMessages !== false;
+    const canUserSendMessages = !isParentInGroup && isMessagingFeatureEnabled;
+    const sendDisabledReason = !isMessagingFeatureEnabled
+        ? "Sending messages is temporarily disabled."
+        : "Only teachers and admins can send messages in this group.";
 
     const styles = useThemedStyles((t) => ({
         container: { flex: 1, backgroundColor: t.bg },
@@ -451,7 +461,7 @@ export default function ChatScreen() {
 
     const handleSendMessage = async () => {
         if (!input.trim() || !conversationId || sending) return;
-        if (isParentInGroup) return;
+        if (!canUserSendMessages) return;
 
         setSending(true);
         try {
@@ -527,6 +537,10 @@ export default function ChatScreen() {
     };
 
     const handleOpenAttachmentMenu = useCallback(() => {
+        if (!canUserSendMessages) {
+            feedback.toast.info("Messaging disabled", sendDisabledReason);
+            return;
+        }
         if (uploadingFile) {
             feedback.toast.info("Upload in progress", "Please wait until the current upload finishes.");
             return;
@@ -535,7 +549,7 @@ export default function ChatScreen() {
             return;
         }
         setShowAttachingMenu(true);
-    }, [sending, uploadingFile]);
+    }, [canUserSendMessages, sendDisabledReason, sending, uploadingFile]);
 
     const pickDocument = async () => {
         try {
@@ -567,7 +581,7 @@ export default function ChatScreen() {
         durationSeconds?: number
     ) => {
         if (!conversationId || uploadingFile) return;
-        if (isParentInGroup) return;
+        if (!canUserSendMessages) return;
 
         setUploadingFile(true);
         setUploadProgress(0);
@@ -682,6 +696,38 @@ export default function ChatScreen() {
         setShowPollSheet(false);
     };
 
+    const handlePollUpdated = async () => {
+        setEditingPoll(null);
+        await loadMessages();
+    };
+
+    const handleEditPoll = async (pollId: string) => {
+        try {
+            const poll = await messagingService.getPoll(pollId);
+            if (poll.isClosed) {
+                feedback.toast.error("Error", "This poll is closed and cannot be edited.");
+                return;
+            }
+            const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
+            if (totalVotes > 0) {
+                feedback.toast.error("Error", "Cannot edit a poll that already has votes.");
+                return;
+            }
+            setEditingPoll({
+                pollId: poll.id,
+                question: poll.question,
+                options: poll.options.map((opt) => opt.text),
+            });
+        } catch (err: any) {
+            feedback.toast.error("Error", err?.message || "Failed to load poll for editing.");
+        }
+    };
+
+    const closePollSheet = () => {
+        setShowPollSheet(false);
+        setEditingPoll(null);
+    };
+
     const handleAnnouncementCreated = async (message: MessageResponseDto) => {
         addMessage(conversationId, message);
         setShowAnnouncementSheet(false);
@@ -756,7 +802,7 @@ export default function ChatScreen() {
 
     const startRecording = useCallback(async () => {
         if (!conversationId || uploadingFile || sending) return;
-        if (isParentInGroup) return;
+        if (!canUserSendMessages) return;
         if (audioRecorder.isRecording || isStartingRecordingRef.current) return;
         const ok = await requestRecordingPermission();
         if (!ok) {
@@ -804,7 +850,7 @@ export default function ChatScreen() {
         } finally {
             isStartingRecordingRef.current = false;
         }
-    }, [conversationId, uploadingFile, sending, isParentInGroup, requestRecordingPermission, cleanupPreviewPlayer, resetRecorderUi, setRecorderModeImmediate, audioRecorder]);
+    }, [conversationId, uploadingFile, sending, canUserSendMessages, requestRecordingPermission, cleanupPreviewPlayer, resetRecorderUi, setRecorderModeImmediate, audioRecorder]);
 
     const stopRecordingToPreview = useCallback(async () => {
         if (!audioRecorder.isRecording && !isStartingRecordingRef.current) return;
@@ -1330,8 +1376,16 @@ export default function ChatScreen() {
         return () => {
             stopMessagePlayer();
             cleanupPreviewPlayer();
-            if (audioRecorder.isRecording) {
-                audioRecorder.stop().catch(() => { });
+            const shouldStopRecorder =
+                recorderModeRef.current === "recording" ||
+                recorderModeRef.current === "locked" ||
+                isStartingRecordingRef.current;
+            if (shouldStopRecorder) {
+                try {
+                    void audioRecorder.stop();
+                } catch {
+                    // native recorder may already be torn down on unmount
+                }
             }
             stopAudioRouteSession();
         };
@@ -1521,6 +1575,7 @@ export default function ChatScreen() {
                 {item.type === "poll" && item.polls?.length && (
                     <>
                         <PollMessageCard
+                            key={`${item.polls[0].id}-${item.polls[0].updatedAt ?? item.updatedAt}`}
                             pollId={item.polls[0].id}
                             isMe={isMe}
                             translatedQuestion={translateMessages ? translatedPollCache[item.id]?.question : undefined}
@@ -1531,7 +1586,8 @@ export default function ChatScreen() {
                                 loadMessages();
                             }}
                             onEditPoll={() => {
-                                feedback.toast.info("Edit Poll", "Edit poll is not available yet.");
+                                const poll = item.polls?.[0];
+                                if (poll) handleEditPoll(poll.id);
                             }}
                         />
                         {item.reactions && item.reactions.length > 0 && (
@@ -1686,11 +1742,11 @@ export default function ChatScreen() {
     const previewProgress = previewDurationMs > 0 ? Math.min(1, previewPositionMs / previewDurationMs) : 0;
 
     const renderChatComposer = () => {
-        if (isParentInGroup) {
+        if (!canUserSendMessages) {
             return (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
                     <SpeakableText style={{ fontSize: 13, color: theme.subText || theme.text + "99", textAlign: "center" }}>
-                        Only teachers and admins can send messages in this group.
+                        {sendDisabledReason}
                     </SpeakableText>
                 </View>
             );
@@ -2035,10 +2091,20 @@ export default function ChatScreen() {
                 <AttachingMenu
                     visible={showAttachingMenu}
                     onClose={() => setShowAttachingMenu(false)}
-                    onSelectPoll={() => setShowPollSheet(true)}
+                    onSelectPoll={() => {
+                        if (!canUserSendMessages) {
+                            feedback.toast.info("Messaging disabled", sendDisabledReason);
+                            return;
+                        }
+                        setShowPollSheet(true);
+                    }}
                     onSelectMedia={handleSelectMedia}
                     onSelectFiles={handleSelectFiles}
                     onSelectAnnouncement={() => {
+                        if (!canUserSendMessages) {
+                            feedback.toast.info("Messaging disabled", sendDisabledReason);
+                            return;
+                        }
                         setShowAttachingMenu(false);
                         setShowAnnouncementSheet(true);
                     }}
@@ -2048,10 +2114,15 @@ export default function ChatScreen() {
                 {/* Poll Creation Bottom Sheet */}
                 {conversationId && (
                     <CreatePollBottomSheet
-                        visible={showPollSheet}
-                        onClose={() => setShowPollSheet(false)}
+                        visible={showPollSheet || !!editingPoll}
+                        onClose={closePollSheet}
                         conversationId={conversationId}
+                        canSendMessages={canUserSendMessages}
                         onPollCreated={handlePollCreated}
+                        pollId={editingPoll?.pollId}
+                        initialQuestion={editingPoll?.question}
+                        initialOptions={editingPoll?.options}
+                        onPollUpdated={handlePollUpdated}
                     />
                 )}
 
@@ -2061,6 +2132,7 @@ export default function ChatScreen() {
                         visible={showAnnouncementSheet}
                         onClose={() => setShowAnnouncementSheet(false)}
                         conversationId={conversationId}
+                        canSendMessages={canUserSendMessages}
                         onAnnouncementCreated={handleAnnouncementCreated}
                     />
                 )}

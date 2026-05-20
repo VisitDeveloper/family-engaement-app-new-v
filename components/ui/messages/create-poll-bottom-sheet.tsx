@@ -1,6 +1,6 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { feedback } from "@/lib/feedback";
-import { CreatePollDto, messagingService, PollResponseDto } from "@/services/messaging.service";
+import { CreatePollDto, messagingService, PollResponseDto, UpdatePollDto } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { Feather } from "@expo/vector-icons";
 import {
@@ -17,15 +17,26 @@ interface CreatePollBottomSheetProps {
   visible: boolean;
   onClose: () => void;
   conversationId: string;
+  canSendMessages?: boolean;
   onPollCreated?: (poll: PollResponseDto, message: any) => void;
+  pollId?: string;
+  initialQuestion?: string;
+  initialOptions?: string[];
+  onPollUpdated?: (poll: PollResponseDto) => void;
 }
 
 export default function CreatePollBottomSheet({
   visible,
   onClose,
   conversationId,
+  canSendMessages = true,
   onPollCreated,
+  pollId,
+  initialQuestion,
+  initialOptions,
+  onPollUpdated,
 }: CreatePollBottomSheetProps) {
+  const isEditMode = !!pollId;
   const theme = useStore((state) => state.theme);
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [question, setQuestion] = useState("");
@@ -127,13 +138,20 @@ export default function CreatePollBottomSheet({
 
   useEffect(() => {
     if (visible) {
+      if (isEditMode && initialQuestion !== undefined && initialOptions) {
+        setQuestion(initialQuestion);
+        setOptions(initialOptions.length >= 2 ? [...initialOptions] : ["", ""]);
+      } else if (!isEditMode) {
+        setQuestion("");
+        setOptions(["", ""]);
+      }
       setTimeout(() => {
         bottomSheetRef.current?.present();
       }, 100);
     } else {
       bottomSheetRef.current?.dismiss();
     }
-  }, [visible]);
+  }, [visible, isEditMode, initialQuestion, initialOptions]);
 
   useEffect(() => {
     if (!visible) return;
@@ -186,6 +204,10 @@ export default function CreatePollBottomSheet({
   };
 
   const handleSubmit = async () => {
+    if (!canSendMessages) {
+      feedback.toast.info("Messaging disabled", "Sending messages is temporarily disabled.");
+      return;
+    }
     const trimmedQuestion = question.trim();
     const trimmedOptions = options
       .map((opt) => opt.trim())
@@ -204,23 +226,29 @@ export default function CreatePollBottomSheet({
     try {
       setIsSubmitting(true);
 
-      // Step 1 – Create a poll-type message
-      const message = await messagingService.createMessage({
-        conversationId,
-        type: "poll",
-      });
+      if (isEditMode && pollId) {
+        const pollData: UpdatePollDto = {
+          question: trimmedQuestion,
+          options: trimmedOptions.map((text) => ({ text })),
+        };
+        const poll = await messagingService.updatePoll(pollId, pollData);
+        onPollUpdated?.(poll);
+      } else {
+        // Step 1 – Create a poll-type message
+        const message = await messagingService.createMessage({
+          conversationId,
+          type: "poll",
+        });
 
-      // Step 2 – Create the poll for that message (use message.id from step 1)
-      const pollData: CreatePollDto = {
-        messageId: message.id,
-        question: trimmedQuestion,
-        options: trimmedOptions.map((text) => ({ text })),
-      };
+        // Step 2 – Create the poll for that message (use message.id from step 1)
+        const pollData: CreatePollDto = {
+          messageId: message.id,
+          question: trimmedQuestion,
+          options: trimmedOptions.map((text) => ({ text })),
+        };
 
-      const poll = await messagingService.createPoll(pollData);
-
-      if (onPollCreated) {
-        onPollCreated(poll, message);
+        const poll = await messagingService.createPoll(pollData);
+        onPollCreated?.(poll, message);
       }
 
       // Reset form
@@ -228,8 +256,11 @@ export default function CreatePollBottomSheet({
       setOptions(["", ""]);
       onClose();
     } catch (error: any) {
-      console.error("Error creating poll:", error);
-      feedback.toast.error("Error", error.message || "Failed to create poll");
+      console.error(isEditMode ? "Error updating poll:" : "Error creating poll:", error);
+      feedback.toast.error(
+        "Error",
+        error.message || (isEditMode ? "Failed to update poll" : "Failed to create poll")
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -257,6 +288,7 @@ export default function CreatePollBottomSheet({
   const canSubmit =
     question.trim().length > 0 &&
     options.filter((opt) => opt.trim().length > 0).length >= 2 &&
+    canSendMessages &&
     !isSubmitting;
 
   return (
@@ -280,7 +312,9 @@ export default function CreatePollBottomSheet({
         <View style={styles.header}>
           <View style={{ flex: 1, display: "flex", justifyContent: "center" }}>
             <View style={styles.newPollBadge}>
-              <SpeakableText style={styles.newPollBadgeText}>New Poll</SpeakableText>
+              <SpeakableText style={styles.newPollBadgeText}>
+                {isEditMode ? "Edit Poll" : "New Poll"}
+              </SpeakableText>
             </View>
           </View>
           <TouchableOpacity onPress={onClose}>
@@ -345,7 +379,9 @@ export default function CreatePollBottomSheet({
             {isSubmitting ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <SpeakableText style={styles.submitButtonText}>Create Poll</SpeakableText>
+              <SpeakableText style={styles.submitButtonText}>
+                {isEditMode ? "Save Poll" : "Create Poll"}
+              </SpeakableText>
             )}
           </TouchableOpacity>
         </BottomSheetScrollView>

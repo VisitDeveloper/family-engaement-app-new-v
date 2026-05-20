@@ -1,4 +1,4 @@
-import { getLocales } from "expo-localization";
+import { getDeviceLocales } from "@/utils/device-locale";
 
 const MYMEMORY_URL = "https://api.mymemory.translated.net/get";
 
@@ -32,7 +32,7 @@ export function detectSourceLanguage(text: string): LangCode {
 
 export function getDeviceTargetLang(): LangCode {
   try {
-    const locales = getLocales();
+    const locales = getDeviceLocales();
     const raw = locales[0]?.languageCode;
     const code = typeof raw === "string" ? raw.toLowerCase() : "";
     if (code === "ar" || code.startsWith("ar")) return "ar";

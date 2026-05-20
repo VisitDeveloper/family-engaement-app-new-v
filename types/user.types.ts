@@ -73,6 +73,10 @@ export interface MediaUploadLimitsDto {
   maxUploadSizeMb: number;
 }
 
+export interface MessagingPermissionsDto {
+  canSendMessages: boolean;
+}
+
 /** Profile as returned by GET /auth/profile */
 export interface ProfileResponseDto {
   id: string;
@@ -95,6 +99,7 @@ export interface ProfileResponseDto {
   currentProfile?: CurrentProfile;
   mobileMapsConfig?: MobileMapsConfigDto;
   mediaUploadLimits?: MediaUploadLimitsDto;
+  messagingPermissions?: MessagingPermissionsDto;
 }
 
 /** Body for PUT /auth/profile (partial update; only send changed fields) */

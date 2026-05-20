@@ -12,6 +12,7 @@ import type {
   GetGroupsParams,
   PollResponseDto,
   CreatePollDto,
+  UpdatePollDto,
   VotePollDto,
   UploadFileResponse,
   CreateClassroomDto,
@@ -38,6 +39,7 @@ export type {
   GetGroupsParams,
   PollResponseDto,
   CreatePollDto,
+  UpdatePollDto,
   VotePollDto,
   UploadFileResponse,
   CreateClassroomDto,
@@ -81,6 +83,7 @@ export interface MessagingService {
 
   // Polls
   createPoll(data: CreatePollDto): Promise<PollResponseDto>;
+  updatePoll(pollId: string, data: UpdatePollDto): Promise<PollResponseDto>;
   getPoll(pollId: string): Promise<PollResponseDto>;
   votePoll(pollId: string, data: VotePollDto): Promise<void>;
   closePoll(pollId: string): Promise<void>;
@@ -518,6 +521,23 @@ class MessagingServiceImpl implements MessagingService {
       const apiError = error as ApiError;
       throw {
         message: apiError.message || "Failed to create poll. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async updatePoll(pollId: string, data: UpdatePollDto): Promise<PollResponseDto> {
+    try {
+      const response = await apiClient.patch<PollResponseDto>(
+        `/messaging/polls/${pollId}`,
+        data
+      );
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message: apiError.message || "Failed to update poll. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

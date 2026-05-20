@@ -260,7 +260,7 @@ export default function SwitchProfileScreen() {
           u.email?.split("@")[0] ?? ""
         );
 
-        setUser({
+        const baseUser = {
           id: u.id,
           name,
           email: u.email,
@@ -273,7 +273,8 @@ export default function SwitchProfileScreen() {
           profilePicture: u.profilePicture,
           childName: u.childName,
           subjects: u.subjects,
-        });
+        };
+        setUser(baseUser);
         setRole(profile.role);
         setCurrentProfile({
           id: profile.id ?? `${profile.role}|${profile.organizationId ?? ""}|${profile.siteId ?? ""}`,
@@ -282,7 +283,16 @@ export default function SwitchProfileScreen() {
           siteId: profile.siteId ?? null,
         });
 
-        void authService.getProfile().catch(() => {});
+        try {
+          const fullProfile = await authService.getProfile();
+          setUser({
+            ...baseUser,
+            canSendMessages: fullProfile.messagingPermissions?.canSendMessages ?? false,
+            messagingPermissions: fullProfile.messagingPermissions,
+          });
+        } catch {
+          // keep switch response user if profile refresh fails
+        }
 
         feedback.toast.success(t("common.success"), t("switchProfile.profileSwitchedSuccess"));
         router.back();

@@ -17,6 +17,7 @@ interface CreateAnnouncementBottomSheetProps {
   visible: boolean;
   onClose: () => void;
   conversationId: string;
+  canSendMessages?: boolean;
   onAnnouncementCreated?: (message: MessageResponseDto) => void;
 }
 
@@ -24,6 +25,7 @@ export default function CreateAnnouncementBottomSheet({
   visible,
   onClose,
   conversationId,
+  canSendMessages = true,
   onAnnouncementCreated,
 }: CreateAnnouncementBottomSheetProps) {
   const theme = useStore((state) => state.theme);
@@ -134,6 +136,10 @@ export default function CreateAnnouncementBottomSheet({
   );
 
   const handleSubmit = async () => {
+    if (!canSendMessages) {
+      feedback.toast.info("Messaging disabled", "Sending messages is temporarily disabled.");
+      return;
+    }
     const trimmedContent = content.trim();
 
     if (!trimmedContent) {
@@ -184,7 +190,7 @@ export default function CreateAnnouncementBottomSheet({
     return null;
   }
 
-  const canSubmit = content.trim().length > 0 && !isSubmitting;
+  const canSubmit = content.trim().length > 0 && canSendMessages && !isSubmitting;
 
   return (
     <BottomSheetModal

@@ -139,6 +139,11 @@ export interface CreatePollDto {
   options: CreatePollOptionDto[];
 }
 
+export interface UpdatePollDto {
+  question: string;
+  options: CreatePollOptionDto[];
+}
+
 export interface VotePollDto {
   pollOptionId: string;
 }

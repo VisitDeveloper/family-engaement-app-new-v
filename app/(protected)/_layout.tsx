@@ -85,6 +85,8 @@ export default function RootLayout() {
           profilePicture: response.profilePicture,
           subjects: response.subjects,
           childName: response.childName,
+          canSendMessages: response.messagingPermissions?.canSendMessages ?? false,
+          messagingPermissions: response.messagingPermissions,
           createdAt: response.createdAt,
           updatedAt: response.updatedAt,
         };

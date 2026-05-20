@@ -26,6 +26,8 @@ export interface StoreUser {
   profilePicture?: string;
   subjects?: string[];
   childName?: string;
+  canSendMessages?: boolean;
+  messagingPermissions?: { canSendMessages: boolean };
   createdAt?: string;
   updatedAt?: string;
   [key: string]: unknown;
