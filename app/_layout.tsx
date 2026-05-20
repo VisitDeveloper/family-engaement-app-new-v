@@ -50,6 +50,10 @@ export default function RootLayout() {
       router.push('/(protected)/emergency-notifications');
     } else if (data.type === 'event' && data.eventId) {
       handleDeepLink(`mebo://event/${data.eventId}`);
+    } else if (data.type === 'post' && data.postId) {
+      handleDeepLink(`mebo://feed/${data.postId}`);
+    } else if (data.type === 'resource' && data.resourceId) {
+      handleDeepLink(`mebo://resource/${data.resourceId}`);
     }
   };
 

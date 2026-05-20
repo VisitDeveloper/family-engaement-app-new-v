@@ -452,11 +452,21 @@ export default function ChatScreen() {
         loadConversation();
         loadMessages();
 
+        messagingService.setActiveConversation(conversationId).catch((error) => {
+            console.error('Error setting messaging presence:', error);
+        });
+
         // Mark conversation as read when component mounts
         messagingService.markConversationAsRead(conversationId).catch((error) => {
             console.error('Error marking conversation as read:', error);
         });
         markConversationAsRead(conversationId, { unreadCount: 0 });
+
+        return () => {
+            messagingService.setActiveConversation(null).catch((error) => {
+                console.error('Error clearing messaging presence:', error);
+            });
+        };
     }, [conversationId, loadConversation, loadMessages, markConversationAsRead]);
 
     const handleSendMessage = async () => {

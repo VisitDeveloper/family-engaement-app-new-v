@@ -20,11 +20,13 @@ Notifications.setNotificationHandler({
 });
 
 export interface PushNotificationData {
-  type?: 'message' | 'emergency' | 'event' | string;
+  type?: 'message' | 'emergency' | 'event' | 'post' | 'resource' | string;
   conversationId?: string;
   messageId?: string;
   senderId?: string;
   eventId?: string;
+  postId?: string;
+  resourceId?: string;
   deepLink?: string;
   [key: string]: any;
 }

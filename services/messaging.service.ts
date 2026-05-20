@@ -69,6 +69,7 @@ export interface MessagingService {
   getMessages(conversationId: string, params?: GetMessagesParams): Promise<GetMessagesResponse>;
   markMessageAsRead(messageId: string): Promise<void>;
   markConversationAsRead(conversationId: string): Promise<void>;
+  setActiveConversation(conversationId: string | null): Promise<void>;
   deleteMessage(messageId: string): Promise<void>;
   updateMessage(messageId: string, data: UpdateMessageDto): Promise<MessageResponseDto>;
   addReaction(messageId: string, userId: string, emoji: string, lang?: string): Promise<MessageResponseDto>;
@@ -326,6 +327,14 @@ class MessagingServiceImpl implements MessagingService {
         status: apiError.status,
         data: apiError.data,
       } as ApiError;
+    }
+  }
+
+  async setActiveConversation(conversationId: string | null): Promise<void> {
+    try {
+      await apiClient.patch("/messaging/presence", { conversationId });
+    } catch (error) {
+      console.error("Error updating messaging presence:", error);
     }
   }
 
