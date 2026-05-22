@@ -26,6 +26,20 @@ export function isManagementRole(
   return role != null && (MANAGEMENT_ROLES as readonly string[]).includes(role);
 }
 
+/** Portal Send messages toggle applies only to org/site manager profiles. */
+export function isManagerMessagingRole(role: string | null | undefined): boolean {
+  return role === "organization_manager" || role === "site_manager";
+}
+
+/** Resolved from API; falls back so teachers/parents are not blocked when permissions are missing. */
+export function resolveCanSendMessages(
+  apiValue: boolean | undefined,
+  effectiveRole: string | null | undefined
+): boolean {
+  if (typeof apiValue === "boolean") return apiValue;
+  return !isManagerMessagingRole(effectiveRole);
+}
+
 export function isManagementOrTeacher(role: string | null | undefined): boolean {
   return (
     role != null &&

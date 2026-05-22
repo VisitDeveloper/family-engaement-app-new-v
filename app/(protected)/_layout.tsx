@@ -7,6 +7,7 @@ import {
   mergeProfileAppLanguage,
   shouldPushAppLanguageToServer,
 } from "@/store/slice/language";
+import { resolveCanSendMessages } from "@/utils/roles";
 import { getDisplayName } from "@/utils/user-name";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
@@ -85,7 +86,10 @@ export default function RootLayout() {
           profilePicture: response.profilePicture,
           subjects: response.subjects,
           childName: response.childName,
-          canSendMessages: response.messagingPermissions?.canSendMessages ?? false,
+          canSendMessages: resolveCanSendMessages(
+            response.messagingPermissions?.canSendMessages,
+            response.currentProfile?.role ?? response.role
+          ),
           messagingPermissions: response.messagingPermissions,
           createdAt: response.createdAt,
           updatedAt: response.updatedAt,

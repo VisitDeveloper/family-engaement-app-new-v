@@ -6,6 +6,7 @@ import { ApiError } from "@/services/api";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
 import type { CurrentProfile, ProfileItem, SwitchProfileBody } from "@/types";
+import { resolveCanSendMessages } from "@/utils/roles";
 import { getDisplayName, getInitials as getSafeInitials } from "@/utils/user-name";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -287,7 +288,10 @@ export default function SwitchProfileScreen() {
           const fullProfile = await authService.getProfile();
           setUser({
             ...baseUser,
-            canSendMessages: fullProfile.messagingPermissions?.canSendMessages ?? false,
+            canSendMessages: resolveCanSendMessages(
+              fullProfile.messagingPermissions?.canSendMessages,
+              fullProfile.currentProfile?.role ?? profile.role
+            ),
             messagingPermissions: fullProfile.messagingPermissions,
           });
         } catch {
