@@ -43,6 +43,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import InCallManager from "react-native-incall-manager";
 
 const WAVEFORM_BAR_COUNT = 28;
+const MIN_VOICE_RECORDING_MS = 500;
 
 const VOICE_RECORDING_OPTIONS = {
     ...RecordingPresets.HIGH_QUALITY,
@@ -100,6 +101,8 @@ export default function ChatScreen() {
     const gestureOutcomeRef = useRef<"none" | "locked" | "cancelled">("none");
     /** If user cancels before prepare/record finishes, drop the recording when it starts. */
     const discardRecordingAfterPrepareRef = useRef(false);
+    const recordingDurationMsRef = useRef(0);
+    const isFinishingRecordingRef = useRef(false);
     const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
     const [audioPositions, setAudioPositions] = useState<Record<string, number>>({});
     const [audioDurations, setAudioDurations] = useState<Record<string, number>>({});
@@ -140,7 +143,9 @@ export default function ChatScreen() {
     useEffect(() => {
         if (recorderMode !== "recording" && recorderMode !== "locked") return;
         if (!recorderState.isRecording) return;
-        setRecordingDurationMs(recorderState.durationMillis ?? 0);
+        const durationMs = recorderState.durationMillis ?? 0;
+        recordingDurationMsRef.current = durationMs;
+        setRecordingDurationMs(durationMs);
         if (typeof recorderState.metering === "number") {
             const normalized = Math.max(0.08, Math.min(1, (recorderState.metering + 160) / 160));
             setRecordingWaveform((prev) => [...prev.slice(-(WAVEFORM_BAR_COUNT - 1)), normalized]);
@@ -280,9 +285,30 @@ export default function ChatScreen() {
         input: { flex: 1, borderWidth: 1, borderColor: t.border, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, minHeight: 40, maxHeight: 100, color: t.text, backgroundColor: t.panel || t.bg, fontSize: 16 },
         sendButton: { backgroundColor: t.tint, padding: 10, borderRadius: 8, marginLeft: 5, alignItems: "center", justifyContent: "center", minWidth: 40, minHeight: 40 },
         micButton: { backgroundColor: t.panel || t.bg, padding: 10, borderRadius: 8, marginLeft: 5, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: t.border, minWidth: 40, minHeight: 40 },
+        recordingGestureBar: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 16,
+            paddingTop: 10,
+            paddingBottom: 4,
+            backgroundColor: t.bg,
+        },
+        recordingGestureChip: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            borderRadius: 24,
+            backgroundColor: t.panel || t.bg,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        recordingGestureChipText: { color: t.subText || t.text, fontSize: 13, fontWeight: "500" },
         recordingContainer: {
             flex: 1,
-            minHeight: 42,
+            minHeight: 40,
             borderWidth: 1,
             borderColor: t.border,
             borderRadius: 10,
@@ -290,12 +316,10 @@ export default function ChatScreen() {
             paddingVertical: 8,
             backgroundColor: t.panel || t.bg,
             justifyContent: "center",
-            gap: 6,
         },
         recordingHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
         recordingDot: { width: 8, height: 8, borderRadius: 999, backgroundColor: "#ff3b30" },
         recordingTimer: { color: t.text, fontWeight: "700", fontSize: 13 },
-        recordingHint: { color: t.subText || t.text, fontSize: 11 },
         waveformRow: {
             flexDirection: "row",
             alignItems: "flex-end",
@@ -801,6 +825,8 @@ export default function ChatScreen() {
 
     const resetRecorderUi = useCallback(async () => {
         cleanupPreviewPlayer();
+        recordingDurationMsRef.current = 0;
+        isFinishingRecordingRef.current = false;
         setRecordingDurationMs(0);
         setRecordingWaveform([]);
         setPreviewAudio(null);
@@ -823,6 +849,7 @@ export default function ChatScreen() {
         isStartingRecordingRef.current = true;
         try {
             cleanupPreviewPlayer();
+            recordingDurationMsRef.current = 0;
             setRecordingDurationMs(0);
             setRecordingWaveform([]);
             await audioRecorder.prepareToRecordAsync();
@@ -863,35 +890,64 @@ export default function ChatScreen() {
     }, [conversationId, uploadingFile, sending, canUserSendMessages, requestRecordingPermission, cleanupPreviewPlayer, resetRecorderUi, setRecorderModeImmediate, audioRecorder]);
 
     const stopRecordingToPreview = useCallback(async () => {
-        if (!audioRecorder.isRecording && !isStartingRecordingRef.current) return;
+        if (recorderModeRef.current === "preview" || recorderModeRef.current === "sending") return;
+        if (isFinishingRecordingRef.current) return;
+
+        const recorderActive =
+            recorderModeRef.current === "recording" ||
+            recorderModeRef.current === "locked" ||
+            audioRecorder.isRecording ||
+            isStartingRecordingRef.current;
+        if (!recorderActive) return;
+
+        isFinishingRecordingRef.current = true;
         try {
-            setRecorderModeImmediate("preview");
+            if (isStartingRecordingRef.current) {
+                for (let i = 0; i < 30 && isStartingRecordingRef.current; i += 1) {
+                    await new Promise((resolve) => setTimeout(resolve, 50));
+                }
+            }
+
+            const statusBeforeStop = audioRecorder.getStatus();
+            const durationMillis = Math.max(
+                statusBeforeStop.durationMillis ?? 0,
+                recordingDurationMsRef.current,
+                recordingDurationMs
+            );
+
             if (audioRecorder.isRecording) {
                 await audioRecorder.stop();
             }
-            const status = audioRecorder.getStatus();
-            const durationMillis = status.durationMillis ?? recordingDurationMs;
+
             const uri = audioRecorder.uri;
             if (!uri) {
                 await resetRecorderUi();
                 feedback.toast.error("Error", "Recording file not available");
                 return;
             }
-            const durationSeconds = durationMillis > 0 ? Math.round(durationMillis / 1000) : 0;
-            if (durationSeconds < 1) {
+
+            if (durationMillis < MIN_VOICE_RECORDING_MS) {
                 await resetRecorderUi();
-                feedback.toast.info("Too short", t("chat.voiceTooShort"));
+                if (durationMillis > 0) {
+                    feedback.toast.info("Too short", t("chat.voiceTooShort"));
+                }
                 return;
             }
+
+            const durationSeconds = Math.max(1, Math.ceil(durationMillis / 1000));
+            cleanupPreviewPlayer();
             setPreviewAudio({ uri, durationSeconds });
             setPreviewDurationMs(durationMillis);
             setPreviewPositionMs(0);
+            setRecorderModeImmediate("preview");
         } catch (error: any) {
             console.error("Failed to stop recording:", error);
             await resetRecorderUi();
             feedback.toast.error("Error", error?.message || "Failed to process voice message");
+        } finally {
+            isFinishingRecordingRef.current = false;
         }
-    }, [recordingDurationMs, resetRecorderUi, t, setRecorderModeImmediate, audioRecorder]);
+    }, [recordingDurationMs, resetRecorderUi, t, setRecorderModeImmediate, audioRecorder, cleanupPreviewPlayer]);
 
     const cancelRecording = useCallback(async () => {
         const hadRecording = audioRecorder.isRecording || isStartingRecordingRef.current;
@@ -998,7 +1054,7 @@ export default function ChatScreen() {
                     if (gestureOutcomeRef.current === "cancelled") {
                         return;
                     }
-                    if (recorderModeRef.current === "recording") {
+                    if (recorderModeRef.current === "recording" && !isFinishingRecordingRef.current) {
                         if (audioRecorder.isRecording || isStartingRecordingRef.current) {
                             void stopRecordingToPreview();
                         } else {
@@ -1016,7 +1072,7 @@ export default function ChatScreen() {
                     if (gestureOutcomeRef.current === "cancelled") {
                         return;
                     }
-                    if (recorderModeRef.current === "recording") {
+                    if (recorderModeRef.current === "recording" && !isFinishingRecordingRef.current) {
                         if (audioRecorder.isRecording || isStartingRecordingRef.current) {
                             void stopRecordingToPreview();
                         } else {
@@ -1751,6 +1807,22 @@ export default function ChatScreen() {
         : Array.from({ length: WAVEFORM_BAR_COUNT }, () => 0.12);
     const previewProgress = previewDurationMs > 0 ? Math.min(1, previewPositionMs / previewDurationMs) : 0;
 
+    const renderRecordingGestureBar = () => {
+        if (!isRecording || isRecorderLocked) return null;
+        return (
+            <View style={styles.recordingGestureBar} pointerEvents="none">
+                <View style={styles.recordingGestureChip}>
+                    <Ionicons name="chevron-back" size={18} color={theme.subText || theme.text} />
+                    <SpeakableText style={styles.recordingGestureChipText}>{t("common.cancel")}</SpeakableText>
+                </View>
+                <View style={styles.recordingGestureChip}>
+                    <Ionicons name="lock-closed" size={16} color={theme.tint} />
+                    <Ionicons name="arrow-up" size={16} color={theme.tint} />
+                </View>
+            </View>
+        );
+    };
+
     const renderChatComposer = () => {
         if (!canUserSendMessages) {
             return (
@@ -1812,17 +1884,17 @@ export default function ChatScreen() {
                         onPress={handleOpenAttachmentMenu}
                         disabled={sending || isRecording}
                     >
-                        <Ionicons
-                            name="add"
-                            size={24}
-                            color={theme.text}
-                        />
+                        <Ionicons name="add" size={24} color={theme.text} />
                     </TouchableOpacity>
                     {isRecording ? (
                         <View style={styles.recordingContainer}>
                             <View style={styles.recordingHeader}>
-                                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 54 }}>
-                                    <View style={styles.recordingDot} />
+                                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: isRecorderLocked ? 68 : 54 }}>
+                                    {isRecorderLocked ? (
+                                        <Ionicons name="lock-closed" size={14} color={theme.tint} />
+                                    ) : (
+                                        <View style={styles.recordingDot} />
+                                    )}
                                     <SpeakableText style={styles.recordingTimer}>{recordingDurationLabel}</SpeakableText>
                                 </View>
                                 <View style={styles.waveformRow}>
@@ -1852,11 +1924,28 @@ export default function ChatScreen() {
 
                 {isRecorderLocked ? (
                     <>
-                        <TouchableOpacity style={styles.recorderLockButton} onPress={() => void cancelRecording()}>
-                            <Ionicons name="trash-outline" size={18} color={theme.text} />
+                        <TouchableOpacity
+                            style={[styles.recorderLockButton, { backgroundColor: theme.tint, borderColor: theme.tint }]}
+                            onPress={() => void stopRecordingToPreview()}
+                            accessibilityRole="button"
+                            accessibilityLabel={t("chat.stopRecording")}
+                        >
+                            <Ionicons name="stop" size={18} color="#fff" />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.sendButton} onPress={() => void stopRecordingToPreview()}>
-                            <SendIcon color="#fff" size={16} />
+                        <TouchableOpacity
+                            style={[styles.sendButton, (sending || uploadingFile) && { opacity: 0.5 }]}
+                            onPress={() => void stopRecordingToPreview()}
+                            disabled={sending || uploadingFile}
+                            accessibilityRole="button"
+                            accessibilityLabel={t("chat.previewVoice")}
+                            accessibilityHint="Finish recording and review before sending"
+                            accessibilityState={{ disabled: sending || uploadingFile }}
+                        >
+                            {(sending || uploadingFile) ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <SendIcon color="#fff" size={16} />
+                            )}
                         </TouchableOpacity>
                     </>
                 ) : (
@@ -1869,7 +1958,7 @@ export default function ChatScreen() {
                             ]}
                             pointerEvents={sending || uploadingFile || isRecorderPreview ? "none" : "auto"}
                             accessibilityRole="button"
-                            accessibilityLabel={isRecording ? "Stop and send voice message" : "Record voice message"}
+                            accessibilityLabel={isRecording ? "Record voice message" : "Record voice message"}
                             accessibilityState={{ disabled: sending || uploadingFile || isRecorderPreview }}
                             {...micPanResponder.panHandlers}
                         >
@@ -1879,13 +1968,23 @@ export default function ChatScreen() {
                             />
                         </View>
                         <TouchableOpacity
-                            style={[styles.sendButton, (sending || uploadingFile || !input.trim() || isRecording) && { opacity: 0.5 }]}
-                            onPress={handleSendMessage}
-                            disabled={sending || uploadingFile || !input.trim() || isRecording}
+                            style={[
+                                styles.sendButton,
+                                (sending || uploadingFile || (!isRecording && !input.trim())) && { opacity: 0.5 },
+                            ]}
+                            onPress={() => {
+                                if (isRecording) void stopRecordingToPreview();
+                                else void handleSendMessage();
+                            }}
+                            disabled={sending || uploadingFile || (!isRecording && !input.trim())}
                             accessibilityRole="button"
-                            accessibilityLabel="Send message"
-                            accessibilityHint="Double tap to send your message"
-                            accessibilityState={{ disabled: sending || uploadingFile || !input.trim() || isRecording }}
+                            accessibilityLabel={isRecording ? t("chat.previewVoice") : "Send message"}
+                            accessibilityHint={
+                                isRecording
+                                    ? "Finish recording and review before sending"
+                                    : "Double tap to send your message"
+                            }
+                            accessibilityState={{ disabled: sending || uploadingFile || (!isRecording && !input.trim()) }}
                         >
                             {(sending || uploadingFile) ? (
                                 <ActivityIndicator size="small" color="#fff" />
@@ -1992,13 +2091,19 @@ export default function ChatScreen() {
                 {/* Input — parent cannot send in group chats */}
                 {Platform.OS === 'android' ? (
                     <KeyboardStickyView offset={{ opened: -Math.max(insets.bottom, 10), closed: 0 }}>
-                        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-                            {renderChatComposer()}
+                        <View>
+                            {renderRecordingGestureBar()}
+                            <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+                                {renderChatComposer()}
+                            </View>
                         </View>
                     </KeyboardStickyView>
                 ) : (
-                    <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-                        {renderChatComposer()}
+                    <View>
+                        {renderRecordingGestureBar()}
+                        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+                            {renderChatComposer()}
+                        </View>
                     </View>
                 )}
 
