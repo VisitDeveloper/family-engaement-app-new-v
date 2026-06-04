@@ -666,7 +666,11 @@
     "previewVoice": "Voice preview",
     "play": "Play",
     "pause": "Pause",
-    "voiceTooShort": "Voice message is too short."
+    "voiceTooShort": "Voice message is too short.",
+    "uploading": "Uploading…",
+    "uploadFailed": "Couldn't send",
+    "resend": "Resend",
+    "delete": "Delete"
   },
   "ai": {
     "title": "AI Teaching Assistant",

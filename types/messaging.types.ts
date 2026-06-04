@@ -17,6 +17,21 @@ export interface MessageReactionItemDto {
   userIds?: string[];
 }
 
+export type ClientMessageUploadStatus = "uploading" | "failed";
+
+export interface ClientMessageUpload {
+  status: ClientMessageUploadStatus;
+  progress: number;
+  localUri: string;
+  retryPayload: {
+    uri: string;
+    type: "image" | "video" | "audio" | "file";
+    mimeType: string;
+    fileName?: string;
+    durationSeconds?: number;
+  };
+}
+
 export interface MessageResponseDto {
   id: string;
   conversationId: string;
@@ -47,6 +62,8 @@ export interface MessageResponseDto {
   reactions?: MessageReactionItemDto[] | null;
   /** Current user's reaction emoji, if any. */
   myReaction?: string | null;
+  /** Client-only: optimistic upload state shown in chat until sent or failed. */
+  clientUpload?: ClientMessageUpload | null;
 }
 
 export interface ConversationResponseDto {

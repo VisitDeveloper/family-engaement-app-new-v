@@ -8,6 +8,10 @@ import { Image, TouchableOpacity, View } from "react-native";
 import { EmojiIcon, TrashIcon } from "../icons/messages-icons";
 import ReactionRow from "./reaction-row";
 
+/** Matches image attachments and chat bubble content width. */
+const VIDEO_THUMB_WIDTH = 200;
+const VIDEO_THUMB_HEIGHT = Math.round((VIDEO_THUMB_WIDTH * 9) / 16);
+
 interface VideoMessageCardProps {
   message: MessageResponseDto;
   isMe?: boolean;
@@ -36,16 +40,29 @@ export default function VideoMessageCard({
   const { theme } = useStore((state) => state);
 
   const styles = useThemedStyles((t) => ({
-    videoThumbnail: {
-      width: 150,
-      height: 100,
+    root: {
+      alignSelf: "flex-start",
+      maxWidth: "100%",
+    },
+    videoWrapper: {
+      width: VIDEO_THUMB_WIDTH,
+      height: VIDEO_THUMB_HEIGHT,
       borderRadius: 8,
       marginTop: 5,
+      overflow: "hidden",
+    },
+    videoThumbnail: {
+      width: VIDEO_THUMB_WIDTH,
+      height: VIDEO_THUMB_HEIGHT,
     },
     playIconContainer: {
       position: "absolute",
-      alignSelf: "center",
-      top: "35%",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      justifyContent: "center",
+      alignItems: "center",
       opacity: 0.9,
     },
     footer: {
@@ -54,6 +71,7 @@ export default function VideoMessageCard({
       justifyContent: "space-between",
       marginTop: 4,
       gap: 8,
+      width: VIDEO_THUMB_WIDTH,
     },
     footerRight: {
       flexDirection: "row",
@@ -83,18 +101,20 @@ export default function VideoMessageCard({
   const thumbnailUrl = message.thumbnailUrl ?? message.mediaUrl;
 
   return (
-    <>
+    <View style={styles.root}>
       <TouchableOpacity
         activeOpacity={1}
+        style={styles.videoWrapper}
         onPress={() => onVideoPress?.(message.mediaUrl!)}
       >
         <Image
           source={{ uri: thumbnailUrl }}
           style={styles.videoThumbnail}
+          resizeMode="cover"
           accessibilityRole="image"
           accessibilityLabel="Video thumbnail"
         />
-        <View style={styles.playIconContainer}>
+        <View style={styles.playIconContainer} pointerEvents="none">
           <Ionicons name="play-circle" size={48} color="#fff" />
         </View>
       </TouchableOpacity>
@@ -135,6 +155,6 @@ export default function VideoMessageCard({
           )
         )}
       </View>
-    </>
+    </View>
   );
 }

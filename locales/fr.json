@@ -648,7 +648,11 @@
     "previewVoice": "Aperçu vocal",
     "play": "Lire",
     "pause": "Pause",
-    "voiceTooShort": "Le message vocal est trop court."
+    "voiceTooShort": "Le message vocal est trop court.",
+    "uploading": "Envoi en cours…",
+    "uploadFailed": "Échec de l'envoi",
+    "resend": "Renvoyer",
+    "delete": "Supprimer"
   },
   "ai": {
     "title": "Assistant pédagogique IA",

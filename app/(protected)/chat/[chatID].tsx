@@ -13,6 +13,9 @@ import PollMessageCard from "@/components/ui/messages/poll-message-card";
 import ReactionRow from "@/components/ui/messages/reaction-row";
 import TextMessageCard from "@/components/ui/messages/text-message-card";
 import VideoMessageCard from "@/components/ui/messages/video-message-card";
+import MessageUploadStatus from "@/components/ui/messages/message-upload-status";
+import { createPendingOutgoingMessage, isPendingMessageId } from "@/utils/pending-chat-message";
+import type { ClientMessageUpload } from "@/types";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ConversationResponseDto, MessageResponseDto, messagingService, PollResponseDto } from "@/services/messaging.service";
 import { detectSourceLanguage, SUPPORTED_LANGUAGES, translateText } from "@/services/translate.service";
@@ -73,9 +76,6 @@ export default function ChatScreen() {
         options: string[];
     } | null>(null);
     const [showAnnouncementSheet, setShowAnnouncementSheet] = useState(false);
-    const [uploadingFile, setUploadingFile] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [uploadingFileName, setUploadingFileName] = useState<string | null>(null);
     const [showAttachingMenu, setShowAttachingMenu] = useState(false);
     const [fullScreenImageUri, setFullScreenImageUri] = useState<string | null>(null);
     const [videoModalUri, setVideoModalUri] = useState<string | null>(null);
@@ -272,7 +272,7 @@ export default function ChatScreen() {
         audioTimestampViewer: {
             color: "#666", // Dark gray for viewer
         },
-        videoThumbnail: { minWidth: 200, width: 200, height: 100, borderRadius: 8, marginTop: 5 },
+        videoThumbnail: { width: 200, height: 113, borderRadius: 8, marginTop: 5 },
         imageThumbnail: { minWidth: 200, width: 200, height: 150, borderRadius: 8, marginTop: 5 },
         inputContainer: { flexDirection: "row", paddingVertical: 10, borderTopWidth: 1, borderColor: t.border, alignItems: "flex-end", paddingHorizontal: 15, paddingBottom: 10, backgroundColor: t.bg },
         inputWrapper: { flex: 1, flexDirection: "row", alignItems: "flex-end", gap: 8 },
@@ -339,35 +339,6 @@ export default function ChatScreen() {
         loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
         fileContainer: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 5, minWidth: 200, backgroundColor: "rgba(255, 255, 255, 0.1)", padding: 10, borderRadius: 8 },
         fileName: { color: t.text, fontSize: 14 },
-        uploadProgressContainer: {
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: t.panel,
-            padding: 12,
-            borderTopWidth: 1,
-            borderTopColor: t.border,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 12,
-        },
-        uploadProgressBar: {
-            flex: 1,
-            height: 4,
-            backgroundColor: t.border,
-            borderRadius: 2,
-            overflow: "hidden",
-        },
-        uploadProgressFill: {
-            height: "100%",
-            backgroundColor: t.tint,
-        },
-        uploadProgressText: {
-            fontSize: 12,
-            color: t.subText,
-            minWidth: 50,
-        },
         editBarContainer: {
             flexDirection: "row",
             alignItems: "center",
@@ -575,15 +546,11 @@ export default function ChatScreen() {
             feedback.toast.info("Messaging disabled", sendDisabledReason);
             return;
         }
-        if (uploadingFile) {
-            feedback.toast.info("Upload in progress", "Please wait until the current upload finishes.");
-            return;
-        }
         if (sending) {
             return;
         }
         setShowAttachingMenu(true);
-    }, [canUserSendMessages, sendDisabledReason, sending, uploadingFile]);
+    }, [canUserSendMessages, sendDisabledReason, sending]);
 
     const pickDocument = async () => {
         try {
@@ -606,19 +573,38 @@ export default function ChatScreen() {
         }
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const uploadAndSendFile = async (
+    const patchPendingUpload = useCallback(
+        (pendingId: string, patch: Partial<ClientMessageUpload>) => {
+            if (!conversationId) return;
+            const existing = (useStore.getState().messages[conversationId] || []).find(
+                (m: MessageResponseDto) => m.id === pendingId
+            );
+            if (!existing?.clientUpload) return;
+            updateMessageInStore(conversationId, pendingId, {
+                clientUpload: { ...existing.clientUpload, ...patch },
+            });
+        },
+        [conversationId, updateMessageInStore]
+    );
+
+    const uploadAndSendFile = useCallback(async (
         uri: string,
         type: 'image' | 'video' | 'audio' | 'file',
         mimeType: string,
         fileName?: string,
-        durationSeconds?: number
+        durationSeconds?: number,
+        existingPendingId?: string
     ) => {
-        if (!conversationId || uploadingFile) return;
+        if (!conversationId || !currentUserId) return;
         if (!canUserSendMessages) return;
 
-        setUploadingFile(true);
-        setUploadProgress(0);
+        const retryPayload = {
+            uri,
+            type,
+            mimeType,
+            fileName,
+            durationSeconds,
+        };
 
         const ensureUploadableFileUri = async (inputUri: string): Promise<string> => {
             const u = inputUri.trim();
@@ -655,15 +641,44 @@ export default function ChatScreen() {
             }
         };
 
-        // Extract filename from URI if not provided
         const fileUri = await ensureUploadableFileUri(uri);
         const name = fileName || fileUri.split('/').pop() || 'file';
-        setUploadingFileName(name);
 
+        let pendingId = existingPendingId;
+        if (!pendingId) {
+            const pendingMessage = createPendingOutgoingMessage({
+                conversationId,
+                senderId: currentUserId,
+                sender: currentUser
+                    ? {
+                        id: currentUser.id,
+                        email: currentUser.email ?? "",
+                        firstName: currentUser.firstName ?? null,
+                        lastName: currentUser.lastName ?? null,
+                    }
+                    : null,
+                type,
+                localUri: fileUri,
+                fileName: name,
+                mimeType,
+                durationSeconds,
+                thumbnailUrl: type === "video" ? fileUri : undefined,
+                retryPayload: { ...retryPayload, uri: fileUri },
+            });
+            pendingId = pendingMessage.id;
+            addMessage(conversationId, pendingMessage);
+        } else {
+            patchPendingUpload(pendingId, {
+                status: "uploading",
+                progress: 0,
+                localUri: fileUri,
+                retryPayload: { ...retryPayload, uri: fileUri },
+            });
+        }
+
+        let progressInterval: ReturnType<typeof setInterval> | null = null;
         try {
-            // Create FormData
             const formData = new FormData();
-
             // @ts-ignore - FormData in React Native works differently
             formData.append('file', {
                 uri: fileUri,
@@ -671,15 +686,14 @@ export default function ChatScreen() {
                 name: name,
             } as any);
 
-            // Simulate progress (since we don't have actual progress from API)
-            const progressInterval = setInterval(() => {
-                setUploadProgress((prev) => {
-                    if (prev >= 90) {
-                        clearInterval(progressInterval);
-                        return 90;
-                    }
-                    return prev + 10;
-                });
+            progressInterval = setInterval(() => {
+                const existing = (useStore.getState().messages[conversationId] || []).find(
+                    (m: MessageResponseDto) => m.id === pendingId
+                );
+                const currentProgress = existing?.clientUpload?.progress ?? 0;
+                if (currentProgress < 90) {
+                    patchPendingUpload(pendingId!, { progress: currentProgress + 8 });
+                }
             }, 200);
 
             let uploadResponse;
@@ -693,10 +707,9 @@ export default function ChatScreen() {
                 uploadResponse = await messagingService.uploadFile(formData);
             }
 
-            clearInterval(progressInterval);
-            setUploadProgress(100);
+            if (progressInterval) clearInterval(progressInterval);
+            patchPendingUpload(pendingId!, { progress: 100 });
 
-            // Create message with uploaded file
             const newMessage = await messagingService.createMessage({
                 conversationId,
                 type: type,
@@ -708,22 +721,50 @@ export default function ChatScreen() {
                 ...(type === 'video' && uploadResponse.thumbnailUrl != null && { thumbnailUrl: uploadResponse.thumbnailUrl }),
             });
 
+            removeMessage(conversationId, pendingId!);
             addMessage(conversationId, newMessage);
-
-            // Reset after a short delay
-            setTimeout(() => {
-                setUploadProgress(0);
-                setUploadingFileName(null);
-            }, 500);
         } catch (error: any) {
             console.error('Error uploading file:', error);
-            feedback.toast.error('Error', error.message || 'Failed to upload file');
-            setUploadProgress(0);
-            setUploadingFileName(null);
-        } finally {
-            setUploadingFile(false);
+            if (progressInterval) clearInterval(progressInterval);
+            patchPendingUpload(pendingId!, {
+                status: "failed",
+                progress: 0,
+            });
         }
-    };
+    }, [
+        conversationId,
+        currentUserId,
+        currentUser,
+        canUserSendMessages,
+        addMessage,
+        removeMessage,
+        updateMessageInStore,
+        patchPendingUpload,
+    ]);
+
+    const handleRemovePendingMessage = useCallback(
+        (messageId: string) => {
+            if (!conversationId) return;
+            removeMessage(conversationId, messageId);
+        },
+        [conversationId, removeMessage]
+    );
+
+    const handleResendPendingMessage = useCallback(
+        (message: MessageResponseDto) => {
+            const payload = message.clientUpload?.retryPayload;
+            if (!payload || !conversationId) return;
+            void uploadAndSendFile(
+                payload.uri,
+                payload.type,
+                payload.mimeType,
+                payload.fileName,
+                payload.durationSeconds,
+                message.id
+            );
+        },
+        [conversationId, uploadAndSendFile]
+    );
 
     const handlePollCreated = async (poll: PollResponseDto, message: MessageResponseDto) => {
         addMessage(conversationId, { ...message, polls: [poll] });
@@ -837,7 +878,7 @@ export default function ChatScreen() {
     }, [cleanupPreviewPlayer, setRecorderModeImmediate]);
 
     const startRecording = useCallback(async () => {
-        if (!conversationId || uploadingFile || sending) return;
+        if (!conversationId || sending) return;
         if (!canUserSendMessages) return;
         if (audioRecorder.isRecording || isStartingRecordingRef.current) return;
         const ok = await requestRecordingPermission();
@@ -887,7 +928,7 @@ export default function ChatScreen() {
         } finally {
             isStartingRecordingRef.current = false;
         }
-    }, [conversationId, uploadingFile, sending, canUserSendMessages, requestRecordingPermission, cleanupPreviewPlayer, resetRecorderUi, setRecorderModeImmediate, audioRecorder]);
+    }, [conversationId, sending, canUserSendMessages, requestRecordingPermission, cleanupPreviewPlayer, resetRecorderUi, setRecorderModeImmediate, audioRecorder]);
 
     const stopRecordingToPreview = useCallback(async () => {
         if (recorderModeRef.current === "preview" || recorderModeRef.current === "sending") return;
@@ -1024,10 +1065,10 @@ export default function ChatScreen() {
     const micPanResponder = useMemo(
         () =>
             PanResponder.create({
-                onStartShouldSetPanResponder: () => !(sending || uploadingFile || isRecorderPreview),
+                onStartShouldSetPanResponder: () => !(sending || isRecorderPreview),
                 onPanResponderTerminationRequest: () => false,
                 onPanResponderGrant: () => {
-                    if (sending || uploadingFile || isRecorderPreview) return;
+                    if (sending || isRecorderPreview) return;
                     micPressingRef.current = true;
                     gestureOutcomeRef.current = "none";
                     discardRecordingAfterPrepareRef.current = false;
@@ -1084,7 +1125,6 @@ export default function ChatScreen() {
             }),
         [
             sending,
-            uploadingFile,
             isRecorderPreview,
             startRecording,
             setRecorderModeImmediate,
@@ -1113,6 +1153,11 @@ export default function ChatScreen() {
     const handleDeleteMessage = useCallback(async (messageId: string) => {
         if (!conversationId) return;
 
+        if (isPendingMessageId(messageId)) {
+            handleRemovePendingMessage(messageId);
+            return;
+        }
+
         feedback.alert(
             "Delete Message",
             "Are you sure you want to delete this message? This action cannot be undone.",
@@ -1135,7 +1180,7 @@ export default function ChatScreen() {
                 },
             ]
         );
-    }, [conversationId, removeMessage]);
+    }, [conversationId, removeMessage, handleRemovePendingMessage]);
 
     const handleEditMessage = useCallback((message: MessageResponseDto) => {
         if (message.type !== "text" && message.type !== "announcement") return;
@@ -1534,6 +1579,8 @@ export default function ChatScreen() {
 
         // Check if we need to show date header
         const showDateHeader = index === 0 || (messages[index - 1] && !isSameDay(item.createdAt, messages[index - 1].createdAt));
+        const showBubbleDelete = isMe && !item.clientUpload;
+        const onDeleteMessage = showBubbleDelete ? () => handleDeleteMessage(item.id) : undefined;
 
         const messageContent = (
             <View
@@ -1547,6 +1594,8 @@ export default function ChatScreen() {
                         : isAnnouncement
                             ? [styles.messageContainerPoll, isMe ? { alignSelf: "flex-end" } : { alignSelf: "flex-start" }]
                             : (isMe ? styles.myMessage : styles.otherMessage),
+                    item.clientUpload ? { overflow: "hidden", position: "relative" } : null,
+                    item.type === "video" ? { alignItems: "flex-start" as const } : null,
                 ]}>
                 {item.type === "text" && item.content && (
                     <TextMessageCard
@@ -1559,7 +1608,7 @@ export default function ChatScreen() {
                         reactions={item.reactions}
                         myReaction={item.myReaction}
                         onEdit={() => handleEditMessage(item)}
-                        onDelete={() => handleDeleteMessage(item.id)}
+                        onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
                     />
@@ -1574,7 +1623,7 @@ export default function ChatScreen() {
                         reactions={item.reactions}
                         myReaction={item.myReaction}
                         onEdit={() => handleEditMessage(item)}
-                        onDelete={() => handleDeleteMessage(item.id)}
+                        onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
                     />
@@ -1587,8 +1636,8 @@ export default function ChatScreen() {
                         messageTime={messageTime}
                         reactions={item.reactions}
                         myReaction={item.myReaction}
-                        onImagePress={handleImagePress}
-                        onDelete={() => handleDeleteMessage(item.id)}
+                        onImagePress={item.clientUpload?.status === "uploading" ? undefined : handleImagePress}
+                        onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
                     />
@@ -1601,8 +1650,8 @@ export default function ChatScreen() {
                         messageTime={messageTime}
                         reactions={item.reactions}
                         myReaction={item.myReaction}
-                        onVideoPress={handleVideoPress}
-                        onDelete={() => handleDeleteMessage(item.id)}
+                        onVideoPress={item.clientUpload?.status === "uploading" ? undefined : handleVideoPress}
+                        onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
                     />
@@ -1617,14 +1666,14 @@ export default function ChatScreen() {
                         playingAudioId={playingAudioId}
                         audioPositions={audioPositions}
                         audioDurations={audioDurations}
-                        onPlay={handleAudioPlay}
-                        onDelete={() => handleDeleteMessage(item.id)}
+                        onPlay={item.clientUpload?.status === "uploading" ? undefined : handleAudioPlay}
+                        onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
                         formatAudioDuration={formatAudioDuration}
                     />
                 )}
-                {item.type === "file" && (
+                {item.type === "file" && (item.mediaUrl || item.fileName) && (
                     <FileMessageCard
                         message={item}
                         isMe={isMe}
@@ -1632,8 +1681,8 @@ export default function ChatScreen() {
                         messageTime={messageTime}
                         reactions={item.reactions}
                         myReaction={item.myReaction}
-                        onFilePress={handleFilePress}
-                        onDelete={() => handleDeleteMessage(item.id)}
+                        onFilePress={item.clientUpload?.status === "uploading" ? undefined : handleFilePress}
+                        onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
                     />
@@ -1702,10 +1751,22 @@ export default function ChatScreen() {
                         </View>
                     </>
                 )}
-                {isMe && isLastReadMessage && (item.userStatus === 'read' || (item as any).isRead) && (
+                {isMe && isLastReadMessage && !item.clientUpload && (item.userStatus === 'read' || (item as any).isRead) && (
                     <SpeakableText style={[styles.timeText, { fontSize: 9, marginTop: 2, fontStyle: 'italic' }, isPoll ? { color: theme.subText ?? '#666' } : { color: '#fff' }]}>
                         Read
                     </SpeakableText>
+                )}
+                {item.clientUpload && isMe && (
+                    <MessageUploadStatus
+                        message={item}
+                        isMe={isMe}
+                        onResend={
+                            item.clientUpload.status === "failed"
+                                ? () => handleResendPendingMessage(item)
+                                : undefined
+                        }
+                        onDelete={() => handleRemovePendingMessage(item.id)}
+                    />
                 )}
             </View>
         );
@@ -1913,10 +1974,10 @@ export default function ChatScreen() {
                             onChangeText={setInput}
                             multiline={true}
                             blurOnSubmit={false}
-                            editable={!sending && !uploadingFile}
+                            editable={!sending}
                             accessibilityLabel="Message input"
                             accessibilityHint="Type your message here. Press Enter for a new line, use the send button to send."
-                            accessibilityState={{ disabled: sending || uploadingFile }}
+                            accessibilityState={{ disabled: sending }}
                             textAlignVertical="top"
                         />
                     )}
@@ -1933,15 +1994,15 @@ export default function ChatScreen() {
                             <Ionicons name="stop" size={18} color="#fff" />
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.sendButton, (sending || uploadingFile) && { opacity: 0.5 }]}
+                            style={[styles.sendButton, sending && { opacity: 0.5 }]}
                             onPress={() => void stopRecordingToPreview()}
-                            disabled={sending || uploadingFile}
+                            disabled={sending}
                             accessibilityRole="button"
                             accessibilityLabel={t("chat.previewVoice")}
                             accessibilityHint="Finish recording and review before sending"
-                            accessibilityState={{ disabled: sending || uploadingFile }}
+                            accessibilityState={{ disabled: sending }}
                         >
-                            {(sending || uploadingFile) ? (
+                            {sending ? (
                                 <ActivityIndicator size="small" color="#fff" />
                             ) : (
                                 <SendIcon color="#fff" size={16} />
@@ -1954,12 +2015,12 @@ export default function ChatScreen() {
                             style={[
                                 styles.micButton,
                                 isRecording && { backgroundColor: theme.tint + "1f", borderColor: theme.tint + "66" },
-                                (sending || uploadingFile || isRecorderPreview) && { opacity: 0.45 },
+                                (sending || isRecorderPreview) && { opacity: 0.45 },
                             ]}
-                            pointerEvents={sending || uploadingFile || isRecorderPreview ? "none" : "auto"}
+                            pointerEvents={sending || isRecorderPreview ? "none" : "auto"}
                             accessibilityRole="button"
                             accessibilityLabel={isRecording ? "Record voice message" : "Record voice message"}
-                            accessibilityState={{ disabled: sending || uploadingFile || isRecorderPreview }}
+                            accessibilityState={{ disabled: sending || isRecorderPreview }}
                             {...micPanResponder.panHandlers}
                         >
                             <VoiceIcon
@@ -1970,13 +2031,13 @@ export default function ChatScreen() {
                         <TouchableOpacity
                             style={[
                                 styles.sendButton,
-                                (sending || uploadingFile || (!isRecording && !input.trim())) && { opacity: 0.5 },
+                                (sending || (!isRecording && !input.trim())) && { opacity: 0.5 },
                             ]}
                             onPress={() => {
                                 if (isRecording) void stopRecordingToPreview();
                                 else void handleSendMessage();
                             }}
-                            disabled={sending || uploadingFile || (!isRecording && !input.trim())}
+                            disabled={sending || (!isRecording && !input.trim())}
                             accessibilityRole="button"
                             accessibilityLabel={isRecording ? t("chat.previewVoice") : "Send message"}
                             accessibilityHint={
@@ -1984,9 +2045,9 @@ export default function ChatScreen() {
                                     ? "Finish recording and review before sending"
                                     : "Double tap to send your message"
                             }
-                            accessibilityState={{ disabled: sending || uploadingFile || (!isRecording && !input.trim()) }}
+                            accessibilityState={{ disabled: sending || (!isRecording && !input.trim()) }}
                         >
-                            {(sending || uploadingFile) ? (
+                            {sending ? (
                                 <ActivityIndicator size="small" color="#fff" />
                             ) : (
                                 <SendIcon color="#fff" size={16} />
@@ -2104,26 +2165,6 @@ export default function ChatScreen() {
                         <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
                             {renderChatComposer()}
                         </View>
-                    </View>
-                )}
-
-                {/* Upload Progress Indicator */}
-                {uploadingFile && uploadingFileName && (
-                    <View style={styles.uploadProgressContainer}>
-                        <ActivityIndicator size="small" color={theme.tint} />
-                        <View style={styles.uploadProgressBar}>
-                            <View
-                                style={[
-                                    styles.uploadProgressFill,
-                                    { width: `${uploadProgress}%` },
-                                ]}
-                            />
-                        </View>
-                        <SpeakableText style={styles.uploadProgressText} numberOfLines={1}>
-                            {uploadingFileName.length > 15
-                                ? `${uploadingFileName.substring(0, 15)}...`
-                                : uploadingFileName}
-                        </SpeakableText>
                     </View>
                 )}
 
