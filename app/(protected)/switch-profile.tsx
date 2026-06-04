@@ -3,6 +3,7 @@ import { feedback } from "@/lib/feedback";
 import { ThemedText } from "@/components/themed-text";
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { ApiError } from "@/services/api";
+import { refreshConversationsInStore } from "@/lib/messaging-refresh";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
 import type { CurrentProfile, ProfileItem, SwitchProfileBody } from "@/types";
@@ -201,6 +202,33 @@ export default function SwitchProfileScreen() {
     profileInfo: {
       flex: 1,
     },
+    otherProfilesSection: {
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+      marginTop: 4,
+      paddingTop: 20,
+      paddingBottom: 20,
+      paddingHorizontal: 8,
+    },
+    emptyState: {
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 8,
+    },
+    emptyStateTitle: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: theme.text,
+      textAlign: "center",
+      lineHeight: 22,
+    },
+    emptyStateMessage: {
+      fontSize: 14,
+      color: theme.subText,
+      textAlign: "center",
+      lineHeight: 21,
+      maxWidth: 300,
+    },
   }));
 
   const getInitials = (firstName?: string, lastName?: string) => {
@@ -298,6 +326,8 @@ export default function SwitchProfileScreen() {
           // keep switch response user if profile refresh fails
         }
 
+        void refreshConversationsInStore({ background: true }).catch(() => {});
+
         feedback.toast.success(t("common.success"), t("switchProfile.profileSwitchedSuccess"));
         router.back();
       } catch (err) {
@@ -351,7 +381,15 @@ export default function SwitchProfileScreen() {
     <View style={styles.container}>
       <HeaderInnerPage title={t("switchProfile.title")} />
       <ScrollView style={styles.scrollContent}>
-        <View style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 12, padding: 16, paddingBottom: 0 }} >
+        <View
+          style={{
+            borderWidth: 1,
+            borderColor: theme.border,
+            borderRadius: 12,
+            padding: 16,
+            overflow: "hidden",
+          }}
+        >
           {currentProfileItem ? (
             <>
               {/* <ThemedText type="subtitle" style={{ fontSize: 14, marginBottom: 10, color: theme.subText }}>
@@ -394,12 +432,19 @@ export default function SwitchProfileScreen() {
             </>
           ) : null}
 
-          <View style={{ borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 16 }} >
+          <View style={styles.otherProfilesSection}>
             {(() => {
               const otherProfiles = profiles.filter((p) => !isActiveProfile(p, currentProfile));
               if (otherProfiles.length === 0) {
                 return (
-                  <ThemedText type="subText">{t("switchProfile.noOtherProfiles", { defaultValue: "No other profiles to switch to." })}</ThemedText>
+                  <View style={styles.emptyState}>
+                    <ThemedText style={styles.emptyStateTitle}>
+                      {t("switchProfile.noOtherProfiles")}
+                    </ThemedText>
+                    <ThemedText style={styles.emptyStateMessage}>
+                      {t("switchProfile.noOtherProfilesHint")}
+                    </ThemedText>
+                  </View>
                 );
               }
               return (

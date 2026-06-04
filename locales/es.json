@@ -220,7 +220,9 @@
     "teacher": "Maestro",
     "parent": "Padre",
     "tapToSwitch": "Toca para usar este perfil",
-    "currentlyActive": "Perfil en uso"
+    "currentlyActive": "Perfil en uso",
+    "noOtherProfiles": "No hay otros perfiles disponibles",
+    "noOtherProfilesHint": "Ya estás usando tu único perfil. Si se te asigna otra escuela o rol, aparecerá aquí."
   },
   "changePassword": {
     "title": "Cambiar contraseña",

@@ -1,20 +1,22 @@
 import RoleGuard from "@/components/check-permisions";
+import { ConversationListSkeleton } from "@/components/ui/messages/conversation-list-skeleton";
+import {
+  refreshConversationsInStore,
+  resetConversationsLoadingFlags,
+} from "@/lib/messaging-refresh";
 import { MANAGEMENT_AND_TEACHER_ROLES, MANAGEMENT_TEACHER_PARENT_ROLES } from "@/utils/roles";
 import { feedback } from "@/lib/feedback";
 import HeaderTabItem from "@/components/reptitive-component/header-tab-item";
 import SearchContainer from "@/components/reptitive-component/search-container";
 import { FAB } from "@/components/ui/fab";
 import { AiAssistantIcon, AnnouncementIcon, EmergencyIcon, FileIcon, MediaIcon, NewIcon, NewMessageIcon, PollIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
-import {
-  ConversationResponseDto,
-  messagingService,
-} from "@/services/messaging.service";
+import { ConversationResponseDto } from "@/services/messaging.service";
 import { useStore } from "@/store";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, FlatList, Image, Platform, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Image, Platform, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SpeakableText } from "@/components/speakable-text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -173,8 +175,6 @@ export default function MessagesScreen() {
   const router = useRouter();
   const theme = useStore((state: any) => state.theme);
   const conversations = useStore((state: any) => state.conversations);
-  const setConversations = useStore((state: any) => state.setConversations);
-  const setLoading = useStore((state: any) => state.setLoading);
   const loading = useStore((state: any) => state.loading);
   const currentUser = useStore((state: any) => state.user);
   const currentUserId = currentUser?.id || null;
@@ -277,17 +277,16 @@ export default function MessagesScreen() {
 
   const loadConversations = useCallback(async (opts?: { showLoading?: boolean }) => {
     const showLoading = opts?.showLoading ?? true;
-    if (showLoading) setLoading(true);
+    const hasCached = useStore.getState().conversations.length > 0;
     try {
-      const convs = await messagingService.getConversations();
-      setConversations(convs.conversations);
+      await refreshConversationsInStore({
+        background: !showLoading || hasCached,
+      });
     } catch (error: any) {
       console.error("Error loading conversations:", error);
       feedback.toast.error("Error", error.message || "Failed to load conversations");
-    } finally {
-      if (showLoading) setLoading(false);
     }
-  }, [setLoading, setConversations]);
+  }, []);
 
   const filterConversations = useCallback(
     (searchQuery: string) => {
@@ -322,14 +321,23 @@ export default function MessagesScreen() {
     [filterConversations]
   );
 
+  const isFirstFocusRef = useRef(true);
+
+  useEffect(() => {
+    resetConversationsLoadingFlags();
+  }, []);
+
   useEffect(() => {
     loadConversations();
   }, [loadConversations]);
 
-  // Refresh conversations when screen comes into focus (e.g., after creating a group or sending a message)
+  // Refresh when returning to tab (skip initial mount — useEffect already loads)
   useFocusEffect(
     useCallback(() => {
-      // Don't drive RefreshControl spinner on focus refetch
+      if (isFirstFocusRef.current) {
+        isFirstFocusRef.current = false;
+        return;
+      }
       loadConversations({ showLoading: false });
     }, [loadConversations])
   );
@@ -508,12 +516,8 @@ export default function MessagesScreen() {
       </RoleGuard>
 
       {/* Message List */}
-      {loading && filteredContacts.length === 0 ? (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" color={theme.tint} />
-        </View>
+      {loading && conversations.length === 0 ? (
+        <ConversationListSkeleton />
       ) : (
         <FlatList
           data={filteredContacts}

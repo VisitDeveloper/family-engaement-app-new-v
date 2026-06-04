@@ -238,7 +238,9 @@
     "teacher": "Teacher",
     "parent": "Parent",
     "tapToSwitch": "Tap to Switch",
-    "currentlyActive": "Currently Active"
+    "currentlyActive": "Currently Active",
+    "noOtherProfiles": "No other profiles available",
+    "noOtherProfilesHint": "You are already using your only profile. If you are assigned another school or role, it will appear here."
   },
   "changePassword": {
     "title": "Change Password",

@@ -8,6 +8,8 @@ export interface ChatSlice {
   conversations: ConversationResponseDto[];
   messages: Record<string, MessageResponseDto[]>; // conversationId -> messages
   loading: boolean;
+  /** True while refetching conversations without clearing the list (profile switch, pull-to-refresh). */
+  conversationsFetching: boolean;
   error: string | null;
 
   // Actions
@@ -32,6 +34,7 @@ export interface ChatSlice {
   getMessagesByConversationId: (conversationId: string) => MessageResponseDto[];
 
   setLoading: (loading: boolean) => void;
+  setConversationsFetching: (fetching: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
 }
@@ -43,6 +46,7 @@ export const createChatSlice: StateCreator<any, [], [], ChatSlice> = (
   conversations: [],
   messages: {},
   loading: false,
+  conversationsFetching: false,
   error: null,
 
   setConversations: (conversations) => set({ conversations }),
@@ -120,6 +124,9 @@ export const createChatSlice: StateCreator<any, [], [], ChatSlice> = (
     get().messages[conversationId] || [],
 
   setLoading: (loading) => set({ loading }),
+
+  setConversationsFetching: (conversationsFetching) =>
+    set({ conversationsFetching }),
 
   setError: (error) => set({ error }),
 

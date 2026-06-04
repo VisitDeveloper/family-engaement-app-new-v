@@ -14,9 +14,12 @@ import ReactionRow from "@/components/ui/messages/reaction-row";
 import TextMessageCard from "@/components/ui/messages/text-message-card";
 import VideoMessageCard from "@/components/ui/messages/video-message-card";
 import MessageUploadStatus from "@/components/ui/messages/message-upload-status";
+import { MessageListSkeleton } from "@/components/ui/messages/message-list-skeleton";
 import { createPendingOutgoingMessage, isPendingMessageId } from "@/utils/pending-chat-message";
 import type { ClientMessageUpload } from "@/types";
+import { useEffectiveRole } from "@/hooks/use-effective-role";
 import { useThemedStyles } from "@/hooks/use-theme-style";
+import { getProfileScopeKey } from "@/utils/chat-store";
 import { ConversationResponseDto, MessageResponseDto, messagingService, PollResponseDto } from "@/services/messaging.service";
 import { detectSourceLanguage, SUPPORTED_LANGUAGES, translateText } from "@/services/translate.service";
 import { useStore } from "@/store";
@@ -125,6 +128,10 @@ export default function ChatScreen() {
     const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
     const requestedTranslateRef = useRef<Set<string>>(new Set());
     const prevConversationIdRef = useRef<string | undefined>(undefined);
+    const prevProfileScopeRef = useRef<string | null>(null);
+    const effectiveRole = useEffectiveRole();
+    const currentProfile = useStore((state: any) => state.currentProfile);
+    const profileScopeKey = getProfileScopeKey(currentProfile);
     const { chatID } = useLocalSearchParams<{ chatID: string }>();
     const conversationId = chatID;
     const router = useRouter();
@@ -182,7 +189,7 @@ export default function ChatScreen() {
     }, [conversationId, messagesStore]);
 
     // Parent cannot send messages in group chats (only view)
-    const isParentInGroup = currentUser?.role === "parent" && conversation?.type === "group";
+    const isParentInGroup = effectiveRole === "parent" && conversation?.type === "group";
     const isMessagingFeatureEnabled = currentUser?.canSendMessages !== false;
     const canUserSendMessages = !isParentInGroup && isMessagingFeatureEnabled;
     const sendDisabledReason = !isMessagingFeatureEnabled
@@ -410,48 +417,73 @@ export default function ChatScreen() {
         }
     }, [conversationId]);
 
-    const loadMessages = useCallback(async () => {
-        if (!conversationId || typeof conversationId !== 'string') {
-            console.warn('Invalid conversationId:', conversationId);
-            setLoading(false);
-            return;
-        }
+    const loadMessages = useCallback(
+        async (opts?: { background?: boolean; fromProfileChange?: boolean }) => {
+            if (!conversationId || typeof conversationId !== 'string') {
+                console.warn('Invalid conversationId:', conversationId);
+                setLoading(false);
+                return;
+            }
 
-        setLoading(true);
-        try {
-            const response = await messagingService.getMessages(conversationId, { limit: 50 });
-            if (response && response.messages) {
-                setMessages(conversationId, response.messages.reverse()); // Reverse to show oldest first
-            } else {
-                setMessages(conversationId, []);
+            const cached =
+                (useStore.getState().messages[conversationId] || []).length > 0;
+            const background = opts?.background ?? cached;
+            if (!background) {
+                setLoading(true);
             }
-        } catch (error: any) {
-            console.error('Error loading messages:', error);
-            const errorMessage = error?.message || 'Failed to load messages';
-            // Only show alert if it's not a 404
-            if (error?.status !== 404) {
-                feedback.toast.error('Error', errorMessage);
+
+            try {
+                const response = await messagingService.getMessages(conversationId, { limit: 50 });
+                if (response && response.messages) {
+                    setMessages(conversationId, response.messages.reverse());
+                } else if (!cached) {
+                    setMessages(conversationId, []);
+                }
+            } catch (error: any) {
+                console.error('Error loading messages:', error);
+                const errorMessage = error?.message || 'Failed to load messages';
+                const status = error?.status as number | undefined;
+                if (opts?.fromProfileChange && (status === 404 || status === 403)) {
+                    router.back();
+                    return;
+                }
+                if (status !== 404) {
+                    feedback.toast.error('Error', errorMessage);
+                }
+                if (!cached) {
+                    setMessages(conversationId, []);
+                }
+            } finally {
+                if (!background) {
+                    setLoading(false);
+                }
             }
-            // Set empty messages array on error
-            setMessages(conversationId, []);
-        } finally {
-            setLoading(false);
-        }
-    }, [conversationId, setMessages]);
+        },
+        [conversationId, router, setMessages]
+    );
 
     useEffect(() => {
         if (!conversationId || typeof conversationId !== 'string') {
             return;
         }
 
+        const cached =
+            (useStore.getState().messages[conversationId] || []).length > 0;
+        const profileChanged =
+            prevProfileScopeRef.current !== null &&
+            prevProfileScopeRef.current !== profileScopeKey;
+        prevProfileScopeRef.current = profileScopeKey;
+
         loadConversation();
-        loadMessages();
+        void loadMessages({
+            background: cached || profileChanged,
+            fromProfileChange: profileChanged,
+        });
 
         messagingService.setActiveConversation(conversationId).catch((error) => {
             console.error('Error setting messaging presence:', error);
         });
 
-        // Mark conversation as read when component mounts
         messagingService.markConversationAsRead(conversationId).catch((error) => {
             console.error('Error marking conversation as read:', error);
         });
@@ -462,7 +494,13 @@ export default function ChatScreen() {
                 console.error('Error clearing messaging presence:', error);
             });
         };
-    }, [conversationId, loadConversation, loadMessages, markConversationAsRead]);
+    }, [
+        conversationId,
+        profileScopeKey,
+        loadConversation,
+        loadMessages,
+        markConversationAsRead,
+    ]);
 
     const handleSendMessage = async () => {
         if (!input.trim() || !conversationId || sending) return;
@@ -2061,8 +2099,12 @@ export default function ChatScreen() {
 
     if (loading && messages.length === 0) {
         return (
-            <View style={[styles.container, styles.loadingContainer]}>
-                <ActivityIndicator size="large" color={theme.tint} />
+            <View style={styles.container}>
+                <HeaderThreeSections
+                    title={getConversationName()}
+                    titlePrefix={getConversationAvatar()}
+                />
+                <MessageListSkeleton />
             </View>
         );
     }

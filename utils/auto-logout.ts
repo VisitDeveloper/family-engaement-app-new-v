@@ -1,4 +1,5 @@
 import { useStore } from "@/store";
+import { clearChatState } from "@/utils/chat-store";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { unregisterPushTokenOnLogout } from "./pushNotifications";
 
@@ -17,6 +18,7 @@ export async function performAutoLogout(): Promise<void> {
 
     // Update state - using getState for direct access
     const store = useStore.getState();
+    clearChatState();
     store.setLoggedIn(false);
     store.setRole(null);
     store.setUser(null);
@@ -28,6 +30,7 @@ export async function performAutoLogout(): Promise<void> {
     // Even if an error occurs, we try to clear the state
     try {
       const store = useStore.getState();
+      clearChatState();
       store.setLoggedIn(false);
       store.setRole(null);
       store.setUser(null);

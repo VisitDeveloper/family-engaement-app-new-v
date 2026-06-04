@@ -1,4 +1,5 @@
 import Header from "@/components/layout/header";
+import { useSyncChatOnProfileChange } from "@/hooks/use-sync-chat-on-profile-change";
 import { apiClient } from "@/services/api";
 import { authService } from "@/services/auth.service";
 import type { StoreUser } from "@/store";
@@ -30,6 +31,8 @@ export default function RootLayout() {
   const setColorScheme = useStore((state) => state.setColorScheme);
   const getAcceptLanguage = useStore((state) => state.getAcceptLanguage);
   const appLanguage = useStore((state) => state.appLanguage);
+
+  useSyncChatOnProfileChange();
 
   // Sync stored language with i18n (after store rehydration)
   useEffect(() => {

@@ -9,6 +9,7 @@ import SelectBox, { OptionsList } from "@/components/ui/select-box-modal";
 import i18n from "@/i18n";
 import { authService } from "@/services/auth.service";
 import { useStore } from "@/store";
+import { clearChatState } from "@/utils/chat-store";
 import { getAppVersionLabel } from "@/utils/app-version";
 import { getDisplayName } from "@/utils/user-name";
 import {
@@ -140,6 +141,7 @@ export default function SettingsScreen() {
               await authService.logout();
 
               // Clear state
+              clearChatState();
               setLoggedIn(false);
               setRole(null);
               setUser(null);
@@ -150,6 +152,7 @@ export default function SettingsScreen() {
             } catch (error) {
               console.error("Logout error:", error);
               // Even if an error occurs, clear the state
+              clearChatState();
               setLoggedIn(false);
               setRole(null);
               setUser(null);

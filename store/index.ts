@@ -75,7 +75,13 @@ export const useStore = create<StoreState>()(
       name: 'main-store',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => {
-        const { theme: _t, ...rest } = state;
+        const {
+          theme: _t,
+          loading: _loading,
+          conversationsFetching: _conversationsFetching,
+          error: _chatError,
+          ...rest
+        } = state;
         return rest;
       },
       onRehydrateStorage: () => (state) => {
@@ -88,6 +94,9 @@ export const useStore = create<StoreState>()(
         useStore.setState({
           colorScheme: scheme as 'light' | 'dark',
           theme: buildTheme(scheme as 'light' | 'dark', isHC),
+          loading: false,
+          conversationsFetching: false,
+          error: null,
         });
       },
     }
