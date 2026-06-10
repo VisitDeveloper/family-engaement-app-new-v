@@ -654,7 +654,10 @@
     "uploading": "Subiendo…",
     "uploadFailed": "No se pudo enviar",
     "resend": "Reenviar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "stickyVoiceYou": "Tu mensaje de voz",
+    "stickyVoiceFrom": "Mensaje de voz de {{name}}",
+    "stickyVoiceMessage": "Mensaje de voz"
   },
   "ai": {
     "title": "Asistente docente de AI",

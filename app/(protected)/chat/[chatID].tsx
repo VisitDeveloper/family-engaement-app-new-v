@@ -5,6 +5,7 @@ import { TranslateIcon } from "@/components/ui/icons/common-icons";
 import { CopyIcon, EmojiIcon, SendIcon, TrashIcon, VoiceIcon } from "@/components/ui/icons/messages-icons";
 import AnnouncementMessageCard from "@/components/ui/messages/announcement-message-card";
 import AudioMessageCard from "@/components/ui/messages/audio-message-card";
+import ChatStickyAudioPlayer from "@/components/ui/messages/chat-sticky-audio-player";
 import CreateAnnouncementBottomSheet from "@/components/ui/messages/create-announcement-bottom-sheet";
 import CreatePollBottomSheet from "@/components/ui/messages/create-poll-bottom-sheet";
 import FileMessageCard from "@/components/ui/messages/file-message-card";
@@ -87,6 +88,8 @@ export default function ChatScreen() {
     const [selectedOtherMessage, setSelectedOtherMessage] = useState<MessageResponseDto | null>(null);
     const [showReactionPicker, setShowReactionPicker] = useState(false);
     const messageViewRefs = useRef<Record<string, View | null>>({});
+    const flatListRef = useRef<FlatList<MessageResponseDto> | null>(null);
+    const [isPlayingMessageVisible, setIsPlayingMessageVisible] = useState(true);
     const [recorderMode, setRecorderMode] = useState<RecorderMode>("idle");
     const audioRecorder = useAudioRecorder(VOICE_RECORDING_OPTIONS);
     const recorderState = useAudioRecorderState(audioRecorder, 120);
@@ -111,6 +114,9 @@ export default function ChatScreen() {
     const [audioDurations, setAudioDurations] = useState<Record<string, number>>({});
     const messagePlayerRef = useRef<AudioPlayer | null>(null);
     const messageStatusSubscriptionRef = useRef<{ remove: () => void } | null>(null);
+    const playingAudioIdRef = useRef<string | null>(null);
+    const pendingAudioIdRef = useRef<string | null>(null);
+    const audioPlayGenerationRef = useRef(0);
     const positionUpdateInterval = useRef<NodeJS.Timeout | null>(null);
     const [audioRouteSessionActive, setAudioRouteSessionActive] = useState(false);
     const [isProximityNear, setIsProximityNear] = useState(false);
@@ -902,6 +908,27 @@ export default function ChatScreen() {
         setPreviewPositionMs(0);
     }, []);
 
+    const stopMessagePlayer = useCallback(() => {
+        messageStatusSubscriptionRef.current?.remove();
+        messageStatusSubscriptionRef.current = null;
+        if (messagePlayerRef.current) {
+            try {
+                const player = messagePlayerRef.current;
+                if (player.playing) {
+                    player.pause();
+                }
+                player.remove();
+            } catch {
+                // noop
+            }
+            messagePlayerRef.current = null;
+        }
+        if (positionUpdateInterval.current) {
+            clearInterval(positionUpdateInterval.current);
+            positionUpdateInterval.current = null;
+        }
+    }, []);
+
     const resetRecorderUi = useCallback(async () => {
         cleanupPreviewPlayer();
         recordingDurationMsRef.current = 0;
@@ -1060,6 +1087,12 @@ export default function ChatScreen() {
     const togglePreviewPlayback = useCallback(() => {
         if (!previewAudio?.uri) return;
         try {
+            audioPlayGenerationRef.current += 1;
+            stopMessagePlayer();
+            playingAudioIdRef.current = null;
+            pendingAudioIdRef.current = null;
+            setPlayingAudioId(null);
+
             if (!previewPlayerRef.current) {
                 const player = createAudioPlayer(previewAudio.uri, { updateInterval: 100 });
                 previewPlayerRef.current = player;
@@ -1098,7 +1131,7 @@ export default function ChatScreen() {
         } catch {
             feedback.toast.error("Error", "Failed to preview recording");
         }
-    }, [previewAudio, previewDurationMs, previewPositionMs]);
+    }, [previewAudio, previewDurationMs, previewPositionMs, stopMessagePlayer]);
 
     const micPanResponder = useMemo(
         () =>
@@ -1366,6 +1399,74 @@ export default function ChatScreen() {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const playingMessage = useMemo(
+        () => (playingAudioId ? messages.find((m: MessageResponseDto) => m.id === playingAudioId) : undefined),
+        [playingAudioId, messages]
+    );
+
+    const getPlayingAudioSenderLabel = useCallback(
+        (message: MessageResponseDto) => {
+            if (message.senderId === currentUserId) {
+                return t("chat.stickyVoiceYou");
+            }
+            if (message.sender) {
+                const name = getDisplayName(
+                    message.sender.firstName,
+                    message.sender.lastName,
+                    message.sender.email
+                );
+                return name ? t("chat.stickyVoiceFrom", { name }) : t("chat.stickyVoiceMessage");
+            }
+            return t("chat.stickyVoiceMessage");
+        },
+        [currentUserId, t]
+    );
+
+    useEffect(() => {
+        setIsPlayingMessageVisible(true);
+    }, [playingAudioId]);
+
+    const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 25 }).current;
+
+    const onViewableItemsChanged = useRef(
+        ({ viewableItems }: { viewableItems: Array<{ item?: MessageResponseDto }> }) => {
+            const activeId = playingAudioIdRef.current;
+            if (!activeId) return;
+            const isVisible = viewableItems.some((entry) => entry.item?.id === activeId);
+            setIsPlayingMessageVisible(isVisible);
+        }
+    ).current;
+
+    const scrollToPlayingMessage = useCallback(() => {
+        if (!playingAudioId) return;
+        const index = messages.findIndex((m: MessageResponseDto) => m.id === playingAudioId);
+        if (index < 0) return;
+        flatListRef.current?.scrollToIndex({
+            index,
+            animated: true,
+            viewPosition: 0.5,
+        });
+    }, [playingAudioId, messages]);
+
+    const onScrollToIndexFailed = useCallback(
+        (info: { index: number; averageItemLength: number }) => {
+            flatListRef.current?.scrollToOffset({
+                offset: info.averageItemLength * info.index,
+                animated: true,
+            });
+            setTimeout(() => {
+                flatListRef.current?.scrollToIndex({
+                    index: info.index,
+                    animated: true,
+                    viewPosition: 0.5,
+                });
+            }, 100);
+        },
+        []
+    );
+
+    const showStickyAudioPlayer = Boolean(playingAudioId && playingMessage && !isPlayingMessageVisible);
+
     const applyAudioRoute = useCallback(async () => {
         if (!audioRouteSessionActive) return;
         try {
@@ -1423,80 +1524,106 @@ export default function ChatScreen() {
         }
     }, [audioRouteSessionActive]);
 
-    const stopMessagePlayer = useCallback(() => {
-        messageStatusSubscriptionRef.current?.remove();
-        messageStatusSubscriptionRef.current = null;
-        if (messagePlayerRef.current) {
-            try {
-                messagePlayerRef.current.remove();
-            } catch {
-                // noop
-            }
-            messagePlayerRef.current = null;
-        }
-        if (positionUpdateInterval.current) {
-            clearInterval(positionUpdateInterval.current);
-            positionUpdateInterval.current = null;
-        }
-    }, []);
-
-    const handleAudioPlay = async (audioUrl: string, messageId: string, durationSeconds?: number) => {
+    const handleAudioPlay = useCallback(async (audioUrl: string, messageId: string, durationSeconds?: number) => {
         try {
             if (!audioUrl?.trim()) {
                 feedback.toast.error("Error", "Audio source is not available");
                 return;
             }
 
-            stopMessagePlayer();
+            const generation = ++audioPlayGenerationRef.current;
+            const previousId = playingAudioIdRef.current;
+            const wasPending = pendingAudioIdRef.current === messageId;
 
-            // If clicking the same audio, toggle pause
-            if (playingAudioId === messageId) {
+            stopMessagePlayer();
+            cleanupPreviewPlayer();
+            pendingAudioIdRef.current = null;
+
+            // Toggle pause on the same message (including while load/play is still in flight).
+            if (previousId === messageId || wasPending) {
+                if (previousId) {
+                    setAudioPositions((prev) => ({ ...prev, [messageId]: 0 }));
+                }
+                playingAudioIdRef.current = null;
                 setPlayingAudioId(null);
-                setAudioPositions(prev => ({ ...prev, [messageId]: 0 }));
                 stopAudioRouteSession();
                 return;
             }
 
+            if (previousId) {
+                setAudioPositions((prev) => ({ ...prev, [previousId]: 0 }));
+            }
+
+            pendingAudioIdRef.current = messageId;
+            playingAudioIdRef.current = messageId;
+            setPlayingAudioId(messageId);
+
             await setPlaybackAudioMode();
+            if (generation !== audioPlayGenerationRef.current) {
+                pendingAudioIdRef.current = null;
+                playingAudioIdRef.current = null;
+                setPlayingAudioId(null);
+                return;
+            }
+
             startAudioRouteSession();
 
             const player = createAudioPlayer(audioUrl, { updateInterval: 100 });
+            if (generation !== audioPlayGenerationRef.current) {
+                try {
+                    player.remove();
+                } catch {
+                    // noop
+                }
+                pendingAudioIdRef.current = null;
+                playingAudioIdRef.current = null;
+                setPlayingAudioId(null);
+                return;
+            }
+
             messagePlayerRef.current = player;
             player.play();
 
             const initialDuration =
                 player.duration > 0 ? player.duration : (durationSeconds || 0);
 
-            setAudioDurations(prev => ({ ...prev, [messageId]: initialDuration }));
+            pendingAudioIdRef.current = null;
+            playingAudioIdRef.current = messageId;
+            setAudioDurations((prev) => ({ ...prev, [messageId]: initialDuration }));
             setPlayingAudioId(messageId);
-            setAudioPositions(prev => ({ ...prev, [messageId]: 0 }));
+            setAudioPositions((prev) => ({ ...prev, [messageId]: 0 }));
 
             messageStatusSubscriptionRef.current = player.addListener(
                 "playbackStatusUpdate",
                 (status) => {
+                    if (generation !== audioPlayGenerationRef.current) return;
                     if (!status.isLoaded) return;
                     if (status.duration > 0) {
-                        setAudioDurations(prev => ({ ...prev, [messageId]: status.duration }));
+                        setAudioDurations((prev) => ({ ...prev, [messageId]: status.duration }));
                     }
-                    setAudioPositions(prev => ({
+                    setAudioPositions((prev) => ({
                         ...prev,
                         [messageId]: status.currentTime,
                     }));
                     if (status.didJustFinish) {
+                        playingAudioIdRef.current = null;
                         setPlayingAudioId(null);
-                        setAudioPositions(prev => ({ ...prev, [messageId]: 0 }));
+                        setAudioPositions((prev) => ({ ...prev, [messageId]: 0 }));
                         stopMessagePlayer();
                         stopAudioRouteSession();
                     }
                 }
             );
         } catch (error: any) {
-            console.error('Error playing audio:', error);
+            console.error("Error playing audio:", error);
+            pendingAudioIdRef.current = null;
             stopMessagePlayer();
+            playingAudioIdRef.current = null;
+            setPlayingAudioId(null);
             stopAudioRouteSession();
-            feedback.toast.error('Error', 'Failed to play audio');
+            feedback.toast.error("Error", "Failed to play audio");
         }
-    };
+    }, [cleanupPreviewPlayer, startAudioRouteSession, stopAudioRouteSession, stopMessagePlayer]);
 
     useEffect(() => {
         void applyAudioRoute();
@@ -2151,8 +2278,30 @@ export default function ChatScreen() {
                     colorDesc={getOnlineStatus === 'Online' ? theme.passDesc : theme.subText}
                 />
 
+                {showStickyAudioPlayer && playingMessage?.mediaUrl && (
+                    <ChatStickyAudioPlayer
+                        senderLabel={getPlayingAudioSenderLabel(playingMessage)}
+                        position={audioPositions[playingMessage.id] ?? 0}
+                        duration={
+                            audioDurations[playingMessage.id] ??
+                            (playingMessage.duration ? Number(playingMessage.duration) : 0)
+                        }
+                        isPlaying={playingAudioId === playingMessage.id}
+                        onScrollToMessage={scrollToPlayingMessage}
+                        onTogglePlay={() =>
+                            void handleAudioPlay(
+                                playingMessage.mediaUrl!,
+                                playingMessage.id,
+                                playingMessage.duration ? Number(playingMessage.duration) : undefined
+                            )
+                        }
+                        formatDuration={formatAudioDuration}
+                    />
+                )}
+
                 {/* Messages */}
                 <FlatList
+                    ref={flatListRef}
                     data={messages}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item, index }) => renderMessage({ item, index })}
@@ -2161,6 +2310,9 @@ export default function ChatScreen() {
                     showsHorizontalScrollIndicator={false}
                     inverted={true}
                     keyboardShouldPersistTaps="handled"
+                    onViewableItemsChanged={onViewableItemsChanged}
+                    viewabilityConfig={viewabilityConfig}
+                    onScrollToIndexFailed={onScrollToIndexFailed}
                 />
 
                 {/* Edit message bar */}

@@ -654,7 +654,10 @@
     "uploading": "Envoi en cours…",
     "uploadFailed": "Échec de l'envoi",
     "resend": "Renvoyer",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "stickyVoiceYou": "Votre message vocal",
+    "stickyVoiceFrom": "Message vocal de {{name}}",
+    "stickyVoiceMessage": "Message vocal"
   },
   "ai": {
     "title": "Assistant pédagogique IA",
