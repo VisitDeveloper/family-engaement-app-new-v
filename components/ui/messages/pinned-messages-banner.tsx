@@ -9,7 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { PushPin, PushPinSlash } from "phosphor-react-native";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
   Easing,
   interpolate,
@@ -69,7 +69,6 @@ export default function PinnedMessagesBanner({
 
   const animatedListStyle = useAnimatedStyle(() => ({
     height: contentHeight.value * progress.value,
-    opacity: interpolate(progress.value, [0, 0.35, 1], [0, 0.85, 1]),
   }));
 
   const animatedLeadingStyle = useAnimatedStyle(() => ({
@@ -85,91 +84,104 @@ export default function PinnedMessagesBanner({
     ],
   }));
 
+  const animatedExpandedPanelStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+  }));
+
   const styles = useThemedStyles((theme) => {
     const borderColor = theme.border ?? "rgba(0,0,0,0.08)";
+    const expandedPanelBg = theme.panel ?? "rgba(0, 0, 0, 0.03)";
     return {
-    wrapper: {
-      marginTop: 4,
-      marginBottom: 6,
-      flexShrink: 0,
-      zIndex: 2,
-    },
-    divider: {
-      borderBottomWidth: 1,
-      borderBottomColor: borderColor,
-    },
-    row: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      paddingHorizontal: ROW_HORIZONTAL_PADDING,
-    },
-    header: {
-      paddingVertical: 10,
-      alignItems: "center",
-    },
-    leadingSlot: {
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    badge: {
-      width: LEADING_SLOT_WIDTH,
-      height: LEADING_SLOT_WIDTH,
-      padding: LEADING_BADGE_PADDING,
-      borderRadius: 8,
-      backgroundColor: (theme.tint ?? "#1976D2") + "22",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    rowBody: {
-      flex: 1,
-      minWidth: 0,
-      marginRight: ROW_GAP,
-    },
-    trailingSlot: {
-      width: TRAILING_SLOT_WIDTH,
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: LEADING_SLOT_WIDTH,
-    },
-    headerTitle: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.text,
-      flexShrink: 1,
-    },
-    item: {
-      paddingVertical: 10,
-    },
-    itemBody: {
-      flex: 1,
-      minWidth: 0,
-      marginRight: ROW_GAP,
-      gap: 3,
-    },
-    typeLabel: {
-      fontSize: 10,
-      fontWeight: "600",
-      color: theme.tint ?? "#1976D2",
-      textTransform: "uppercase",
-    },
-    preview: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.text,
-      lineHeight: 19,
-    },
-    sender: {
-      fontSize: 12,
-      color: theme.subText ?? theme.text,
-      opacity: 0.75,
-    },
-    listMeasure: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-    },
-  };
+      wrapper: {
+        marginTop: 4,
+        marginBottom: 6,
+        flexShrink: 0,
+        zIndex: 2,
+      },
+      divider: {
+        borderBottomWidth: 1,
+        borderBottomColor: borderColor,
+      },
+      row: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        paddingHorizontal: ROW_HORIZONTAL_PADDING,
+      },
+      header: {
+        paddingVertical: 10,
+        alignItems: "center",
+        overflow: "hidden",
+      },
+      expandedPanelFill: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: expandedPanelBg,
+      },
+      expandedListBg: {
+        backgroundColor: expandedPanelBg,
+      },
+      leadingSlot: {
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      badge: {
+        width: LEADING_SLOT_WIDTH,
+        height: LEADING_SLOT_WIDTH,
+        padding: LEADING_BADGE_PADDING,
+        borderRadius: 8,
+        backgroundColor: (theme.tint ?? "#1976D2") + "22",
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      rowBody: {
+        flex: 1,
+        minWidth: 0,
+        marginRight: ROW_GAP,
+      },
+      trailingSlot: {
+        width: TRAILING_SLOT_WIDTH,
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: LEADING_SLOT_WIDTH,
+      },
+      headerTitle: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: theme.text,
+        flexShrink: 1,
+      },
+      item: {
+        paddingVertical: 10,
+      },
+      itemBody: {
+        flex: 1,
+        minWidth: 0,
+        marginRight: ROW_GAP,
+        gap: 3,
+      },
+      typeLabel: {
+        fontSize: 10,
+        fontWeight: "600",
+        color: theme.tint ?? "#1976D2",
+        textTransform: "uppercase",
+      },
+      preview: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: theme.text,
+        lineHeight: 19,
+      },
+      sender: {
+        fontSize: 12,
+        color: theme.subText ?? theme.text,
+        opacity: 0.75,
+      },
+      listMeasure: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+      },
+    };
   });
 
   if (pins.length === 0) return null;
@@ -180,7 +192,7 @@ export default function PinnedMessagesBanner({
       : t("chat.pinnedCount", { count: pins.length });
 
   return (
-    <View style={[styles.wrapper, !expanded && styles.divider]}>
+    <View style={[styles.wrapper, styles.divider]}>
       <TouchableOpacity
         style={[styles.row, styles.header, expanded && styles.divider]}
         onPress={toggleExpanded}
@@ -188,6 +200,10 @@ export default function PinnedMessagesBanner({
         accessibilityRole="button"
         accessibilityLabel={expanded ? t("chat.pinnedCollapse") : collapsedLabel}
       >
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.expandedPanelFill, animatedExpandedPanelStyle]}
+        />
         <Animated.View style={[styles.leadingSlot, animatedLeadingStyle]}>
           <View style={styles.badge}>
             <PushPin
@@ -214,7 +230,7 @@ export default function PinnedMessagesBanner({
       </TouchableOpacity>
 
       <Animated.View
-        style={[animatedListStyle, { overflow: "hidden" }]}
+        style={[animatedListStyle, styles.expandedListBg, { overflow: "hidden" }]}
         pointerEvents={expanded ? "auto" : "none"}
       >
         <View
@@ -227,11 +243,15 @@ export default function PinnedMessagesBanner({
             }
           }}
         >
-          {pins.map((pin) => {
+          {pins.map((pin, index) => {
             const preview = getPinnedMessagePreview(pin.message);
             const sender = getPinnedMessageSenderLabel(pin.message);
+            const isLastItem = index === pins.length - 1;
             return (
-              <View key={pin.id} style={[styles.item, styles.divider]}>
+              <View
+                key={pin.id}
+                style={[styles.item, !isLastItem && styles.divider]}
+              >
                 <View style={styles.row}>
                   <TouchableOpacity
                     style={styles.itemBody}
