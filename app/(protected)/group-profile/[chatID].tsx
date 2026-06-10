@@ -375,7 +375,7 @@ export default function GroupProfileScreen() {
                         </View>
                       )}
                     </View>
-                    <SpeakableText style={styles.itemMeta}>Last Seen: {p.user.lastOnline ? formatTimeAgoShort(p.user.lastOnline as string, false) : "Never"}</SpeakableText>
+                    <SpeakableText style={styles.itemMeta}>Last Seen: {p.user?.lastOnline ? formatTimeAgoShort(p.user.lastOnline as string, false) : "Never"}</SpeakableText>
                   </View>
                 </View>
               </View>

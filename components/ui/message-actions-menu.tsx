@@ -1,5 +1,6 @@
 import { useThemedStyles } from "@/hooks/use-theme-style";
 import { Ionicons } from "@expo/vector-icons";
+import { PushPin, PushPinSlash } from "phosphor-react-native";
 import { BlurView } from "expo-blur";
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SpeakableText } from "@/components/speakable-text";
@@ -143,7 +144,7 @@ export default function MessageActionsMenu({
       ? [
         {
           id: "pin",
-          icon: <Ionicons name="pin-outline" size={22} color={iconColor} />,
+          icon: <PushPin size={22} color={iconColor} weight="regular" />,
           title: "Pin message",
           onPress: () => {
             onPin();
@@ -157,7 +158,7 @@ export default function MessageActionsMenu({
       ? [
         {
           id: "unpin",
-          icon: <Ionicons name="pin-outline" size={22} color={iconColor} />,
+          icon: <PushPinSlash size={22} color={iconColor} weight="regular" />,
           title: "Unpin message",
           onPress: () => {
             onUnpin();

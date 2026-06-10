@@ -44,6 +44,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { PushPin } from "phosphor-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Clipboard, DeviceEventEmitter, Dimensions, FlatList, Image, KeyboardAvoidingView, Linking, Modal, PanResponder, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -259,15 +260,8 @@ export default function ChatScreen() {
             alignSelf: "flex-start",
             backgroundColor: t.tint + "22",
             borderRadius: 8,
-            paddingHorizontal: 8,
-            paddingVertical: 2,
+            padding: 4,
             marginBottom: 6,
-        },
-        pinnedBadgeText: {
-            fontSize: 10,
-            fontWeight: "700",
-            color: t.tint,
-            letterSpacing: 0.4,
         },
         audioPlayer: {
             // minHeight: 60,
@@ -1850,7 +1844,7 @@ export default function ChatScreen() {
                 ]}>
                 {isPinned ? (
                     <View style={styles.pinnedBadge}>
-                        <SpeakableText style={styles.pinnedBadgeText}>PIN</SpeakableText>
+                        <PushPin size={12} color={theme.tint} weight="fill" />
                     </View>
                 ) : null}
                 {item.type === "text" && item.content && (
@@ -1974,50 +1968,14 @@ export default function ChatScreen() {
                             <SpeakableText style={[styles.timeText, { color: theme.subText ?? '#666' }]}>
                                 {messageTime}
                             </SpeakableText>
-                            {!isPoll && (
-                                <>
-                                    {isMe ? (
-                                        <View style={[styles.readStatusContainer, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
-                                            <View style={styles.actions}>
-                                                <TouchableOpacity
-                                                    style={styles.actionIcon}
-                                                    onPress={() => handleDeleteMessage(item.id)}
-                                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                                >
-                                                    <TrashIcon size={12} color={theme.subText ?? '#666'} />
-                                                </TouchableOpacity>
-                                                <MessagePinAction
-                                                    {...pinProps}
-                                                    color={theme.subText ?? "#666"}
-                                                />
-                                            </View>
-                                        </View>
-                                    ) : (
-                                        <View style={[styles.readStatusContainer, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
-                                            <View style={styles.actions}>
-                                                <TouchableOpacity
-                                                    style={styles.actionIcon}
-                                                    onPress={() => handleCopyMessage(item)}
-                                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                                >
-                                                    <CopyIcon size={12} color={theme.subText ?? '#666'} />
-                                                </TouchableOpacity>
-                                                <TouchableOpacity
-                                                    style={styles.actionIcon}
-                                                    onPress={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
-                                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                                >
-                                                    <EmojiIcon size={12} color={theme.subText ?? '#666'} />
-                                                </TouchableOpacity>
-                                                <MessagePinAction
-                                                    {...pinProps}
-                                                    color={theme.subText ?? "#666"}
-                                                />
-                                            </View>
-                                        </View>
-                                    )}
-                                </>
-                            )}
+                            <View style={[styles.readStatusContainer, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
+                                <View style={styles.actions}>
+                                    <MessagePinAction
+                                        {...pinProps}
+                                        color={theme.subText ?? "#666"}
+                                    />
+                                </View>
+                            </View>
                         </View>
                     </>
                 )}
@@ -2404,9 +2362,19 @@ export default function ChatScreen() {
                     />
                 )}
 
+                {conversation?.type === "group" && pinnedMessagesData.items.length > 0 ? (
+                    <PinnedMessagesBanner
+                        pins={pinnedMessagesData.items}
+                        onPressPin={scrollToPinnedMessage}
+                        onUnpin={canManagePins ? handleUnpinMessage : undefined}
+                        canManagePins={canManagePins}
+                    />
+                ) : null}
+
                 {/* Messages */}
                 <FlatList
                     ref={flatListRef}
+                    style={{ flex: 1 }}
                     data={messages}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item, index }) => renderMessage({ item, index })}
@@ -2418,16 +2386,6 @@ export default function ChatScreen() {
                     onViewableItemsChanged={onViewableItemsChanged}
                     viewabilityConfig={viewabilityConfig}
                     onScrollToIndexFailed={onScrollToIndexFailed}
-                    ListFooterComponent={
-                        conversation?.type === "group" && pinnedMessagesData.items.length > 0 ? (
-                            <PinnedMessagesBanner
-                                pins={pinnedMessagesData.items}
-                                onPressPin={scrollToPinnedMessage}
-                                onUnpin={canManagePins ? handleUnpinMessage : undefined}
-                                canManagePins={canManagePins}
-                            />
-                        ) : null
-                    }
                 />
 
                 {/* Edit message bar */}

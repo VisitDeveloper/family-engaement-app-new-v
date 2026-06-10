@@ -1,4 +1,4 @@
-import { PinIcon } from "@/components/ui/icons/messages-icons";
+import { PushPin, PushPinSlash } from "phosphor-react-native";
 import { TouchableOpacity } from "react-native";
 
 interface MessagePinActionProps {
@@ -25,7 +25,11 @@ export default function MessagePinAction({
       accessibilityRole="button"
       accessibilityLabel={onUnpin ? "Unpin message" : "Pin message"}
     >
-      <PinIcon size={size} color={color} filled={!!onUnpin} />
+      {onUnpin ? (
+        <PushPinSlash size={size} color={color} weight="regular" />
+      ) : (
+        <PushPin size={size} color={color} weight="regular" />
+      )}
     </TouchableOpacity>
   );
 }
