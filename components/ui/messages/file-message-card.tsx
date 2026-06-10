@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SpeakableText } from "@/components/speakable-text";
 import { TouchableOpacity, View } from "react-native";
 import { CopyIcon, TrashIcon } from "../icons/messages-icons";
+import MessagePinAction from "./message-pin-action";
 import ReactionRow from "./reaction-row";
 
 interface FileMessageCardProps {
@@ -19,6 +20,8 @@ interface FileMessageCardProps {
   onDelete?: () => void;
   onCopy?: () => void;
   onReaction?: () => void;
+  onPin?: () => void;
+  onUnpin?: () => void;
 }
 
 export default function FileMessageCard({
@@ -30,6 +33,8 @@ export default function FileMessageCard({
   onDelete,
   onCopy,
   onReaction,
+  onPin,
+  onUnpin,
   reactions,
   myReaction,
 }: FileMessageCardProps) {
@@ -137,10 +142,15 @@ export default function FileMessageCard({
                   />
                 </TouchableOpacity>
               )}
+              <MessagePinAction
+                onPin={onPin}
+                onUnpin={onUnpin}
+                color={isPoll ? (theme.subText ?? "#666") : "#fff"}
+              />
             </View>
           </View>
         ) : (
-          (onCopy || onReaction) && (
+          (onCopy || onReaction || onPin || onUnpin) && (
             <View style={styles.footerRight}>
               <View style={styles.actions}>
                 {onCopy && (
@@ -153,6 +163,11 @@ export default function FileMessageCard({
                     <Ionicons name="heart-outline" size={12} color={theme.subText ?? "#666"} />
                   </TouchableOpacity>
                 )}
+                <MessagePinAction
+                  onPin={onPin}
+                  onUnpin={onUnpin}
+                  color={theme.subText ?? "#666"}
+                />
               </View>
             </View>
           )

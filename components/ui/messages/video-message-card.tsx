@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SpeakableText } from "@/components/speakable-text";
 import { Image, TouchableOpacity, View } from "react-native";
 import { EmojiIcon, TrashIcon } from "../icons/messages-icons";
+import MessagePinAction from "./message-pin-action";
 import ReactionRow from "./reaction-row";
 
 /** Matches image attachments and chat bubble content width. */
@@ -23,6 +24,8 @@ interface VideoMessageCardProps {
   onDelete?: () => void;
   onCopy?: () => void;
   onReaction?: () => void;
+  onPin?: () => void;
+  onUnpin?: () => void;
 }
 
 export default function VideoMessageCard({
@@ -34,6 +37,8 @@ export default function VideoMessageCard({
   onDelete,
   onCopy,
   onReaction,
+  onPin,
+  onUnpin,
   reactions,
   myReaction,
 }: VideoMessageCardProps) {
@@ -138,10 +143,15 @@ export default function VideoMessageCard({
                   />
                 </TouchableOpacity>
               )}
+              <MessagePinAction
+                onPin={onPin}
+                onUnpin={onUnpin}
+                color={isPoll ? (theme.subText ?? "#666") : "#fff"}
+              />
             </View>
           </View>
         ) : (
-          (onReaction) && (
+          (onReaction || onPin || onUnpin) && (
             <View style={styles.footerRight}>
               <View style={styles.actions}>
 
@@ -150,6 +160,11 @@ export default function VideoMessageCard({
                     <EmojiIcon size={12} color={theme.subText ?? "#666"} />
                   </TouchableOpacity>
                 )}
+                <MessagePinAction
+                  onPin={onPin}
+                  onUnpin={onUnpin}
+                  color={theme.subText ?? "#666"}
+                />
               </View>
             </View>
           )

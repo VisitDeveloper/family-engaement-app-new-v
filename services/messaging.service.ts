@@ -22,6 +22,8 @@ import type {
   EmergencyMessageResponse,
   EmergencyMessageDto,
   GetEmergencyMessagesParams,
+  PinnedMessageItemDto,
+  PinnedMessagesListDto,
 } from "@/types";
 import type { PaginatedResponse, PaginatedResult } from "@/types";
 import { toPaginatedResult } from "@/types";
@@ -49,6 +51,8 @@ export type {
   EmergencyMessageResponse,
   EmergencyMessageDto,
   GetEmergencyMessagesParams,
+  PinnedMessageItemDto,
+  PinnedMessagesListDto,
 };
 
 export type GetConversationsResponse = PaginatedResult<ConversationResponseDto, "conversations">;
@@ -74,6 +78,10 @@ export interface MessagingService {
   updateMessage(messageId: string, data: UpdateMessageDto): Promise<MessageResponseDto>;
   addReaction(messageId: string, userId: string, emoji: string, lang?: string): Promise<MessageResponseDto>;
   removeReaction(messageId: string, userId: string, lang?: string): Promise<MessageResponseDto>;
+
+  getPinnedMessages(conversationId: string): Promise<PinnedMessagesListDto>;
+  pinMessage(conversationId: string, messageId: string): Promise<PinnedMessagesListDto>;
+  unpinMessage(conversationId: string, messageId: string): Promise<PinnedMessagesListDto>;
 
   // File Uploads
   uploadImage(file: FormData): Promise<UploadFileResponse>;
@@ -422,6 +430,64 @@ class MessagingServiceImpl implements MessagingService {
         message:
           apiError.message ||
           "Failed to remove reaction. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async getPinnedMessages(
+    conversationId: string
+  ): Promise<PinnedMessagesListDto> {
+    try {
+      return await apiClient.get<PinnedMessagesListDto>(
+        `/messaging/conversations/${conversationId}/pins`
+      );
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message ||
+          "Failed to load pinned messages. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async pinMessage(
+    conversationId: string,
+    messageId: string
+  ): Promise<PinnedMessagesListDto> {
+    try {
+      return await apiClient.post<PinnedMessagesListDto>(
+        `/messaging/conversations/${conversationId}/pins`,
+        { messageId }
+      );
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message || "Failed to pin message. Please try again.",
+        status: apiError.status,
+        data: apiError.data,
+      } as ApiError;
+    }
+  }
+
+  async unpinMessage(
+    conversationId: string,
+    messageId: string
+  ): Promise<PinnedMessagesListDto> {
+    try {
+      return await apiClient.delete<PinnedMessagesListDto>(
+        `/messaging/conversations/${conversationId}/pins/${messageId}`
+      );
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw {
+        message:
+          apiError.message || "Failed to unpin message. Please try again.",
         status: apiError.status,
         data: apiError.data,
       } as ApiError;

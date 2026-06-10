@@ -32,6 +32,28 @@ export interface ClientMessageUpload {
   };
 }
 
+export interface PinnedByUserDto {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  email: string;
+}
+
+export interface PinnedMessageItemDto {
+  id: string;
+  conversationId: string;
+  messageId: string;
+  sortOrder: number;
+  pinnedAt: string;
+  pinnedBy?: PinnedByUserDto | null;
+  message: MessageResponseDto;
+}
+
+export interface PinnedMessagesListDto {
+  items: PinnedMessageItemDto[];
+  maxPinnedMessages: number;
+}
+
 export interface MessageResponseDto {
   id: string;
   conversationId: string;
@@ -80,7 +102,7 @@ export interface ConversationResponseDto {
   unreadCount?: number;
   lastMessage?: MessageResponseDto | null;
   participantCount?: number;
-  participants?: { id: string; user: UserDto }[];
+  participants?: { id: string; isAdmin?: boolean; user: UserDto }[];
   classrooms?: ClassroomResponseDto[];
 }
 

@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SpeakableText } from "@/components/speakable-text";
 import { TouchableOpacity, View } from "react-native";
 import { EmojiIcon, TrashIcon } from "../icons/messages-icons";
+import MessagePinAction from "./message-pin-action";
 import ReactionRow from "./reaction-row";
 
 interface AudioMessageCardProps {
@@ -21,6 +22,8 @@ interface AudioMessageCardProps {
   onDelete?: () => void;
   onCopy?: () => void;
   onReaction?: () => void;
+  onPin?: () => void;
+  onUnpin?: () => void;
   formatAudioDuration?: (seconds: number) => string;
 }
 
@@ -37,6 +40,8 @@ export default function AudioMessageCard({
   onDelete,
   onCopy,
   onReaction,
+  onPin,
+  onUnpin,
   formatAudioDuration,
 }: AudioMessageCardProps) {
   const { theme } = useStore((state) => state);
@@ -172,10 +177,11 @@ export default function AudioMessageCard({
                   <TrashIcon size={12} color="#fff" />
                 </TouchableOpacity>
               )}
+              <MessagePinAction onPin={onPin} onUnpin={onUnpin} color="#fff" />
             </View>
           </View>
         ) : (
-          (onReaction) && (
+          (onReaction || onPin || onUnpin) && (
             <View style={styles.footerRight}>
               <View style={styles.actions}>
                 {onReaction && (
@@ -183,6 +189,11 @@ export default function AudioMessageCard({
                     <EmojiIcon size={12} color={theme.subText ?? "#666"} />
                   </TouchableOpacity>
                 )}
+                <MessagePinAction
+                  onPin={onPin}
+                  onUnpin={onUnpin}
+                  color={theme.subText ?? "#666"}
+                />
               </View>
             </View>
           )

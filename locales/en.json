@@ -675,7 +675,19 @@
     "delete": "Delete",
     "stickyVoiceYou": "Your voice message",
     "stickyVoiceFrom": "{{name}}'s voice message",
-    "stickyVoiceMessage": "Voice message"
+    "stickyVoiceMessage": "Voice message",
+    "pinnedTitle": "Pinned messages",
+    "pinnedCountOne": "1 pinned message",
+    "pinnedCount": "{{count}} pinned messages",
+    "pinnedCollapse": "Collapse pinned messages",
+    "pinMessage": "Pin message",
+    "unpinMessage": "Unpin message",
+    "pinSuccessTitle": "Pinned",
+    "pinSuccessBody": "Message pinned for the group.",
+    "unpinSuccessTitle": "Unpinned",
+    "unpinSuccessBody": "Message removed from pinned list.",
+    "pinError": "Failed to pin message.",
+    "unpinError": "Failed to unpin message."
   },
   "ai": {
     "title": "AI Teaching Assistant",

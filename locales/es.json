@@ -657,7 +657,19 @@
     "delete": "Eliminar",
     "stickyVoiceYou": "Tu mensaje de voz",
     "stickyVoiceFrom": "Mensaje de voz de {{name}}",
-    "stickyVoiceMessage": "Mensaje de voz"
+    "stickyVoiceMessage": "Mensaje de voz",
+    "pinnedTitle": "Mensajes fijados",
+    "pinnedCountOne": "1 mensaje fijado",
+    "pinnedCount": "{{count}} mensajes fijados",
+    "pinnedCollapse": "Contraer mensajes fijados",
+    "pinMessage": "Fijar mensaje",
+    "unpinMessage": "Quitar fijación",
+    "pinSuccessTitle": "Fijado",
+    "pinSuccessBody": "Mensaje fijado para el grupo.",
+    "unpinSuccessTitle": "Desfijado",
+    "unpinSuccessBody": "Mensaje quitado de la lista fijada.",
+    "pinError": "No se pudo fijar el mensaje.",
+    "unpinError": "No se pudo quitar la fijación."
   },
   "ai": {
     "title": "Asistente docente de AI",

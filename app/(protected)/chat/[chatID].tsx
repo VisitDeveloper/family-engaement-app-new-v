@@ -15,6 +15,8 @@ import ReactionRow from "@/components/ui/messages/reaction-row";
 import TextMessageCard from "@/components/ui/messages/text-message-card";
 import VideoMessageCard from "@/components/ui/messages/video-message-card";
 import MessageUploadStatus from "@/components/ui/messages/message-upload-status";
+import PinnedMessagesBanner from "@/components/ui/messages/pinned-messages-banner";
+import MessagePinAction from "@/components/ui/messages/message-pin-action";
 import { MessageListSkeleton } from "@/components/ui/messages/message-list-skeleton";
 import { createPendingOutgoingMessage, isPendingMessageId } from "@/utils/pending-chat-message";
 import type { ClientMessageUpload } from "@/types";
@@ -25,6 +27,7 @@ import { ConversationResponseDto, MessageResponseDto, messagingService, PollResp
 import { detectSourceLanguage, SUPPORTED_LANGUAGES, translateText } from "@/services/translate.service";
 import { useStore } from "@/store";
 import { getDisplayName } from "@/utils/user-name";
+import { canManageGroupPins } from "@/utils/group-pin-permissions";
 import { formatTimeAgoShort } from "@/utils/format-time-ago";
 import { Ionicons } from "@expo/vector-icons";
 import { AppVideoPlayerModal } from "@/components/ui/app-video-player-modal";
@@ -177,6 +180,8 @@ export default function ChatScreen() {
     const setMessages = useStore((state: any) => state.setMessages);
     const removeMessage = useStore((state: any) => state.removeMessage);
     const updateMessageInStore = useStore((state: any) => state.updateMessage);
+    const pinnedMessagesStore = useStore((state: any) => state.pinnedMessages);
+    const setPinnedMessages = useStore((state: any) => state.setPinnedMessages);
     const markConversationAsRead = useStore((state: any) => state.updateConversation);
     const currentUser = useStore((state: any) => state.user);
     const currentUserId = currentUser?.id || null;
@@ -193,6 +198,21 @@ export default function ChatScreen() {
         if (!conversationId || !messagesStore) return [];
         return messagesStore[conversationId] || [];
     }, [conversationId, messagesStore]);
+
+    const pinnedMessagesData = useMemo(() => {
+        if (!conversationId) return { items: [], maxPinnedMessages: 3 };
+        return pinnedMessagesStore[conversationId] ?? { items: [], maxPinnedMessages: 3 };
+    }, [conversationId, pinnedMessagesStore]);
+
+    const pinnedMessageIds = useMemo(
+        () => new Set(pinnedMessagesData.items.map((pin: { messageId: string }) => pin.messageId)),
+        [pinnedMessagesData.items]
+    );
+
+    const canManagePins = useMemo(
+        () => canManageGroupPins(conversation, currentUserId, effectiveRole),
+        [conversation, currentUserId, effectiveRole]
+    );
 
     // Parent cannot send messages in group chats (only view)
     const isParentInGroup = effectiveRole === "parent" && conversation?.type === "group";
@@ -235,6 +255,20 @@ export default function ChatScreen() {
         readStatusContainer: { flexDirection: "row", alignItems: "center" },
         actions: { flexDirection: "row", alignItems: "center", gap: 10 },
         actionIcon: { padding: 2 },
+        pinnedBadge: {
+            alignSelf: "flex-start",
+            backgroundColor: t.tint + "22",
+            borderRadius: 8,
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+            marginBottom: 6,
+        },
+        pinnedBadgeText: {
+            fontSize: 10,
+            fontWeight: "700",
+            color: t.tint,
+            letterSpacing: 0.4,
+        },
         audioPlayer: {
             // minHeight: 60,
             // padding: 12,
@@ -468,6 +502,16 @@ export default function ChatScreen() {
         [conversationId, router, setMessages]
     );
 
+    const loadPinnedMessages = useCallback(async () => {
+        if (!conversationId) return;
+        try {
+            const response = await messagingService.getPinnedMessages(conversationId);
+            setPinnedMessages(conversationId, response);
+        } catch (error) {
+            console.error("Error loading pinned messages:", error);
+        }
+    }, [conversationId, setPinnedMessages]);
+
     useEffect(() => {
         if (!conversationId || typeof conversationId !== 'string') {
             return;
@@ -485,6 +529,7 @@ export default function ChatScreen() {
             background: cached || profileChanged,
             fromProfileChange: profileChanged,
         });
+        void loadPinnedMessages();
 
         messagingService.setActiveConversation(conversationId).catch((error) => {
             console.error('Error setting messaging presence:', error);
@@ -505,6 +550,7 @@ export default function ChatScreen() {
         profileScopeKey,
         loadConversation,
         loadMessages,
+        loadPinnedMessages,
         markConversationAsRead,
     ]);
 
@@ -1281,6 +1327,38 @@ export default function ChatScreen() {
         setEditDraft("");
     }, []);
 
+    const handlePinMessage = useCallback(async (messageId: string) => {
+        if (!conversationId) return;
+        try {
+            const response = await messagingService.pinMessage(conversationId, messageId);
+            setPinnedMessages(conversationId, response);
+            feedback.toast.success(t("chat.pinSuccessTitle"), t("chat.pinSuccessBody"));
+        } catch (error: any) {
+            feedback.toast.error("Error", error?.message ?? t("chat.pinError"));
+        }
+    }, [conversationId, setPinnedMessages, t]);
+
+    const handleUnpinMessage = useCallback(async (messageId: string) => {
+        if (!conversationId) return;
+        try {
+            const response = await messagingService.unpinMessage(conversationId, messageId);
+            setPinnedMessages(conversationId, response);
+            feedback.toast.success(t("chat.unpinSuccessTitle"), t("chat.unpinSuccessBody"));
+        } catch (error: any) {
+            feedback.toast.error("Error", error?.message ?? t("chat.unpinError"));
+        }
+    }, [conversationId, setPinnedMessages, t]);
+
+    const scrollToPinnedMessage = useCallback((messageId: string) => {
+        const index = messages.findIndex((m: MessageResponseDto) => m.id === messageId);
+        if (index < 0) return;
+        flatListRef.current?.scrollToIndex({
+            index,
+            animated: true,
+            viewPosition: 0.5,
+        });
+    }, [messages]);
+
     const handleCopyMessage = useCallback(async (message: MessageResponseDto) => {
         try {
             let textToCopy = "";
@@ -1746,6 +1824,14 @@ export default function ChatScreen() {
         const showDateHeader = index === 0 || (messages[index - 1] && !isSameDay(item.createdAt, messages[index - 1].createdAt));
         const showBubbleDelete = isMe && !item.clientUpload;
         const onDeleteMessage = showBubbleDelete ? () => handleDeleteMessage(item.id) : undefined;
+        const isPinned = pinnedMessageIds.has(item.id);
+        const pinProps =
+            canManagePins && conversation?.type === "group" && !item.clientUpload
+                ? {
+                    onPin: isPinned ? undefined : () => handlePinMessage(item.id),
+                    onUnpin: isPinned ? () => handleUnpinMessage(item.id) : undefined,
+                }
+                : {};
 
         const messageContent = (
             <View
@@ -1762,6 +1848,11 @@ export default function ChatScreen() {
                     item.clientUpload ? { overflow: "hidden", position: "relative" } : null,
                     item.type === "video" ? { alignItems: "flex-start" as const } : null,
                 ]}>
+                {isPinned ? (
+                    <View style={styles.pinnedBadge}>
+                        <SpeakableText style={styles.pinnedBadgeText}>PIN</SpeakableText>
+                    </View>
+                ) : null}
                 {item.type === "text" && item.content && (
                     <TextMessageCard
                         message={item}
@@ -1776,6 +1867,7 @@ export default function ChatScreen() {
                         onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        {...pinProps}
                     />
                 )}
                 {item.type === "announcement" && item.content && (
@@ -1791,6 +1883,7 @@ export default function ChatScreen() {
                         onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        {...pinProps}
                     />
                 )}
                 {item.type === "image" && item.mediaUrl && (
@@ -1805,6 +1898,7 @@ export default function ChatScreen() {
                         onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        {...pinProps}
                     />
                 )}
                 {item.type === "video" && (item.thumbnailUrl ?? item.mediaUrl) && item.mediaUrl && (
@@ -1819,6 +1913,7 @@ export default function ChatScreen() {
                         onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        {...pinProps}
                     />
                 )}
                 {item.type === "audio" && item.mediaUrl && (
@@ -1836,6 +1931,7 @@ export default function ChatScreen() {
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={() => { setSelectedOtherMessage(item); setShowReactionPicker(true); }}
                         formatAudioDuration={formatAudioDuration}
+                        {...pinProps}
                     />
                 )}
                 {item.type === "file" && (item.mediaUrl || item.fileName) && (
@@ -1850,6 +1946,7 @@ export default function ChatScreen() {
                         onDelete={onDeleteMessage}
                         onCopy={!isMe ? () => handleCopyMessage(item) : undefined}
                         onReaction={!isMe ? () => { setSelectedOtherMessage(item); setShowReactionPicker(true); } : undefined}
+                        {...pinProps}
                     />
                 )}
                 {item.type === "poll" && item.polls?.length && (
@@ -1889,6 +1986,10 @@ export default function ChatScreen() {
                                                 >
                                                     <TrashIcon size={12} color={theme.subText ?? '#666'} />
                                                 </TouchableOpacity>
+                                                <MessagePinAction
+                                                    {...pinProps}
+                                                    color={theme.subText ?? "#666"}
+                                                />
                                             </View>
                                         </View>
                                     ) : (
@@ -1908,6 +2009,10 @@ export default function ChatScreen() {
                                                 >
                                                     <EmojiIcon size={12} color={theme.subText ?? '#666'} />
                                                 </TouchableOpacity>
+                                                <MessagePinAction
+                                                    {...pinProps}
+                                                    color={theme.subText ?? "#666"}
+                                                />
                                             </View>
                                         </View>
                                     )}
@@ -2313,6 +2418,16 @@ export default function ChatScreen() {
                     onViewableItemsChanged={onViewableItemsChanged}
                     viewabilityConfig={viewabilityConfig}
                     onScrollToIndexFailed={onScrollToIndexFailed}
+                    ListFooterComponent={
+                        conversation?.type === "group" && pinnedMessagesData.items.length > 0 ? (
+                            <PinnedMessagesBanner
+                                pins={pinnedMessagesData.items}
+                                onPressPin={scrollToPinnedMessage}
+                                onUnpin={canManagePins ? handleUnpinMessage : undefined}
+                                canManagePins={canManagePins}
+                            />
+                        ) : null
+                    }
                 />
 
                 {/* Edit message bar */}

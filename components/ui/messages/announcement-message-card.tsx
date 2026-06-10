@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SpeakableText } from "@/components/speakable-text";
 import { TouchableOpacity, View } from "react-native";
 import { CopyIcon, PencilIcon, TrashIcon } from "../icons/messages-icons";
+import MessagePinAction from "./message-pin-action";
 import ReactionRow from "./reaction-row";
 
 interface AnnouncementMessageCardProps {
@@ -20,6 +21,8 @@ interface AnnouncementMessageCardProps {
   onDelete?: () => void;
   onCopy?: () => void;
   onReaction?: () => void;
+  onPin?: () => void;
+  onUnpin?: () => void;
 }
 
 export default function AnnouncementMessageCard({
@@ -31,6 +34,8 @@ export default function AnnouncementMessageCard({
   onDelete,
   onCopy,
   onReaction,
+  onPin,
+  onUnpin,
   messageTime,
   reactions,
   myReaction,
@@ -133,9 +138,14 @@ export default function AnnouncementMessageCard({
                 <TrashIcon size={12} color={theme.subText} />
               </TouchableOpacity>
             )}
+            <MessagePinAction
+              onPin={onPin}
+              onUnpin={onUnpin}
+              color={theme.subText}
+            />
           </View>
         ) : (
-          (onCopy || onReaction) && (
+          (onCopy || onReaction || onPin || onUnpin) && (
             <View style={styles.actions}>
               {onCopy && (
                 <TouchableOpacity style={styles.actionIcon} onPress={onCopy} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -147,6 +157,11 @@ export default function AnnouncementMessageCard({
                   <Ionicons name="heart-outline" size={12} color={theme.subText} />
                 </TouchableOpacity>
               )}
+              <MessagePinAction
+                onPin={onPin}
+                onUnpin={onUnpin}
+                color={theme.subText}
+              />
             </View>
           )
         )}

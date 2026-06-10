@@ -11,6 +11,8 @@ interface MessageActionsMenuProps {
   onDelete?: () => void;
   onCopy?: () => void;
   onReaction?: () => void;
+  onPin?: () => void;
+  onUnpin?: () => void;
   /** Position from top of screen */
   top: number;
   /** Position from left/right of screen */
@@ -27,6 +29,8 @@ export default function MessageActionsMenu({
   onDelete,
   onCopy,
   onReaction,
+  onPin,
+  onUnpin,
   top,
   left,
   right,
@@ -129,6 +133,34 @@ export default function MessageActionsMenu({
           title: "React",
           onPress: () => {
             onReaction();
+            onClose();
+          },
+          isDelete: false,
+        },
+      ]
+      : []),
+    ...(onPin
+      ? [
+        {
+          id: "pin",
+          icon: <Ionicons name="pin-outline" size={22} color={iconColor} />,
+          title: "Pin message",
+          onPress: () => {
+            onPin();
+            onClose();
+          },
+          isDelete: false,
+        },
+      ]
+      : []),
+    ...(onUnpin
+      ? [
+        {
+          id: "unpin",
+          icon: <Ionicons name="pin-outline" size={22} color={iconColor} />,
+          title: "Unpin message",
+          onPress: () => {
+            onUnpin();
             onClose();
           },
           isDelete: false,

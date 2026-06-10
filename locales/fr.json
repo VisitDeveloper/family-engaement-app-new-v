@@ -657,7 +657,19 @@
     "delete": "Supprimer",
     "stickyVoiceYou": "Votre message vocal",
     "stickyVoiceFrom": "Message vocal de {{name}}",
-    "stickyVoiceMessage": "Message vocal"
+    "stickyVoiceMessage": "Message vocal",
+    "pinnedTitle": "Messages épinglés",
+    "pinnedCountOne": "1 message épinglé",
+    "pinnedCount": "{{count}} messages épinglés",
+    "pinnedCollapse": "Réduire les messages épinglés",
+    "pinMessage": "Épingler le message",
+    "unpinMessage": "Retirer l'épingle",
+    "pinSuccessTitle": "Épinglé",
+    "pinSuccessBody": "Message épinglé pour le groupe.",
+    "unpinSuccessTitle": "Épingle retirée",
+    "unpinSuccessBody": "Message retiré de la liste épinglée.",
+    "pinError": "Impossible d'épingler le message.",
+    "unpinError": "Impossible de retirer l'épingle."
   },
   "ai": {
     "title": "Assistant pédagogique IA",

@@ -1,12 +1,15 @@
 import {
   ConversationResponseDto,
   MessageResponseDto,
+  PinnedMessageItemDto,
+  PinnedMessagesListDto,
 } from "@/services/messaging.service";
 import { StateCreator } from "zustand";
 
 export interface ChatSlice {
   conversations: ConversationResponseDto[];
   messages: Record<string, MessageResponseDto[]>; // conversationId -> messages
+  pinnedMessages: Record<string, PinnedMessagesListDto>;
   loading: boolean;
   /** True while refetching conversations without clearing the list (profile switch, pull-to-refresh). */
   conversationsFetching: boolean;
@@ -30,6 +33,12 @@ export interface ChatSlice {
   ) => void;
   removeMessage: (conversationId: string, messageId: string) => void;
 
+  setPinnedMessages: (
+    conversationId: string,
+    data: PinnedMessagesListDto
+  ) => void;
+  clearPinnedMessages: (conversationId: string) => void;
+
   getConversationById: (id: string) => ConversationResponseDto | undefined;
   getMessagesByConversationId: (conversationId: string) => MessageResponseDto[];
 
@@ -45,6 +54,7 @@ export const createChatSlice: StateCreator<any, [], [], ChatSlice> = (
 ) => ({
   conversations: [],
   messages: {},
+  pinnedMessages: {},
   loading: false,
   conversationsFetching: false,
   error: null,
@@ -70,6 +80,9 @@ export const createChatSlice: StateCreator<any, [], [], ChatSlice> = (
       ),
       messages: Object.fromEntries(
         Object.entries(state.messages).filter(([key]) => key !== id)
+      ),
+      pinnedMessages: Object.fromEntries(
+        Object.entries(state.pinnedMessages).filter(([key]) => key !== id)
       ),
     })),
 
@@ -106,12 +119,42 @@ export const createChatSlice: StateCreator<any, [], [], ChatSlice> = (
     })),
 
   removeMessage: (conversationId, messageId) =>
+    set((state: any) => {
+      const currentPins = state.pinnedMessages[conversationId];
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: (state.messages[conversationId] || []).filter(
+            (m: MessageResponseDto) => m.id !== messageId
+          ),
+        },
+        pinnedMessages: currentPins
+          ? {
+              ...state.pinnedMessages,
+              [conversationId]: {
+                ...currentPins,
+                items: currentPins.items.filter(
+                  (pin: PinnedMessageItemDto) => pin.messageId !== messageId
+                ),
+              },
+            }
+          : state.pinnedMessages,
+      };
+    }),
+
+  setPinnedMessages: (conversationId, data) =>
     set((state: any) => ({
-      messages: {
-        ...state.messages,
-        [conversationId]: (state.messages[conversationId] || []).filter(
-          (m: MessageResponseDto) => m.id !== messageId
-        ),
+      pinnedMessages: {
+        ...state.pinnedMessages,
+        [conversationId]: data,
+      },
+    })),
+
+  clearPinnedMessages: (conversationId) =>
+    set((state: any) => ({
+      pinnedMessages: {
+        ...state.pinnedMessages,
+        [conversationId]: { items: [], maxPinnedMessages: 3 },
       },
     })),
 
