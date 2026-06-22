@@ -14,6 +14,9 @@
       "bundleIdentifier": "com.familyapp.engagement",
       "usesIcloudStorage": true,
       "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "file"
+        ],
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location to help you select event locations on the map.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to help you select event locations on the map.",

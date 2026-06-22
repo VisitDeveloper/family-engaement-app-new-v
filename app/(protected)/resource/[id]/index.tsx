@@ -17,6 +17,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import { ActivityIndicator, Image, Linking, Platform, ScrollView, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -98,10 +99,22 @@ const BookDetailScreen = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const uriToOpen =
-          Platform.OS === "android"
-            ? await FileSystem.getContentUriAsync(result.uri)
-            : result.uri;
+        if (Platform.OS === "ios") {
+          const canShare = await Sharing.isAvailableAsync();
+          if (!canShare) {
+            feedback.toast.error(t("common.error"), t("resource.cannotOpenFile"));
+            return;
+          }
+
+          const isPdf = filename.toLowerCase().endsWith(".pdf");
+          await Sharing.shareAsync(result.uri, {
+            mimeType: isPdf ? "application/pdf" : undefined,
+            UTI: isPdf ? "com.adobe.pdf" : undefined,
+          });
+          return;
+        }
+
+        const uriToOpen = await FileSystem.getContentUriAsync(result.uri);
 
         const canOpenLocal = await Linking.canOpenURL(uriToOpen);
         if (!canOpenLocal) {
